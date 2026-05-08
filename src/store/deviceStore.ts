@@ -33,10 +33,11 @@ type DeviceState = {
   // Telemetry — dispositivo
   tp: number          // temperatura (°C)
   voltage: number     // tensão (V)
-  al: boolean         // alerta de nível baixo
-  am: boolean         // alerta de motor
-  er: number          // código de erro
+  al: boolean         // al: motor alimentando agora (true = dispensando)
+  am: boolean         // am: modo automático ativo
+  er: number          // código de erro (0=OK, 1=corrente zero, 2=obstrução, 3=vazio, 11=timeout)
   ts: string          // timestamp do device
+  pf: number          // pf: perfil (0=piscicultura, 1=pet)
 
   // Agendamentos vindos do hardware (c_pt)
   schedules: DeviceSchedule[]
@@ -71,6 +72,7 @@ export const useDeviceStore = create<DeviceState>()(
       am: false,
       er: 0,
       ts: '',
+      pf: 1,
 
       schedules: [],
       feedHistory: [],

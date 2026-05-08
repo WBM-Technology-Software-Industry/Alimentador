@@ -1,5 +1,5 @@
 import mqtt, { type MqttClient } from 'mqtt'
-import { useDeviceStore, type DeviceSchedule } from '../store/deviceStore'
+import { useDeviceStore, type DeviceSchedule, type DeviceType } from '../store/deviceStore'
 
 let client: MqttClient | null = null
 
@@ -32,7 +32,7 @@ export function connectMqtt(brokerUrl: string, deviceId: string) {
   client.on('message', (_topic, payload) => {
     try {
       const d = JSON.parse(payload.toString()) as Record<string, unknown>
-      const { setTelemetry, setSchedules } = useDeviceStore.getState()
+      const { setTelemetry, setSchedules, setDeviceType } = useDeviceStore.getState()
 
       setTelemetry({
         eg:      typeof d.eg === 'number' ? d.eg : undefined,
@@ -43,7 +43,14 @@ export function connectMqtt(brokerUrl: string, deviceId: string) {
         am:      typeof d.am === 'boolean' ? d.am : undefined,
         er:      typeof d.er === 'number' ? d.er : undefined,
         ts:      typeof d.ts === 'string' ? d.ts : undefined,
+        pf:      typeof d.pf === 'number' ? d.pf : undefined,
       })
+
+      // pf: 0 = piscicultura, 1 = pet/cão
+      if (typeof d.pf === 'number') {
+        const t: DeviceType = d.pf === 0 ? 'peixe' : 'cao'
+        if (useDeviceStore.getState().deviceType !== t) setDeviceType(t)
+      }
 
       if (Array.isArray(d.c_pt)) {
         setSchedules(d.c_pt as DeviceSchedule[])
