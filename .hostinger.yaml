@@ -1,0 +1,4 @@
+type: node
+entry: server.js
+build: npm run build
+node_version: "20"
