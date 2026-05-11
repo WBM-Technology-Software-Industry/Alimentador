@@ -5,8 +5,8 @@ type Props = {
 }
 
 export default function StockGauge({ ep, eg, cp }: Props) {
-  const radius = 72
-  const stroke = 12
+  const radius = 100
+  const stroke = 14
   const normalizedR = radius - stroke / 2
   const circumference = 2 * Math.PI * normalizedR
   const sweep = 270
@@ -50,7 +50,7 @@ export default function StockGauge({ ep, eg, cp }: Props) {
       </svg>
 
       <div className="absolute flex flex-col items-center justify-center" style={{ marginTop: radius - 16 }}>
-        <span className="text-3xl font-bold text-gray-800">{Math.round(ep)}%</span>
+        <span className="text-4xl font-bold text-gray-800">{Math.round(ep)}%</span>
         <span className="text-sm text-gray-500">{kgCurrent} kg</span>
         <span className="text-xs text-gray-400">de {kgTotal} kg</span>
       </div>

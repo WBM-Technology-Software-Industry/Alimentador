@@ -43,7 +43,7 @@ export default function Historico() {
                       : <CalendarClock size={15} className="text-blue-500" />}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-gray-800">{e.grams}g</p>
+                    <p className="text-sm font-semibold text-gray-800">{e.grams > 0 ? `${e.grams}g` : '—'}</p>
                     <p className="text-xs text-gray-400">{e.source === 'manual' ? 'Manual' : 'Agendado'}</p>
                   </div>
                 </div>

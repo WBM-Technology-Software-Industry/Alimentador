@@ -2,14 +2,18 @@ import { Utensils, Square } from 'lucide-react'
 import { publishCmd } from '../mqtt/client'
 import { useDeviceStore } from '../store/deviceStore'
 import { useDeviceContext } from '../store/deviceContext'
+import { notify } from '../store/notificationStore'
 
 export default function FeedButton() {
-  const { connected, deviceId, al } = useDeviceStore()
+  const { connected, deviceId, al, addFeedEntry, deviceType, fishSchedule } = useDeviceStore()
   const ctx = useDeviceContext()
 
   function handleFeed() {
     if (!connected) return
     publishCmd(deviceId, { st: 1 })
+    notify.info('Alimentando...')
+    const grams = deviceType === 'peixe' ? (fishSchedule?.qpc ?? 0) : 0
+    addFeedEntry({ id: String(Date.now()), timestamp: Date.now(), grams, source: 'manual' })
   }
 
   function handleStop() {

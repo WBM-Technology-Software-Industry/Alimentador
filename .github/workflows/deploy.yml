@@ -1,0 +1,46 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            --build-arg VITE_MQTT_BROKER_URL=${{ secrets.VITE_MQTT_BROKER_URL }} \
+            --build-arg VITE_DEVICE_ID=${{ secrets.VITE_DEVICE_ID }} \
+            -t alimentador-frontend .
+
+      - name: Save image
+        run: docker save alimentador-frontend | gzip > frontend.tar.gz
+
+      - name: Copy image to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: frontend.tar.gz
+          target: /root/
+
+      - name: Deploy on VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            docker load < /root/frontend.tar.gz
+            docker stop alimentador-frontend 2>/dev/null || true
+            docker rm alimentador-frontend 2>/dev/null || true
+            docker run -d --name alimentador-frontend --restart unless-stopped -p 8080:80 alimentador-frontend
+            rm /root/frontend.tar.gz

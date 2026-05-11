@@ -11,9 +11,16 @@ export type FeedEntry = {
 }
 
 export type DeviceSchedule = {
-  h: number   // hour
-  m: number   // minute
-  q: number   // grams
+  h: number
+  m: number
+  q: number
+}
+
+export type FishSchedule = {
+  qpc: number  // gramas por trato
+  tc: number   // intervalo em minutos
+  hl: number   // hora de início
+  hd: number   // hora de fim
 }
 
 type DeviceState = {
@@ -39,8 +46,9 @@ type DeviceState = {
   ts: string          // timestamp do device
   pf: number          // pf: perfil (0=piscicultura, 1=pet)
 
-  // Agendamentos vindos do hardware (c_pt)
-  schedules: DeviceSchedule[]
+  // Agendamentos vindos do hardware
+  schedules: DeviceSchedule[]      // c_pt — perfil Cão
+  fishSchedule: FishSchedule | null // c_ps — perfil Peixe
 
   // Histórico local
   feedHistory: FeedEntry[]
@@ -51,6 +59,7 @@ type DeviceState = {
   setConnected: (v: boolean) => void
   setTelemetry: (data: Partial<DeviceState>) => void
   setSchedules: (schedules: DeviceSchedule[]) => void
+  setFishSchedule: (s: FishSchedule | null) => void
   addFeedEntry: (entry: FeedEntry) => void
 }
 
@@ -72,19 +81,24 @@ export const useDeviceStore = create<DeviceState>()(
       am: false,
       er: 0,
       ts: '',
-      pf: 1,
+      pf: 0,
 
       schedules: [],
+      fishSchedule: { qpc: 500, tc: 30, hl: 8, hd: 18 },
       feedHistory: [],
 
       setDeviceType: (deviceType) => set({ deviceType }),
       setBrokerConfig: (brokerUrl, deviceId) => set({ brokerUrl, deviceId }),
       setConnected: (connected) => set({ connected }),
-      setTelemetry: (data) => set((s) => ({ ...s, ...data })),
+      setTelemetry: (data) => set((s) => ({
+        ...s,
+        ...Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined)),
+      })),
       setSchedules: (schedules) => set({ schedules }),
+      setFishSchedule: (fishSchedule) => set({ fishSchedule }),
       addFeedEntry: (entry) =>
         set((s) => ({ feedHistory: [entry, ...s.feedHistory].slice(0, 200) })),
     }),
-    { name: 'feeder-wbm-storage' }
+    { name: 'feeder-wbm-storage', version: 2 }
   )
 )
