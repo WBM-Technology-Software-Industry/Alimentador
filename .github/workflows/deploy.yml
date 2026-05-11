@@ -40,7 +40,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             docker load < /root/frontend.tar.gz
-            docker stop alimentador-feeder 2>/dev/null || true
-            docker rm alimentador-feeder 2>/dev/null || true
+            docker stop alimentador-feeder feeder 2>/dev/null || true
+            docker rm alimentador-feeder feeder 2>/dev/null || true
             docker run -d --name alimentador-feeder --restart unless-stopped -p 3000:80 alimentador-feeder
             rm /root/frontend.tar.gz
