@@ -16,7 +16,6 @@ jobs:
       - name: Build Docker image
         run: |
           docker build \
-            --build-arg VITE_MQTT_BROKER_URL=${{ secrets.VITE_MQTT_BROKER_URL }} \
             --build-arg VITE_DEVICE_ID=${{ secrets.VITE_DEVICE_ID }} \
             -t alimentador-feeder .
 
@@ -42,5 +41,5 @@ jobs:
             docker load < /root/frontend.tar.gz
             docker stop alimentador-feeder feeder 2>/dev/null || true
             docker rm alimentador-feeder feeder 2>/dev/null || true
-            docker run -d --name alimentador-feeder --restart unless-stopped -p 3000:80 alimentador-feeder
+            docker run -d --name alimentador-feeder --restart unless-stopped -p 3000:3000 alimentador-feeder
             rm /root/frontend.tar.gz
