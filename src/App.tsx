@@ -32,8 +32,7 @@ export default function App() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    console.log('[MQTT] Conectando em:', BROKER_URL, '| Device:', DEVICE_ID)
-    setBrokerConfig(BROKER_URL, DEVICE_ID)
+setBrokerConfig(BROKER_URL, DEVICE_ID)
     connectMqtt(BROKER_URL, DEVICE_ID)
 
     const timeout = setTimeout(() => setLoading(false), 8000)

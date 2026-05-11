@@ -39,11 +39,8 @@ const server = createServer((req, res) => {
 
 const wss = new WebSocketServer({ server })
 
-wss.on('connection', (ws, req) => {
-  console.log('[WS] Cliente conectado:', req.socket.remoteAddress)
+wss.on('connection', (ws) => {
   const tcp = net.connect(BROKER_PORT, BROKER_HOST)
-  tcp.on('connect', () => console.log('[TCP] Conectado ao broker MQTT'))
-  tcp.on('error', (e) => console.log('[TCP] Erro broker:', e.message))
 
   ws.on('message', (data) => { if (tcp.writable) tcp.write(data) })
   tcp.on('data',   (data) => { if (ws.readyState === ws.OPEN) ws.send(data) })
