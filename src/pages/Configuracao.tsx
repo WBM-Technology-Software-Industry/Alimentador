@@ -1,66 +1,43 @@
 import { useState } from 'react'
 import { useDeviceStore, type FishSchedule, type DeviceSchedule } from '../store/deviceStore'
 import { publishCmd, connectMqtt } from '../mqtt/client'
-import { CheckCircle2, Trash2, Plus, Pencil, X } from 'lucide-react'
+import { CheckCircle2, Trash2, Plus } from 'lucide-react'
 
 function pad(n: number) { return String(n).padStart(2, '0') }
 
+const DEVICES = [
+  { label: 'Alimentador 1', id: 'ALIMENTADOR_201' },
+  { label: 'Alimentador 2', id: 'ALIMENTADOR_202' },
+]
+
 function DeviceIdConfig() {
   const { deviceId, brokerUrl, setBrokerConfig, setConnected } = useDeviceStore()
-  const [editing, setEditing] = useState(false)
-  const [id, setId] = useState(deviceId)
 
-  function handleSave() {
-    const trimmed = id.trim()
-    if (!trimmed) return
-    setBrokerConfig(brokerUrl, trimmed)
+  function handleSelect(id: string) {
+    if (id === deviceId) return
+    setBrokerConfig(brokerUrl, id)
     setConnected(false)
-    connectMqtt(brokerUrl, trimmed)
-    setEditing(false)
-  }
-
-  function handleCancel() {
-    setId(deviceId)
-    setEditing(false)
+    connectMqtt(brokerUrl, id)
   }
 
   return (
     <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-3">
-      <h2 className="text-gray-500 text-sm font-medium">Dispositivo conectado</h2>
-      <div className="flex items-center gap-2">
-        {editing ? (
-          <>
-            <input
-              autoFocus
-              value={id}
-              onChange={(e) => setId(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-              placeholder="Ex: ALIMENTADOR_202"
-              className="flex-1 border border-brand-400 rounded-xl px-3 py-2 text-sm outline-none font-mono"
-            />
-            <button onClick={handleSave} className="p-2 rounded-xl bg-brand-600 text-[#1A1A1A]">
-              <CheckCircle2 size={16} />
-            </button>
-            <button onClick={handleCancel} className="p-2 rounded-xl bg-gray-100 text-gray-500">
-              <X size={16} />
-            </button>
-          </>
-        ) : (
-          <>
-            <span className="flex-1 text-sm font-mono font-semibold text-gray-800">{deviceId || '—'}</span>
-            <button
-              onClick={() => setEditing(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-100 text-gray-500 hover:bg-gray-200 text-xs font-medium"
-            >
-              <Pencil size={13} />
-              Trocar
-            </button>
-          </>
-        )}
+      <h2 className="text-gray-500 text-sm font-medium">Alimentador</h2>
+      <div className="flex rounded-xl overflow-hidden border border-gray-200">
+        {DEVICES.map((d) => (
+          <button
+            key={d.id}
+            onClick={() => handleSelect(d.id)}
+            className={`flex-1 py-3 text-sm font-semibold transition-all ${
+              deviceId === d.id
+                ? 'bg-brand-600 text-[#1A1A1A]'
+                : 'bg-white text-gray-500 hover:bg-gray-50'
+            }`}
+          >
+            {d.label}
+          </button>
+        ))}
       </div>
-      {!editing && (
-        <p className="text-xs text-gray-400">Toque em <strong>Trocar</strong> para conectar a outro alimentador.</p>
-      )}
     </div>
   )
 }
