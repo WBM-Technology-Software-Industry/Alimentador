@@ -6,12 +6,7 @@ import { useDeviceContext } from '../store/deviceContext'
 import { notify } from '../store/notificationStore'
 
 export default function FeedButton() {
-  const {
-    connected, deviceId, al,
-    addFeedEntry, manualGrams,
-    deviceType, fishSchedule, setFishSchedule,
-    schedules, setSchedules,
-  } = useDeviceStore()
+  const { connected, deviceId, al, addFeedEntry, manualGrams } = useDeviceStore()
   const ctx = useDeviceContext()
 
   const [continuous, setContinuous] = useState(false)
@@ -32,19 +27,7 @@ export default function FeedButton() {
   function triggerFeed() {
     if (!connected) return
 
-    // Atualiza a quantidade definida no dispositivo conforme o modo ativo
-    if (deviceType === 'peixe' && fishSchedule) {
-      const updated = { ...fishSchedule, qpc: manualGrams }
-      setFishSchedule(updated)
-      publishCmd(deviceId, { c_ps: updated })
-    } else if (deviceType === 'cao' && schedules.length > 0) {
-      // Atualiza o primeiro slot do agendamento pet com a nova quantidade
-      const updated = schedules.map((s, i) => i === 0 ? { ...s, q: manualGrams } : s)
-      setSchedules(updated)
-      publishCmd(deviceId, { c_pt: updated })
-    }
-
-    publishCmd(deviceId, { st: 1 })
+    publishCmd(deviceId, { sim: manualGrams })
     addFeedEntry({ id: String(Date.now()), timestamp: Date.now(), grams: manualGrams, source: 'manual' })
     notify.info('Alimentando...')
   }

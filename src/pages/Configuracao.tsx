@@ -6,12 +6,7 @@ import { CheckCircle2, Trash2, Plus } from 'lucide-react'
 function pad(n: number) { return String(n).padStart(2, '0') }
 
 function ModoOperacao() {
-  const {
-    am, deviceId, connected, setTelemetry,
-    manualGrams, setManualGrams,
-    deviceType, fishSchedule, setFishSchedule,
-    schedules, setSchedules,
-  } = useDeviceStore()
+  const { am, deviceId, connected, setTelemetry, manualGrams, setManualGrams } = useDeviceStore()
   const [feedback, setFeedback] = useState<string | null>(null)
 
   function toggleMode(automatic: boolean) {
@@ -20,16 +15,8 @@ function ModoOperacao() {
   }
 
   function handleSendQuantity() {
-    if (deviceType === 'peixe' && fishSchedule) {
-      const updated = { ...fishSchedule, qpc: manualGrams }
-      setFishSchedule(updated)
-      publishCmd(deviceId, { c_ps: updated })
-    } else if (deviceType === 'cao' && schedules.length > 0) {
-      const updated = schedules.map((s, i) => i === 0 ? { ...s, q: manualGrams } : s)
-      setSchedules(updated)
-      publishCmd(deviceId, { c_pt: updated })
-    }
-    setFeedback('Quantidade enviada!')
+    publishCmd(deviceId, { sim: manualGrams })
+    setFeedback(`Trato de ${manualGrams}g disparado!`)
     setTimeout(() => setFeedback(null), 3000)
   }
 
@@ -75,7 +62,7 @@ function ModoOperacao() {
             disabled={!connected}
             className="w-full py-3 rounded-2xl bg-brand-600 disabled:bg-gray-300 text-[#1A1A1A] font-bold text-sm"
           >
-            Enviar quantidade
+            Disparar trato manual
           </button>
         </>
       )}
