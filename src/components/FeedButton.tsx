@@ -8,7 +8,7 @@ import { notify } from '../store/notificationStore'
 export default function FeedButton() {
   const {
     connected, deviceId, al,
-    addFeedEntry, manualGrams, setManualGrams,
+    addFeedEntry, manualGrams,
     deviceType, fishSchedule, setFishSchedule,
     schedules, setSchedules,
   } = useDeviceStore()
@@ -75,16 +75,6 @@ export default function FeedButton() {
 
   return (
     <div className="flex flex-col items-center gap-4 w-full">
-      {/* Quantidade manual */}
-      <div className="flex items-center gap-3 w-full max-w-xs">
-        <label className="text-sm text-gray-500 whitespace-nowrap">Quantidade (g)</label>
-        <input
-          type="number" min={1} value={manualGrams}
-          onChange={(e) => setManualGrams(parseInt(e.target.value) || 1)}
-          className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500 text-center"
-        />
-      </div>
-
       {/* Modo contínuo */}
       <button
         onClick={() => setContinuous(c => !c)}
