@@ -7,7 +7,7 @@ import { CheckCircle2, Trash2, Plus, FlaskConical } from 'lucide-react'
 function pad(n: number) { return String(n).padStart(2, '0') }
 
 function ModoOperacao() {
-  const { am, deviceId, setTelemetry } = useDeviceStore()
+  const { am, deviceId, setTelemetry, manualGrams, setManualGrams } = useDeviceStore()
 
   function toggleMode(automatic: boolean) {
     setTelemetry({ am: automatic })
@@ -15,26 +15,39 @@ function ModoOperacao() {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow p-5">
-      <h2 className="text-gray-500 text-sm font-medium mb-3">Modo de operação</h2>
-      <div className="flex rounded-xl overflow-hidden border border-gray-200">
-        <button
-          onClick={() => toggleMode(false)}
-          className={`flex-1 py-3 text-sm font-semibold transition-all ${
-            !am ? 'bg-brand-600 text-[#1A1A1A]' : 'bg-white text-gray-500 hover:bg-gray-50'
-          }`}
-        >
-          Manual
-        </button>
-        <button
-          onClick={() => toggleMode(true)}
-          className={`flex-1 py-3 text-sm font-semibold transition-all ${
-            am ? 'bg-brand-600 text-[#1A1A1A]' : 'bg-white text-gray-500 hover:bg-gray-50'
-          }`}
-        >
-          Automático
-        </button>
+    <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-4">
+      <div>
+        <h2 className="text-gray-500 text-sm font-medium mb-3">Modo de operação</h2>
+        <div className="flex rounded-xl overflow-hidden border border-gray-200">
+          <button
+            onClick={() => toggleMode(false)}
+            className={`flex-1 py-3 text-sm font-semibold transition-all ${
+              !am ? 'bg-brand-600 text-[#1A1A1A]' : 'bg-white text-gray-500 hover:bg-gray-50'
+            }`}
+          >
+            Manual
+          </button>
+          <button
+            onClick={() => toggleMode(true)}
+            className={`flex-1 py-3 text-sm font-semibold transition-all ${
+              am ? 'bg-brand-600 text-[#1A1A1A]' : 'bg-white text-gray-500 hover:bg-gray-50'
+            }`}
+          >
+            Automático
+          </button>
+        </div>
       </div>
+
+      {!am && (
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-gray-500">Quantidade manual (g)</label>
+          <input
+            type="number" min={1} value={manualGrams}
+            onChange={(e) => setManualGrams(parseInt(e.target.value) || 1)}
+            className="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500 w-44"
+          />
+        </div>
+      )}
     </div>
   )
 }
