@@ -79,8 +79,6 @@ function ModoOperacao() {
           >
             Enviar quantidade
           </button>
-          <hr className="border-gray-100" />
-          <FeedButton />
         </>
       )}
     </div>
@@ -252,7 +250,7 @@ const DEVICE_TYPES = [
 ]
 
 export default function Configuracao() {
-  const { deviceType, setDeviceType, fishSchedule, addFeedEntry } = useDeviceStore()
+  const { deviceType, setDeviceType, fishSchedule, addFeedEntry, am } = useDeviceStore()
 
   return (
     <div className="p-4 flex flex-col gap-4">
@@ -279,6 +277,12 @@ export default function Configuracao() {
       </div>
 
       <ModoOperacao />
+
+      {!am && (
+        <div className="bg-white rounded-2xl shadow p-5 flex flex-col items-center gap-4">
+          <FeedButton />
+        </div>
+      )}
 
       {deviceType === 'peixe' && fishSchedule
         ? <FishWindowConfig fs={fishSchedule} />
