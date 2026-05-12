@@ -7,11 +7,31 @@ import { CheckCircle2, Trash2, Plus, FlaskConical } from 'lucide-react'
 function pad(n: number) { return String(n).padStart(2, '0') }
 
 function ModoOperacao() {
-  const { am, deviceId, setTelemetry, manualGrams, setManualGrams } = useDeviceStore()
+  const {
+    am, deviceId, connected, setTelemetry,
+    manualGrams, setManualGrams,
+    deviceType, fishSchedule, setFishSchedule,
+    schedules, setSchedules,
+  } = useDeviceStore()
+  const [feedback, setFeedback] = useState<string | null>(null)
 
   function toggleMode(automatic: boolean) {
     setTelemetry({ am: automatic })
     publishCmd(deviceId, { am: automatic })
+  }
+
+  function handleSendQuantity() {
+    if (deviceType === 'peixe' && fishSchedule) {
+      const updated = { ...fishSchedule, qpc: manualGrams }
+      setFishSchedule(updated)
+      publishCmd(deviceId, { c_ps: updated })
+    } else if (deviceType === 'cao' && schedules.length > 0) {
+      const updated = schedules.map((s, i) => i === 0 ? { ...s, q: manualGrams } : s)
+      setSchedules(updated)
+      publishCmd(deviceId, { c_pt: updated })
+    }
+    setFeedback('Quantidade enviada!')
+    setTimeout(() => setFeedback(null), 3000)
   }
 
   return (
@@ -37,14 +57,28 @@ function ModoOperacao() {
       </div>
 
       {!am && (
-        <div className="flex flex-col gap-1">
-          <label className="text-xs text-gray-500">Quantidade por trato manual (g)</label>
-          <input
-            type="number" min={1} value={manualGrams}
-            onChange={(e) => setManualGrams(parseInt(e.target.value) || 1)}
-            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500"
-          />
-        </div>
+        <>
+          {feedback && (
+            <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-3 py-2 text-green-700 text-sm">
+              <CheckCircle2 size={14} />{feedback}
+            </div>
+          )}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-gray-500">Quantidade por trato manual (g)</label>
+            <input
+              type="number" min={1} value={manualGrams}
+              onChange={(e) => setManualGrams(parseInt(e.target.value) || 1)}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500"
+            />
+          </div>
+          <button
+            onClick={handleSendQuantity}
+            disabled={!connected}
+            className="w-full py-3 rounded-2xl bg-brand-600 disabled:bg-gray-300 text-[#1A1A1A] font-bold text-sm"
+          >
+            Enviar quantidade
+          </button>
+        </>
       )}
     </div>
   )
