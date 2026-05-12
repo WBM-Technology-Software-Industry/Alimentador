@@ -12,7 +12,7 @@ export default function FeedButton() {
 
   function handleFeed() {
     if (!connected) return
-    publishCmd(deviceId, { st: 1, q: grams })
+    publishCmd(deviceId, { st: 1 })
     notify.info('Alimentando...')
     addFeedEntry({ id: String(Date.now()), timestamp: Date.now(), grams, source: 'manual' })
   }
