@@ -3,7 +3,6 @@ import { useDeviceStore, type FishSchedule, type DeviceSchedule } from '../store
 import { publishCmd } from '../mqtt/client'
 import { notify } from '../store/notificationStore'
 import { CheckCircle2, Trash2, Plus, FlaskConical } from 'lucide-react'
-import FeedButton from '../components/FeedButton'
 
 function pad(n: number) { return String(n).padStart(2, '0') }
 
@@ -250,7 +249,7 @@ const DEVICE_TYPES = [
 ]
 
 export default function Configuracao() {
-  const { deviceType, setDeviceType, fishSchedule, addFeedEntry, am } = useDeviceStore()
+  const { deviceType, setDeviceType, fishSchedule, addFeedEntry } = useDeviceStore()
 
   return (
     <div className="p-4 flex flex-col gap-4">
@@ -277,12 +276,6 @@ export default function Configuracao() {
       </div>
 
       <ModoOperacao />
-
-      {!am && (
-        <div className="bg-white rounded-2xl shadow p-5 flex flex-col items-center gap-4">
-          <FeedButton />
-        </div>
-      )}
 
       {deviceType === 'peixe' && fishSchedule
         ? <FishWindowConfig fs={fishSchedule} />
