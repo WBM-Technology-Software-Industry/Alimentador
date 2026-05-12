@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { useDeviceStore, type FishSchedule, type DeviceSchedule } from '../store/deviceStore'
 import { publishCmd } from '../mqtt/client'
-import { notify } from '../store/notificationStore'
-import { CheckCircle2, Trash2, Plus, FlaskConical } from 'lucide-react'
+import { CheckCircle2, Trash2, Plus } from 'lucide-react'
 
 function pad(n: number) { return String(n).padStart(2, '0') }
 
@@ -249,7 +248,7 @@ const DEVICE_TYPES = [
 ]
 
 export default function Configuracao() {
-  const { deviceType, setDeviceType, fishSchedule, addFeedEntry } = useDeviceStore()
+  const { deviceType, setDeviceType, fishSchedule } = useDeviceStore()
 
   return (
     <div className="p-4 flex flex-col gap-4">
@@ -282,66 +281,6 @@ export default function Configuracao() {
         : <PetScheduleSection />
       }
 
-      {/* Simulação */}
-      <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-3">
-        <div className="flex items-center gap-2">
-          <FlaskConical size={16} className="text-gray-400" />
-          <h2 className="text-gray-500 text-sm font-medium">Simulação</h2>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <button onClick={() => notify.success('Dispositivo conectado.')}
-            className="py-2.5 rounded-xl bg-green-50 border border-green-200 text-green-700 text-xs font-medium">
-            Conectado
-          </button>
-          <button onClick={() => notify.warning('Dispositivo desconectado.')}
-            className="py-2.5 rounded-xl bg-yellow-50 border border-yellow-200 text-yellow-700 text-xs font-medium">
-            Desconectado
-          </button>
-          <button onClick={() => notify.info('Alimentando...')}
-            className="py-2.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-xs font-medium">
-            Alimentando
-          </button>
-          <button onClick={() => notify.warning('Conexão offline.')}
-            className="py-2.5 rounded-xl bg-yellow-50 border border-yellow-200 text-yellow-700 text-xs font-medium">
-            Offline
-          </button>
-        </div>
-
-        <p className="text-xs text-gray-400 font-medium mt-1">Histórico</p>
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            onClick={() => addFeedEntry({ id: String(Date.now()), timestamp: Date.now(), grams: fishSchedule?.qpc ?? 100, source: 'manual' })}
-            className="py-2.5 rounded-xl bg-brand-50 border border-brand-200 text-brand-700 text-xs font-medium">
-            Feed Manual
-          </button>
-          <button
-            onClick={() => addFeedEntry({ id: String(Date.now()), timestamp: Date.now() - 3600000, grams: 200, source: 'scheduled' })}
-            className="py-2.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-xs font-medium">
-            Feed Agendado
-          </button>
-        </div>
-
-        <p className="text-xs text-gray-400 font-medium mt-1">Erros</p>
-        <div className="grid grid-cols-2 gap-2">
-          <button onClick={() => notify.error('Motor desconectado ou fusível queimado.')}
-            className="py-2.5 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs font-medium">
-            Corrente Zero
-          </button>
-          <button onClick={() => notify.error('Motor travado por objeto estranho ou ração úmida.')}
-            className="py-2.5 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs font-medium">
-            Corrente Alta
-          </button>
-          <button onClick={() => notify.error('Sensor capacitivo detectou falta de ração.')}
-            className="py-2.5 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs font-medium">
-            Vazio
-          </button>
-          <button onClick={() => notify.error('Motor ligado por tempo excessivo sem atingir o peso.')}
-            className="py-2.5 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs font-medium">
-            Timeout
-          </button>
-        </div>
-      </div>
 
     </div>
   )
