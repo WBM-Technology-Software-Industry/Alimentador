@@ -53,9 +53,6 @@ type DeviceState = {
   // Histórico local
   feedHistory: FeedEntry[]
 
-  // Configuração manual
-  manualGrams: number
-
   // Actions
   setDeviceType: (t: DeviceType) => void
   setBrokerConfig: (url: string, id: string) => void
@@ -64,7 +61,6 @@ type DeviceState = {
   setSchedules: (schedules: DeviceSchedule[]) => void
   setFishSchedule: (s: FishSchedule | null) => void
   addFeedEntry: (entry: FeedEntry) => void
-  setManualGrams: (g: number) => void
 }
 
 export const useDeviceStore = create<DeviceState>()(
@@ -90,7 +86,6 @@ export const useDeviceStore = create<DeviceState>()(
       schedules: [],
       fishSchedule: { qpc: 500, tc: 30, hl: 8, hd: 18 },
       feedHistory: [],
-      manualGrams: 100,
 
       setDeviceType: (deviceType) => set({ deviceType }),
       setBrokerConfig: (brokerUrl, deviceId) => set({ brokerUrl, deviceId }),
@@ -103,7 +98,6 @@ export const useDeviceStore = create<DeviceState>()(
       setFishSchedule: (fishSchedule) => set({ fishSchedule }),
       addFeedEntry: (entry) =>
         set((s) => ({ feedHistory: [entry, ...s.feedHistory].slice(0, 200) })),
-      setManualGrams: (manualGrams) => set({ manualGrams }),
     }),
     { name: 'feeder-wbm-storage', version: 2 }
   )

@@ -5,14 +5,14 @@ import { useDeviceContext } from '../store/deviceContext'
 import { notify } from '../store/notificationStore'
 
 export default function FeedButton() {
-  const { connected, deviceId, al, addFeedEntry, manualGrams } = useDeviceStore()
+  const { connected, deviceId, al, addFeedEntry } = useDeviceStore()
   const ctx = useDeviceContext()
 
   function handleFeed() {
     if (!connected) return
     publishCmd(deviceId, { st: 1 })
     notify.info('Alimentando...')
-    addFeedEntry({ id: String(Date.now()), timestamp: Date.now(), grams: manualGrams, source: 'manual' })
+    addFeedEntry({ id: String(Date.now()), timestamp: Date.now(), grams: 0, source: 'manual' })
   }
 
   function handleStop() {

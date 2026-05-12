@@ -7,61 +7,34 @@ import { CheckCircle2, Trash2, Plus, FlaskConical } from 'lucide-react'
 function pad(n: number) { return String(n).padStart(2, '0') }
 
 function ModoOperacao() {
-  const { am, deviceId, setTelemetry, manualGrams, setManualGrams } = useDeviceStore()
-  const [localGrams, setLocalGrams] = useState(manualGrams)
-  const [feedback, setFeedback] = useState<string | null>(null)
+  const { am, deviceId, setTelemetry } = useDeviceStore()
 
   function toggleMode(automatic: boolean) {
     setTelemetry({ am: automatic })
     publishCmd(deviceId, { am: automatic })
   }
 
-  function handleSaveGrams() {
-    setManualGrams(localGrams)
-    setFeedback('Salvo!')
-    setTimeout(() => setFeedback(null), 2000)
-  }
-
   return (
-    <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-4">
-      <div>
-        <h2 className="text-gray-500 text-sm font-medium mb-3">Modo de operação</h2>
-        <div className="flex rounded-xl overflow-hidden border border-gray-200">
-          <button
-            onClick={() => toggleMode(false)}
-            className={`flex-1 py-3 text-sm font-semibold transition-all ${
-              !am ? 'bg-brand-600 text-[#1A1A1A]' : 'bg-white text-gray-500 hover:bg-gray-50'
-            }`}
-          >
-            Manual
-          </button>
-          <button
-            onClick={() => toggleMode(true)}
-            className={`flex-1 py-3 text-sm font-semibold transition-all ${
-              am ? 'bg-brand-600 text-[#1A1A1A]' : 'bg-white text-gray-500 hover:bg-gray-50'
-            }`}
-          >
-            Automático
-          </button>
-        </div>
+    <div className="bg-white rounded-2xl shadow p-5">
+      <h2 className="text-gray-500 text-sm font-medium mb-3">Modo de operação</h2>
+      <div className="flex rounded-xl overflow-hidden border border-gray-200">
+        <button
+          onClick={() => toggleMode(false)}
+          className={`flex-1 py-3 text-sm font-semibold transition-all ${
+            !am ? 'bg-brand-600 text-[#1A1A1A]' : 'bg-white text-gray-500 hover:bg-gray-50'
+          }`}
+        >
+          Manual
+        </button>
+        <button
+          onClick={() => toggleMode(true)}
+          className={`flex-1 py-3 text-sm font-semibold transition-all ${
+            am ? 'bg-brand-600 text-[#1A1A1A]' : 'bg-white text-gray-500 hover:bg-gray-50'
+          }`}
+        >
+          Automático
+        </button>
       </div>
-
-      {!am && (
-        <div className="flex flex-col gap-2">
-          <label className="text-xs text-gray-500">Quantidade manual (g)</label>
-          <div className="flex gap-2">
-            <input
-              type="number" min={1} value={localGrams}
-              onChange={(e) => setLocalGrams(parseInt(e.target.value) || 1)}
-              className="min-w-0 flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500"
-            />
-            <button onClick={handleSaveGrams}
-              className="shrink-0 bg-brand-600 text-[#1A1A1A] font-medium text-sm px-4 rounded-xl">
-              {feedback ?? 'Salvar'}
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
