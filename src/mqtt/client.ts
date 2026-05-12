@@ -42,7 +42,6 @@ export function connectMqtt(brokerUrl: string, deviceId: string) {
         tp:      typeof d.tp === 'number' ? d.tp : undefined,
         voltage: typeof d.v  === 'number' ? d.v  : undefined,
         al:      typeof d.al === 'boolean' ? d.al : undefined,
-        am:      typeof d.am === 'boolean' ? d.am : undefined,
         er:      typeof d.er === 'number' ? d.er : undefined,
         ts:      typeof d.ts === 'string' ? d.ts : undefined,
         pf:      typeof d.pf === 'number' ? d.pf : undefined,
