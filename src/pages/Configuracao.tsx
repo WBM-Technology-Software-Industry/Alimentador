@@ -25,8 +25,8 @@ function DeviceIdConfig() {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow p-5">
-      <h2 className="text-gray-500 text-sm font-medium mb-3">Dispositivo</h2>
+    <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-3">
+      <h2 className="text-gray-500 text-sm font-medium">Dispositivo conectado</h2>
       <div className="flex items-center gap-2">
         {editing ? (
           <>
@@ -35,6 +35,7 @@ function DeviceIdConfig() {
               value={id}
               onChange={(e) => setId(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+              placeholder="Ex: ALIMENTADOR_202"
               className="flex-1 border border-brand-400 rounded-xl px-3 py-2 text-sm outline-none font-mono"
             />
             <button onClick={handleSave} className="p-2 rounded-xl bg-brand-600 text-[#1A1A1A]">
@@ -47,12 +48,19 @@ function DeviceIdConfig() {
         ) : (
           <>
             <span className="flex-1 text-sm font-mono font-semibold text-gray-800">{deviceId || '—'}</span>
-            <button onClick={() => setEditing(true)} className="p-2 rounded-xl bg-gray-100 text-gray-500 hover:bg-gray-200">
-              <Pencil size={15} />
+            <button
+              onClick={() => setEditing(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-100 text-gray-500 hover:bg-gray-200 text-xs font-medium"
+            >
+              <Pencil size={13} />
+              Trocar
             </button>
           </>
         )}
       </div>
+      {!editing && (
+        <p className="text-xs text-gray-400">Toque em <strong>Trocar</strong> para conectar a outro alimentador.</p>
+      )}
     </div>
   )
 }
