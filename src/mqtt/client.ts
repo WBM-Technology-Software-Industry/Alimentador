@@ -48,11 +48,6 @@ export function connectMqtt(brokerUrl: string, deviceId: string) {
         pf:      typeof d.pf === 'number' ? d.pf : undefined,
       })
 
-      // pf: 0 = piscicultura, 1 = pet/cão
-      if (typeof d.pf === 'number') {
-        const t: DeviceType = d.pf === 0 ? 'peixe' : 'cao'
-        if (useDeviceStore.getState().deviceType !== t) setDeviceType(t)
-      }
 
       if (typeof d.er === 'number' && d.er > 0) {
         const ERR: Record<number, string> = {
