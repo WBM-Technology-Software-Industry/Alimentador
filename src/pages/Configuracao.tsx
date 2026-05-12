@@ -1,9 +1,52 @@
 import { useState } from 'react'
 import { useDeviceStore, type FishSchedule, type DeviceSchedule } from '../store/deviceStore'
-import { publishCmd } from '../mqtt/client'
+import { publishCmd, connectMqtt } from '../mqtt/client'
 import { CheckCircle2, Trash2, Plus } from 'lucide-react'
 
 function pad(n: number) { return String(n).padStart(2, '0') }
+
+function DeviceIdConfig() {
+  const { deviceId, brokerUrl, setBrokerConfig, setConnected } = useDeviceStore()
+  const [id, setId] = useState(deviceId)
+  const [feedback, setFeedback] = useState<string | null>(null)
+
+  function handleSave() {
+    const trimmed = id.trim()
+    if (!trimmed) return
+    setBrokerConfig(brokerUrl, trimmed)
+    setConnected(false)
+    connectMqtt(brokerUrl, trimmed)
+    setFeedback(`Conectando a ${trimmed}...`)
+    setTimeout(() => setFeedback(null), 3000)
+  }
+
+  return (
+    <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-3">
+      <h2 className="text-gray-500 text-sm font-medium">Dispositivo</h2>
+      {feedback && (
+        <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-3 py-2 text-green-700 text-sm">
+          <CheckCircle2 size={14} />{feedback}
+        </div>
+      )}
+      <div className="flex flex-col gap-1">
+        <label className="text-xs text-gray-500">ID do dispositivo</label>
+        <input
+          value={id}
+          onChange={(e) => setId(e.target.value)}
+          placeholder="Ex: ALIMENTADOR_201"
+          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500"
+        />
+      </div>
+      <button
+        onClick={handleSave}
+        disabled={!id.trim() || id.trim() === deviceId}
+        className="w-full py-3 rounded-2xl bg-brand-600 disabled:bg-gray-300 text-[#1A1A1A] font-bold text-sm"
+      >
+        Conectar
+      </button>
+    </div>
+  )
+}
 
 function ModoOperacao() {
   const { am, deviceId, connected, setTelemetry, manualGrams, setManualGrams } = useDeviceStore()
@@ -240,6 +283,7 @@ export default function Configuracao() {
   return (
     <div className="p-4 flex flex-col gap-4">
 
+      <DeviceIdConfig />
 
       {/* Perfil do dispositivo */}
       <div className="bg-white rounded-2xl shadow p-5">
