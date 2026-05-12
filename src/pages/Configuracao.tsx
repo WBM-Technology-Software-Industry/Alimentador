@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import { useDeviceStore, type FishSchedule, type DeviceSchedule } from '../store/deviceStore'
 import { publishCmd, connectMqtt } from '../mqtt/client'
-import { CheckCircle2, Trash2, Plus } from 'lucide-react'
+import { CheckCircle2, Trash2, Plus, Pencil, X } from 'lucide-react'
 
 function pad(n: number) { return String(n).padStart(2, '0') }
 
 function DeviceIdConfig() {
   const { deviceId, brokerUrl, setBrokerConfig, setConnected } = useDeviceStore()
+  const [editing, setEditing] = useState(false)
   const [id, setId] = useState(deviceId)
-  const [feedback, setFeedback] = useState<string | null>(null)
 
   function handleSave() {
     const trimmed = id.trim()
@@ -16,34 +16,43 @@ function DeviceIdConfig() {
     setBrokerConfig(brokerUrl, trimmed)
     setConnected(false)
     connectMqtt(brokerUrl, trimmed)
-    setFeedback(`Conectando a ${trimmed}...`)
-    setTimeout(() => setFeedback(null), 3000)
+    setEditing(false)
+  }
+
+  function handleCancel() {
+    setId(deviceId)
+    setEditing(false)
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-3">
-      <h2 className="text-gray-500 text-sm font-medium">Dispositivo</h2>
-      {feedback && (
-        <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-3 py-2 text-green-700 text-sm">
-          <CheckCircle2 size={14} />{feedback}
-        </div>
-      )}
-      <div className="flex flex-col gap-1">
-        <label className="text-xs text-gray-500">ID do dispositivo</label>
-        <input
-          value={id}
-          onChange={(e) => setId(e.target.value)}
-          placeholder="Ex: ALIMENTADOR_201"
-          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500"
-        />
+    <div className="bg-white rounded-2xl shadow p-5">
+      <h2 className="text-gray-500 text-sm font-medium mb-3">Dispositivo</h2>
+      <div className="flex items-center gap-2">
+        {editing ? (
+          <>
+            <input
+              autoFocus
+              value={id}
+              onChange={(e) => setId(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+              className="flex-1 border border-brand-400 rounded-xl px-3 py-2 text-sm outline-none font-mono"
+            />
+            <button onClick={handleSave} className="p-2 rounded-xl bg-brand-600 text-[#1A1A1A]">
+              <CheckCircle2 size={16} />
+            </button>
+            <button onClick={handleCancel} className="p-2 rounded-xl bg-gray-100 text-gray-500">
+              <X size={16} />
+            </button>
+          </>
+        ) : (
+          <>
+            <span className="flex-1 text-sm font-mono font-semibold text-gray-800">{deviceId || '—'}</span>
+            <button onClick={() => setEditing(true)} className="p-2 rounded-xl bg-gray-100 text-gray-500 hover:bg-gray-200">
+              <Pencil size={15} />
+            </button>
+          </>
+        )}
       </div>
-      <button
-        onClick={handleSave}
-        disabled={!id.trim() || id.trim() === deviceId}
-        className="w-full py-3 rounded-2xl bg-brand-600 disabled:bg-gray-300 text-[#1A1A1A] font-bold text-sm"
-      >
-        Conectar
-      </button>
     </div>
   )
 }
