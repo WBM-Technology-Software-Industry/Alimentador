@@ -1,5 +1,4 @@
 import { useDeviceStore } from '../store/deviceStore'
-import FeedButton from '../components/FeedButton'
 import StockGauge from '../components/StockGauge'
 import type { DeviceType } from '../store/deviceStore'
 
@@ -48,7 +47,7 @@ function ModeAnimation({ deviceType }: { deviceType: DeviceType }) {
 }
 
 export default function Dashboard() {
-  const { tp, er, deviceType, am, eg, ep, cp } = useDeviceStore()
+  const { tp, er, deviceType, eg, ep, cp } = useDeviceStore()
 
   return (
     <div className="p-4 flex flex-col gap-4">
@@ -76,12 +75,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {!am && (
-        <div className="bg-white rounded-2xl shadow p-5 flex flex-col items-center gap-4">
-          <h2 className="text-gray-500 text-sm font-medium self-start">Alimentar agora</h2>
-          <FeedButton />
-        </div>
-      )}
 
     </div>
   )

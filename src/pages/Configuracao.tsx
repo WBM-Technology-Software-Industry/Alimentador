@@ -3,6 +3,7 @@ import { useDeviceStore, type FishSchedule, type DeviceSchedule } from '../store
 import { publishCmd } from '../mqtt/client'
 import { notify } from '../store/notificationStore'
 import { CheckCircle2, Trash2, Plus, FlaskConical } from 'lucide-react'
+import FeedButton from '../components/FeedButton'
 
 function pad(n: number) { return String(n).padStart(2, '0') }
 
@@ -78,6 +79,8 @@ function ModoOperacao() {
           >
             Enviar quantidade
           </button>
+          <hr className="border-gray-100" />
+          <FeedButton />
         </>
       )}
     </div>
