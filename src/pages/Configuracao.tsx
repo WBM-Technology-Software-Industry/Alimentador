@@ -185,16 +185,16 @@ function PetScheduleSection() {
       )}
 
       <div className="flex flex-col gap-2">
-        <div className="flex gap-2">
-          <div className="flex flex-col gap-1 flex-1">
+        <div className="flex gap-2 w-full">
+          <div className="flex flex-col gap-1 flex-1 min-w-0">
             <label className="text-xs text-gray-500">Horário</label>
             <input type="time" value={time} onChange={(e) => setTime(e.target.value)}
-              className="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500" />
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500" />
           </div>
-          <div className="flex flex-col gap-1 flex-1">
+          <div className="flex flex-col gap-1 flex-1 min-w-0">
             <label className="text-xs text-gray-500">Gramas</label>
             <input type="number" min={1} value={grams} onChange={(e) => setGrams(parseInt(e.target.value) || 0)}
-              className="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500" />
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500" />
           </div>
         </div>
         <button onClick={handleAdd} disabled={schedules.length >= 4}
