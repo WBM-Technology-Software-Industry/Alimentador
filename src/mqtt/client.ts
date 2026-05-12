@@ -1,5 +1,5 @@
 import mqtt, { type MqttClient } from 'mqtt'
-import { useDeviceStore, type DeviceSchedule, type DeviceType } from '../store/deviceStore'
+import { useDeviceStore, type DeviceSchedule } from '../store/deviceStore'
 import { notify } from '../store/notificationStore'
 
 let client: MqttClient | null = null
@@ -34,7 +34,7 @@ export function connectMqtt(brokerUrl: string, deviceId: string) {
   client.on('message', (_topic, payload) => {
     try {
       const d = JSON.parse(payload.toString()) as Record<string, unknown>
-      const { setTelemetry, setSchedules, setDeviceType } = useDeviceStore.getState()
+      const { setTelemetry, setSchedules } = useDeviceStore.getState()
 
       setTelemetry({
         eg:      typeof d.eg === 'number' ? d.eg : undefined,
