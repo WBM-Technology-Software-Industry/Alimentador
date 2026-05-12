@@ -24,7 +24,8 @@ const MIME = {
 }
 
 const server = createServer((req, res) => {
-  let filePath = join(__dirname, 'dist', req.url === '/' ? 'index.html' : req.url)
+  const url = decodeURIComponent(req.url ?? '/')
+  let filePath = join(__dirname, 'dist', url === '/' ? 'index.html' : url)
   if (!existsSync(filePath)) filePath = join(__dirname, 'dist', 'index.html')
 
   const mime = MIME[extname(filePath)] ?? 'application/octet-stream'
