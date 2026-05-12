@@ -53,6 +53,7 @@ export function connectMqtt(brokerUrl: string, deviceId: string) {
           1:  'Motor desconectado ou fusível queimado.',
           2:  'Motor travado por objeto estranho ou ração úmida.',
           3:  'Sensor capacitivo detectou falta de ração.',
+          6:  'Nível de ração baixo — reabasteça em breve.',
           11: 'Motor ligado por tempo excessivo sem atingir o peso.',
         }
         notify.error(ERR[d.er as number] ?? `Erro no dispositivo (${d.er}).`)
