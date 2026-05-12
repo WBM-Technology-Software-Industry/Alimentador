@@ -34,7 +34,7 @@ export function connectMqtt(brokerUrl: string, deviceId: string) {
   client.on('message', (_topic, payload) => {
     try {
       const d = JSON.parse(payload.toString()) as Record<string, unknown>
-      const { setTelemetry, setSchedules } = useDeviceStore.getState()
+      const { setTelemetry, setSchedules, schedules, fishSchedule, setFishSchedule } = useDeviceStore.getState()
 
       setTelemetry({
         eg:      typeof d.eg === 'number' ? d.eg : undefined,
@@ -63,7 +63,8 @@ export function connectMqtt(brokerUrl: string, deviceId: string) {
         notify.info('Alimentando...')
       }
 
-      if (Array.isArray(d.c_pt)) {
+      // Sincroniza agendamentos só se o app ainda não tiver dados locais
+      if (Array.isArray(d.c_pt) && schedules.length === 0) {
         setSchedules(d.c_pt as DeviceSchedule[])
       }
 
@@ -71,7 +72,9 @@ export function connectMqtt(brokerUrl: string, deviceId: string) {
         const ps = d.c_ps as Record<string, unknown>
         if (typeof ps.qpc === 'number' && typeof ps.tc === 'number' &&
             typeof ps.hl === 'number' && typeof ps.hd === 'number') {
-          useDeviceStore.getState().setFishSchedule({ qpc: ps.qpc, tc: ps.tc, hl: ps.hl, hd: ps.hd })
+          if (!fishSchedule) {
+            setFishSchedule({ qpc: ps.qpc, tc: ps.tc, hl: ps.hl, hd: ps.hd })
+          }
         }
       }
     } catch {
