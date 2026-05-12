@@ -8,10 +8,18 @@ function pad(n: number) { return String(n).padStart(2, '0') }
 
 function ModoOperacao() {
   const { am, deviceId, setTelemetry, manualGrams, setManualGrams } = useDeviceStore()
+  const [localGrams, setLocalGrams] = useState(manualGrams)
+  const [feedback, setFeedback] = useState<string | null>(null)
 
   function toggleMode(automatic: boolean) {
     setTelemetry({ am: automatic })
     publishCmd(deviceId, { am: automatic })
+  }
+
+  function handleSaveGrams() {
+    setManualGrams(localGrams)
+    setFeedback('Salvo!')
+    setTimeout(() => setFeedback(null), 2000)
   }
 
   return (
@@ -39,13 +47,19 @@ function ModoOperacao() {
       </div>
 
       {!am && (
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-2">
           <label className="text-xs text-gray-500">Quantidade manual (g)</label>
-          <input
-            type="number" min={1} value={manualGrams}
-            onChange={(e) => setManualGrams(parseInt(e.target.value) || 1)}
-            className="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500 w-44"
-          />
+          <div className="flex gap-2">
+            <input
+              type="number" min={1} value={localGrams}
+              onChange={(e) => setLocalGrams(parseInt(e.target.value) || 1)}
+              className="min-w-0 flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500"
+            />
+            <button onClick={handleSaveGrams}
+              className="shrink-0 bg-brand-600 text-[#1A1A1A] font-medium text-sm px-4 rounded-xl">
+              {feedback ?? 'Salvar'}
+            </button>
+          </div>
         </div>
       )}
     </div>
