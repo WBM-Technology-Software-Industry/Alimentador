@@ -1,0 +1,36 @@
+services:
+
+  postgres:
+    image: postgres:16
+    container_name: dashboard-postgres
+    environment:
+      POSTGRES_DB: dashboard_db
+      POSTGRES_USER: dashboard
+      POSTGRES_PASSWORD: dashboard123
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  api:
+    build: .
+    container_name: dashboard-api
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/dashboard_db
+      SPRING_DATASOURCE_USERNAME: dashboard
+      SPRING_DATASOURCE_PASSWORD: dashboard123
+      APP_JWT_SECRET: wbm-dashboard-jwt-secret-key-must-be-at-least-256-bits-long-2024
+      APP_JWT_EXPIRATION_MS: "86400000"
+      OMIE_APP_KEY: "7135482197844"
+      OMIE_APP_SECRET: 869fd7c891d753be5794eefcbcbdafa7
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+    restart: unless-stopped
+
+volumes:
+  pgdata:
