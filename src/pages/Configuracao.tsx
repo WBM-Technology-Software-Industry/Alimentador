@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useDeviceStore, type FishSchedule, type DeviceSchedule } from '../store/deviceStore'
 import { publishCmd, connectMqtt } from '../mqtt/client'
-import { CheckCircle2, Trash2, Plus } from 'lucide-react'
+import { CheckCircle2 } from 'lucide-react'
 
 function pad(n: number) { return String(n).padStart(2, '0') }
 
@@ -193,25 +193,41 @@ function FishWindowConfig({ fs }: { fs: FishSchedule }) {
   )
 }
 
+type Slot = { time: string; grams: number }
+
+function initSlots(schedules: DeviceSchedule[]): Slot[] {
+  const sorted = [...schedules].sort((a, b) => a.h * 60 + a.m - (b.h * 60 + b.m))
+  return sorted.length > 0
+    ? sorted.map(sc => ({ time: `${pad(sc.h)}:${pad(sc.m)}`, grams: sc.q }))
+    : [{ time: '08:00', grams: 100 }]
+}
+
 function PetScheduleSection() {
   const { schedules, setSchedules, deviceId } = useDeviceStore()
-  const [time,  setTime]  = useState('08:00')
-  const [grams, setGrams] = useState(100)
+  const [slots, setSlots] = useState<Slot[]>(() => initSlots(schedules))
   const [feedback, setFeedback] = useState<string | null>(null)
 
-  function sync(updated: DeviceSchedule[]) {
+  function updateSlot(i: number, partial: Partial<Slot>) {
+    setSlots(prev => prev.map((s, idx) => idx === i ? { ...s, ...partial } : s))
+  }
+
+  function addSlot() {
+    if (slots.length >= 4) return
+    setSlots(prev => [...prev, { time: '12:00', grams: 100 }])
+  }
+
+  function removeSlot(i: number) {
+    setSlots(prev => prev.filter((_, idx) => idx !== i))
+  }
+
+  function handleSave() {
+    const updated: DeviceSchedule[] = slots
+      .map(s => { const [h, m] = s.time.split(':').map(Number); return { h, m, q: s.grams } })
+      .sort((a, b) => a.h * 60 + a.m - (b.h * 60 + b.m))
     setSchedules(updated)
     const ok = publishCmd(deviceId, { c_pt: updated })
     setFeedback(ok ? 'Salvo no dispositivo!' : 'Dispositivo offline — salvo localmente.')
     setTimeout(() => setFeedback(null), 3000)
-  }
-
-  function handleAdd() {
-    if (schedules.length >= 4) return
-    const [h, m] = time.split(':').map(Number)
-    const updated = [...schedules, { h, m, q: grams }]
-      .sort((a, b) => a.h * 60 + a.m - (b.h * 60 + b.m))
-    sync(updated)
   }
 
   return (
@@ -224,44 +240,49 @@ function PetScheduleSection() {
         </div>
       )}
 
-      {schedules.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-2">Nenhum horário cadastrado</p>
-      ) : (
-        <div className="flex flex-col gap-2">
-          {schedules.map((sc, i) => (
-            <div key={`${sc.h}-${sc.m}`} className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2">
-              <span className="text-sm font-bold text-gray-800">{pad(sc.h)}:{pad(sc.m)}</span>
-              <span className="text-sm text-gray-500">{sc.q}g</span>
-              <button onClick={() => sync(schedules.filter((_, idx) => idx !== i))}
-                className="text-red-400 hover:text-red-600 p-1">
-                <Trash2 size={16} />
+      <div className="flex flex-col gap-3">
+        {slots.map((slot, i) => (
+          <div key={i} className="flex flex-col gap-2 border border-gray-100 rounded-xl p-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-gray-700">Refeição {i + 1}</span>
+              <button
+                onClick={() => removeSlot(i)}
+                className="text-xs text-red-400 hover:text-red-600 transition-colors"
+              >
+                Remover
               </button>
             </div>
-          ))}
-        </div>
+            <div className="flex gap-2">
+              <div className="flex flex-col gap-1 flex-1">
+                <label className="text-xs text-gray-500">Horário</label>
+                <input type="time" value={slot.time}
+                  onChange={(e) => updateSlot(i, { time: e.target.value })}
+                  className="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500" />
+              </div>
+              <div className="flex flex-col gap-1 flex-1">
+                <label className="text-xs text-gray-500">Gramas</label>
+                <input type="number" min={1} value={slot.grams}
+                  onChange={(e) => updateSlot(i, { grams: parseInt(e.target.value) || 0 })}
+                  className="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {slots.length < 4 && (
+        <button
+          onClick={addSlot}
+          className="w-full py-2 rounded-xl border-2 border-dashed border-gray-200 text-gray-400 text-sm hover:border-brand-400 hover:text-brand-600 transition-colors"
+        >
+          + Adicionar refeição
+        </button>
       )}
 
-      <div className="flex flex-col gap-2">
-        <div className="flex gap-2 w-full">
-          <div className="flex flex-col gap-1 flex-1 min-w-0">
-            <label className="text-xs text-gray-500">Horário</label>
-            <input type="time" value={time} onChange={(e) => setTime(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500" />
-          </div>
-          <div className="flex flex-col gap-1 flex-1 min-w-0">
-            <label className="text-xs text-gray-500">Gramas</label>
-            <input type="number" min={1} value={grams} onChange={(e) => setGrams(parseInt(e.target.value) || 0)}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500" />
-          </div>
-        </div>
-        <button onClick={handleAdd} disabled={schedules.length >= 4}
-          className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-brand-600 disabled:bg-gray-300 text-[#1A1A1A] font-medium text-sm">
-          <Plus size={16} /> Adicionar
-        </button>
-      </div>
-      {schedules.length >= 4 && (
-        <p className="text-xs text-gray-400 text-center">Máximo de 4 horários atingido</p>
-      )}
+      <button onClick={handleSave} disabled={slots.length === 0}
+        className="w-full py-2.5 rounded-xl bg-brand-600 disabled:bg-gray-300 text-[#1A1A1A] font-medium text-sm">
+        Salvar horários
+      </button>
     </div>
   )
 }
