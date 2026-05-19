@@ -197,9 +197,10 @@ type Slot = { time: string; grams: number }
 
 function initSlots(schedules: DeviceSchedule[]): Slot[] {
   const sorted = [...schedules].sort((a, b) => a.h * 60 + a.m - (b.h * 60 + b.m))
-  return sorted.length > 0
-    ? sorted.map(sc => ({ time: `${pad(sc.h)}:${pad(sc.m)}`, grams: sc.q }))
-    : [{ time: '08:00', grams: 100 }]
+  return Array.from({ length: 4 }, (_, i) => {
+    const sc = sorted[i]
+    return sc ? { time: `${pad(sc.h)}:${pad(sc.m)}`, grams: sc.q } : { time: '08:00', grams: 100 }
+  })
 }
 
 function PetScheduleSection() {
@@ -209,15 +210,6 @@ function PetScheduleSection() {
 
   function updateSlot(i: number, partial: Partial<Slot>) {
     setSlots(prev => prev.map((s, idx) => idx === i ? { ...s, ...partial } : s))
-  }
-
-  function addSlot() {
-    if (slots.length >= 4) return
-    setSlots(prev => [...prev, { time: '12:00', grams: 100 }])
-  }
-
-  function removeSlot(i: number) {
-    setSlots(prev => prev.filter((_, idx) => idx !== i))
   }
 
   function handleSave() {
@@ -243,15 +235,7 @@ function PetScheduleSection() {
       <div className="flex flex-col gap-3">
         {slots.map((slot, i) => (
           <div key={i} className="flex flex-col gap-2 border border-gray-100 rounded-xl p-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-gray-700">Refeição {i + 1}</span>
-              <button
-                onClick={() => removeSlot(i)}
-                className="text-xs text-red-400 hover:text-red-600 transition-colors"
-              >
-                Remover
-              </button>
-            </div>
+            <span className="text-sm font-semibold text-gray-700">Refeição {i + 1}</span>
             <div className="flex gap-2">
               <div className="flex flex-col gap-1 flex-1">
                 <label className="text-xs text-gray-500">Horário</label>
@@ -270,17 +254,8 @@ function PetScheduleSection() {
         ))}
       </div>
 
-      {slots.length < 4 && (
-        <button
-          onClick={addSlot}
-          className="w-full py-2 rounded-xl border-2 border-dashed border-gray-200 text-gray-400 text-sm hover:border-brand-400 hover:text-brand-600 transition-colors"
-        >
-          + Adicionar refeição
-        </button>
-      )}
-
-      <button onClick={handleSave} disabled={slots.length === 0}
-        className="w-full py-2.5 rounded-xl bg-brand-600 disabled:bg-gray-300 text-[#1A1A1A] font-medium text-sm">
+      <button onClick={handleSave}
+        className="w-full py-2.5 rounded-xl bg-brand-600 text-[#1A1A1A] font-medium text-sm">
         Salvar horários
       </button>
     </div>

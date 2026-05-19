@@ -11,9 +11,10 @@ type Slot = { time: string; grams: number }
 
 function initSlots(schedules: DeviceSchedule[]): Slot[] {
   const sorted = [...schedules].sort((a, b) => a.h * 60 + a.m - (b.h * 60 + b.m))
-  return sorted.length > 0
-    ? sorted.map(sc => ({ time: `${pad(sc.h)}:${pad(sc.m)}`, grams: sc.q }))
-    : [{ time: '08:00', grams: 100 }]
+  return Array.from({ length: 4 }, (_, i) => {
+    const sc = sorted[i]
+    return sc ? { time: `${pad(sc.h)}:${pad(sc.m)}`, grams: sc.q } : { time: '08:00', grams: 100 }
+  })
 }
 
 function AgendaCao() {
@@ -23,15 +24,6 @@ function AgendaCao() {
 
   function updateSlot(i: number, partial: Partial<Slot>) {
     setSlots(prev => prev.map((s, idx) => idx === i ? { ...s, ...partial } : s))
-  }
-
-  function addSlot() {
-    if (slots.length >= 4) return
-    setSlots(prev => [...prev, { time: '12:00', grams: 100 }])
-  }
-
-  function removeSlot(i: number) {
-    setSlots(prev => prev.filter((_, idx) => idx !== i))
   }
 
   function handleSave() {
@@ -60,15 +52,7 @@ function AgendaCao() {
       <div className="flex flex-col gap-3">
         {slots.map((slot, i) => (
           <div key={i} className="bg-white rounded-2xl shadow px-4 py-3 flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-gray-700">Refeição {i + 1}</span>
-              <button
-                onClick={() => removeSlot(i)}
-                className="text-xs text-red-400 hover:text-red-600 transition-colors"
-              >
-                Remover
-              </button>
-            </div>
+            <span className="text-sm font-semibold text-gray-700">Refeição {i + 1}</span>
             <div className="flex gap-3">
               <div className="flex flex-col gap-1 flex-1">
                 <label className="text-xs text-gray-500">Horário</label>
@@ -87,18 +71,9 @@ function AgendaCao() {
         ))}
       </div>
 
-      {slots.length < 4 && (
-        <button
-          onClick={addSlot}
-          className="w-full py-2.5 rounded-xl border-2 border-dashed border-gray-200 text-gray-400 text-sm hover:border-brand-400 hover:text-brand-600 transition-colors"
-        >
-          + Adicionar refeição
-        </button>
-      )}
-
       <button
         onClick={handleSave}
-        disabled={!connected || slots.length === 0}
+        disabled={!connected}
         className="w-full py-3 rounded-2xl bg-brand-600 disabled:bg-gray-300 text-[#1A1A1A] font-bold text-sm"
       >
         Salvar horários
