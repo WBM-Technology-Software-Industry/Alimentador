@@ -94,3 +94,13 @@ export function publishCmd(deviceId: string, payload: object) {
   client.publish(`devices/${deviceId}/cmd`, JSON.stringify(payload), { qos: 1 })
   return true
 }
+
+export function publishCmdSequence(deviceId: string, payloads: object[], delayMs = 300) {
+  if (!client?.connected) return false
+  payloads.forEach((payload, i) => {
+    setTimeout(() => {
+      client?.publish(`devices/${deviceId}/cmd`, JSON.stringify(payload), { qos: 1 })
+    }, i * delayMs)
+  })
+  return true
+}

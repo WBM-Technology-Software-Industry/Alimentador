@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useDeviceStore, type FishSchedule, type DeviceSchedule } from '../store/deviceStore'
-import { publishCmd, connectMqtt } from '../mqtt/client'
+import { publishCmd, publishCmdSequence, connectMqtt } from '../mqtt/client'
 import { CheckCircle2 } from 'lucide-react'
 
 function pad(n: number) { return String(n).padStart(2, '0') }
@@ -217,7 +217,7 @@ function PetScheduleSection() {
       .map(s => { const [h, m] = s.time.split(':').map(Number); return { h, m, q: s.grams } })
       .sort((a, b) => a.h * 60 + a.m - (b.h * 60 + b.m))
     setSchedules(updated)
-    const ok = publishCmd(deviceId, { pf: 1, am: true, c_pt: updated })
+    const ok = publishCmdSequence(deviceId, [{ pf: 1 }, { am: true }, { c_pt: updated }])
     setFeedback(ok ? 'Salvo no dispositivo!' : 'Dispositivo offline — salvo localmente.')
     setTimeout(() => setFeedback(null), 3000)
   }
