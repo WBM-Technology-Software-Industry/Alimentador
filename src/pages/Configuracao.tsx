@@ -47,8 +47,14 @@ function ModoOperacao() {
   const [feedback, setFeedback] = useState<string | null>(null)
 
   function toggleMode(automatic: boolean) {
-    setTelemetry({ am: automatic })
-    publishCmd(deviceId, { am: automatic })
+    const ok = publishCmd(deviceId, { am: automatic })
+    if (ok) {
+      setTelemetry({ am: automatic })
+      setFeedback(automatic ? 'Modo Automático ativado!' : 'Modo Manual ativado!')
+    } else {
+      setFeedback('Dispositivo offline — tente novamente.')
+    }
+    setTimeout(() => setFeedback(null), 3000)
   }
 
   function handleSendQuantity() {
@@ -60,10 +66,21 @@ function ModoOperacao() {
   return (
     <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-3">
       <h2 className="text-gray-500 text-sm font-medium">Modo de operação</h2>
+      {feedback && (
+        <div className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${
+          feedback.includes('offline')
+            ? 'bg-red-50 border border-red-200 text-red-700'
+            : 'bg-green-50 border border-green-200 text-green-700'
+        }`}>
+          <CheckCircle2 size={14} />{feedback}
+        </div>
+      )}
+
       <div className="flex rounded-xl overflow-hidden border border-gray-200">
         <button
           onClick={() => toggleMode(false)}
-          className={`flex-1 py-3 text-sm font-semibold transition-all ${
+          disabled={!connected}
+          className={`flex-1 py-3 text-sm font-semibold transition-all disabled:opacity-40 ${
             !am ? 'bg-brand-600 text-[#1A1A1A]' : 'bg-white text-gray-500 hover:bg-gray-50'
           }`}
         >
@@ -71,7 +88,8 @@ function ModoOperacao() {
         </button>
         <button
           onClick={() => toggleMode(true)}
-          className={`flex-1 py-3 text-sm font-semibold transition-all ${
+          disabled={!connected}
+          className={`flex-1 py-3 text-sm font-semibold transition-all disabled:opacity-40 ${
             am ? 'bg-brand-600 text-[#1A1A1A]' : 'bg-white text-gray-500 hover:bg-gray-50'
           }`}
         >
@@ -81,11 +99,7 @@ function ModoOperacao() {
 
       {!am && (
         <>
-          {feedback && (
-            <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-3 py-2 text-green-700 text-sm">
-              <CheckCircle2 size={14} />{feedback}
-            </div>
-          )}
+          {false && null /* feedback já está acima */}
           <div className="flex flex-col gap-1">
             <label className="text-xs text-gray-500">Quantidade por trato manual (g)</label>
             <input
@@ -217,7 +231,7 @@ function PetScheduleSection() {
       .map(s => { const [h, m] = s.time.split(':').map(Number); return { h, m, q: s.grams } })
       .sort((a, b) => a.h * 60 + a.m - (b.h * 60 + b.m))
     setSchedules(updated)
-    const ok = publishCmdSequence(deviceId, [{ pf: 1 }, { am: true }, { c_pt: updated }])
+    const ok = publishCmdSequence(deviceId, [{ pf: 0 }, { c_pt: updated }])
     setFeedback(ok ? 'Salvo no dispositivo!' : 'Dispositivo offline — salvo localmente.')
     setTimeout(() => setFeedback(null), 3000)
   }
