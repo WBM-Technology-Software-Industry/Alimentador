@@ -60,6 +60,22 @@
 
 ---
 
+### `pf` invertido — perfil Pet/Piscicultura trocado
+
+**Sintoma:** App enviava `pf: 0` ao salvar horários Pet e `pf: 1` ao salvar Piscicultura — oposto ao firmware.  
+**Causa:** O código assumia `pf: 0` = cão e `pf: 1` = peixe. O manual V3.0 define o contrário: `pf: 0` = Piscicultura, `pf: 1` = Pet.  
+**Correção:** `PetScheduleSection` mantém `pf: 1` (correto). `FishWindowConfig` usa `pf: 0` (correto).
+
+---
+
+### Erro 4 ausente — tensão baixa não notificado
+
+**Sintoma:** Dispositivo entrando em proteção por tensão baixa sem notificação no app.  
+**Causa:** Código de erro `4` não estava mapeado. O manual define: `er: 4` = tensão < 10V, sistema entra em proteção.  
+**Correção:** Adicionado `4: 'Tensão baixa — verifique a alimentação elétrica.'` em `Dashboard.tsx` e `client.ts`.
+
+---
+
 ## Códigos de Erro do Dispositivo (`er`)
 
 | Código | Descrição | Causa provável |
@@ -68,5 +84,6 @@
 | `1` | Corrente zero | Motor desconectado ou fusível queimado |
 | `2` | Corrente alta | Motor travado por objeto estranho ou ração úmida |
 | `3` | Vazio | Sensor capacitivo detectou falta de ração |
+| `4` | Tensão baixa | Tensão < 10V, sistema entra em proteção |
 | `6` | Quase vazio | Nível de ração baixo, próximo do fim |
 | `11` | Timeout | Motor ligado por tempo excessivo sem atingir o peso |

@@ -231,7 +231,7 @@ function PetScheduleSection() {
       .map(s => { const [h, m] = s.time.split(':').map(Number); return { h, m, q: s.grams } })
       .sort((a, b) => a.h * 60 + a.m - (b.h * 60 + b.m))
     setSchedules(updated)
-    const ok = publishCmdSequence(deviceId, [{ pf: 0 }, { c_pt: updated }])
+    const ok = publishCmdSequence(deviceId, [{ pf: 1 }, { c_pt: updated }])
     setFeedback(ok ? 'Salvo no dispositivo!' : 'Dispositivo offline — salvo localmente.')
     setTimeout(() => setFeedback(null), 3000)
   }
