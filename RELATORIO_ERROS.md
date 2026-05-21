@@ -52,6 +52,14 @@
 
 ---
 
+### DeviceId incorreto — comandos não chegavam ao firmware
+
+**Sintoma:** Comandos enviados pelo app (ex: `{"sim":10}`) não eram recebidos pelo dispositivo físico.  
+**Causa:** O array `DEVICES` em `Configuracao.tsx` usava os IDs `ALIMENTADOR_201` / `ALIMENTADOR_202`, mas o firmware do dispositivo está registrado no broker como `ALIMENTADOR_1` / `ALIMENTADOR_2`. Confirmado via `mosquitto_sub -t "devices/#" -v`.  
+**Correção:** IDs corrigidos em `src/pages/Configuracao.tsx` para `ALIMENTADOR_1` e `ALIMENTADOR_2`.
+
+---
+
 ## Códigos de Erro do Dispositivo (`er`)
 
 | Código | Descrição | Causa provável |

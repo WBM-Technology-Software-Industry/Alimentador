@@ -6,8 +6,8 @@ import { CheckCircle2 } from 'lucide-react'
 function pad(n: number) { return String(n).padStart(2, '0') }
 
 const DEVICES = [
-  { label: 'Alimentador 1', id: 'ALIMENTADOR_201' },
-  { label: 'Alimentador 2', id: 'ALIMENTADOR_202' },
+  { label: 'Alimentador 1', id: 'ALIMENTADOR_1' },
+  { label: 'Alimentador 2', id: 'ALIMENTADOR_2' },
 ]
 
 function DeviceIdConfig() {
