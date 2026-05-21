@@ -282,7 +282,12 @@ const DEVICE_TYPES = [
 ]
 
 export default function Configuracao() {
-  const { deviceType, setDeviceType, fishSchedule } = useDeviceStore()
+  const { deviceType, setDeviceType, fishSchedule, deviceId, connected } = useDeviceStore()
+
+  function handleSetProfile(value: 'cao' | 'peixe') {
+    setDeviceType(value)
+    publishCmd(deviceId, { pf: value === 'cao' ? 1 : 0 })
+  }
 
   return (
     <div className="p-4 flex flex-col gap-4">
@@ -296,7 +301,8 @@ export default function Configuracao() {
           {DEVICE_TYPES.map((t) => (
             <button
               key={t.value}
-              onClick={() => setDeviceType(t.value)}
+              disabled={!connected}
+              onClick={() => handleSetProfile(t.value)}
               className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-all ${
                 deviceType === t.value
                   ? 'bg-brand-600 text-[#1A1A1A]'
