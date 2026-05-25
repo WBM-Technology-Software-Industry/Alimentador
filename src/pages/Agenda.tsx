@@ -190,9 +190,12 @@ function AgendaPeixe() {
 
 export default function Agenda() {
   const deviceType = useDeviceStore((s) => s.deviceType)
+  const deviceId   = useDeviceStore((s) => s.deviceId)
   return (
     <div className="p-4">
-      {deviceType === 'peixe' ? <AgendaPeixe /> : <AgendaCao />}
+      {deviceType === 'peixe'
+        ? <AgendaPeixe key={deviceId} />
+        : <AgendaCao   key={deviceId} />}
     </div>
   )
 }

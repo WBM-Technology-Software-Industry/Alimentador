@@ -318,8 +318,8 @@ export default function Configuracao() {
       <ModoOperacao />
 
       {deviceType === 'peixe' && fishSchedule
-        ? <FishWindowConfig fs={fishSchedule} />
-        : <PetScheduleSection />
+        ? <FishWindowConfig key={deviceId} fs={fishSchedule} />
+        : <PetScheduleSection key={deviceId} />
       }
 
     </div>
