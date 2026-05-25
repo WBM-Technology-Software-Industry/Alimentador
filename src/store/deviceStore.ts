@@ -23,6 +23,11 @@ export type FishSchedule = {
   hd: number   // hora de fim
 }
 
+export type PerDeviceData = {
+  schedules: DeviceSchedule[]
+  fishSchedule: FishSchedule | null
+}
+
 type DeviceState = {
   // Tipo do dispositivo
   deviceType: DeviceType
@@ -33,22 +38,21 @@ type DeviceState = {
   connected: boolean
 
   // Telemetry — estoque (tópico status: eg, ep)
-  eg: number          // eg: estoque atual em gramas
-  ep: number          // ep: estoque em porcentagem (0-100)
-  cp: number          // capacidade total em gramas
+  eg: number
+  ep: number
+  cp: number
 
   // Telemetry — dispositivo
-  tp: number          // temperatura (°C)
-  voltage: number     // tensão (V)
-  al: boolean         // al: motor alimentando agora (true = dispensando)
-  am: boolean         // am: modo automático ativo
-  er: number          // código de erro (0=OK, 1=corrente zero, 2=obstrução, 3=vazio, 11=timeout)
-  ts: string          // timestamp do device
-  pf: number          // pf: perfil (0=piscicultura, 1=pet)
+  tp: number
+  voltage: number
+  al: boolean
+  am: boolean
+  er: number
+  ts: string
+  pf: number
 
-  // Agendamentos vindos do hardware
-  schedules: DeviceSchedule[]      // c_pt — perfil Cão
-  fishSchedule: FishSchedule | null // c_ps — perfil Peixe
+  // Dados recebidos por dispositivo (persistidos no localStorage)
+  deviceData: Record<string, PerDeviceData>
 
   // Histórico local
   feedHistory: FeedEntry[]
@@ -61,8 +65,7 @@ type DeviceState = {
   setBrokerConfig: (url: string, id: string) => void
   setConnected: (v: boolean) => void
   setTelemetry: (data: Partial<DeviceState>) => void
-  setSchedules: (schedules: DeviceSchedule[]) => void
-  setFishSchedule: (s: FishSchedule | null) => void
+  setDeviceData: (deviceId: string, patch: Partial<PerDeviceData>) => void
   addFeedEntry: (entry: FeedEntry) => void
   setManualGrams: (g: number) => void
 }
@@ -87,8 +90,7 @@ export const useDeviceStore = create<DeviceState>()(
       ts: '',
       pf: 0,
 
-      schedules: [],
-      fishSchedule: { qpc: 500, tc: 30, hl: 8, hd: 18 },
+      deviceData: {},
       feedHistory: [],
       manualGrams: 100,
 
@@ -99,12 +101,20 @@ export const useDeviceStore = create<DeviceState>()(
         ...s,
         ...Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined)),
       })),
-      setSchedules: (schedules) => set({ schedules }),
-      setFishSchedule: (fishSchedule) => set({ fishSchedule }),
+      setDeviceData: (deviceId, patch) => set((s) => ({
+        deviceData: {
+          ...s.deviceData,
+          [deviceId]: {
+            schedules: s.deviceData[deviceId]?.schedules ?? [],
+            fishSchedule: s.deviceData[deviceId]?.fishSchedule ?? null,
+            ...patch,
+          },
+        },
+      })),
       addFeedEntry: (entry) =>
         set((s) => ({ feedHistory: [entry, ...s.feedHistory].slice(0, 200) })),
       setManualGrams: (manualGrams) => set({ manualGrams }),
     }),
-    { name: 'feeder-wbm-storage', version: 2 }
+    { name: 'feeder-wbm-storage', version: 3 }
   )
 )

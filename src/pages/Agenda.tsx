@@ -18,8 +18,9 @@ function initSlots(schedules: DeviceSchedule[]): Slot[] {
 }
 
 function AgendaCao() {
-  const { schedules, setSchedules, deviceId, connected } = useDeviceStore()
-  const [slots, setSlots] = useState<Slot[]>(() => initSlots(schedules))
+  const { deviceData, deviceId, connected } = useDeviceStore()
+  const received = deviceData[deviceId]
+  const [slots, setSlots] = useState<Slot[]>(() => initSlots(received?.schedules ?? []))
   const [feedback, setFeedback] = useState<string | null>(null)
 
   function updateSlot(i: number, partial: Partial<Slot>) {
@@ -30,17 +31,20 @@ function AgendaCao() {
     const updated: DeviceSchedule[] = slots
       .map(s => { const [h, m] = s.time.split(':').map(Number); return { h, m, q: s.grams } })
       .sort((a, b) => a.h * 60 + a.m - (b.h * 60 + b.m))
-    setSchedules(updated)
     const ok = publishCmdSequence(deviceId, [{ pf: 1 }, { am: true }, { c_pt: updated }])
-    setFeedback(ok ? 'Agendamentos salvos no dispositivo!' : 'Dispositivo offline — salvo localmente.')
-    setTimeout(() => setFeedback(null), 3000)
+    setFeedback(ok ? 'Enviado! Aguardando confirmação do dispositivo...' : 'Dispositivo offline.')
+    setTimeout(() => setFeedback(null), 4000)
   }
 
   return (
     <div className="flex flex-col gap-4">
       <div>
         <h1 className="font-bold text-gray-800 text-base">Horários de Refeição</h1>
-        <p className="text-xs text-gray-400">Até 4 horários fixos por dia</p>
+        <p className="text-xs text-gray-400">
+          {received?.schedules?.length
+            ? `Último dado recebido do dispositivo`
+            : 'Aguardando dados do dispositivo...'}
+        </p>
       </div>
 
       {feedback && (
@@ -85,22 +89,22 @@ function AgendaCao() {
 // ─── Perfil Peixe (c_ps) ─────────────────────────────────────────────────────
 
 function AgendaPeixe() {
-  const { fishSchedule, setFishSchedule, deviceId, connected } = useDeviceStore()
+  const { deviceData, deviceId, connected } = useDeviceStore()
+  const received = deviceData[deviceId]?.fishSchedule
   const [feedback, setFeedback] = useState<string | null>(null)
 
-  const [qpc, setQpc] = useState(fishSchedule?.qpc ?? 500)
-  const [tc,  setTc]  = useState(fishSchedule?.tc  ?? 120)
-  const [hl,  setHl]  = useState(fishSchedule?.hl  ?? 7)
-  const [hd,  setHd]  = useState(fishSchedule?.hd  ?? 19)
+  const [qpc, setQpc] = useState(received?.qpc ?? 500)
+  const [tc,  setTc]  = useState(received?.tc  ?? 120)
+  const [hl,  setHl]  = useState(received?.hl  ?? 7)
+  const [hd,  setHd]  = useState(received?.hd  ?? 19)
 
   const tratosPorDia = tc > 0 ? Math.floor(((hd - hl) * 60) / tc) : 0
 
   function handleSave() {
     const updated: FishSchedule = { qpc, tc, hl, hd }
-    setFishSchedule(updated)
     const ok = publishCmd(deviceId, { c_ps: updated })
-    setFeedback(ok ? 'Configuração salva no dispositivo!' : 'Dispositivo offline — salvo localmente.')
-    setTimeout(() => setFeedback(null), 3000)
+    setFeedback(ok ? 'Enviado! Aguardando confirmação do dispositivo...' : 'Dispositivo offline.')
+    setTimeout(() => setFeedback(null), 4000)
   }
 
   return (
@@ -130,7 +134,9 @@ function AgendaPeixe() {
 
       <div>
         <h1 className="font-bold text-gray-800 text-base">Agenda de Piscicultura</h1>
-        <p className="text-xs text-gray-400">O dispositivo calcula o próximo trato pelo intervalo</p>
+        <p className="text-xs text-gray-400">
+          {received ? 'Último dado recebido do dispositivo' : 'Aguardando dados do dispositivo...'}
+        </p>
       </div>
 
       {feedback && (

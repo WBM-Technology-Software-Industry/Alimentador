@@ -122,7 +122,7 @@ function ModoOperacao() {
 }
 
 function FishWindowConfig({ fs }: { fs: FishSchedule }) {
-  const { connected, deviceId, setFishSchedule } = useDeviceStore()
+  const { connected, deviceId } = useDeviceStore()
   const [hl,  setHl]  = useState(fs.hl)
   const [hd,  setHd]  = useState(fs.hd)
   const [tc,  setTc]  = useState(fs.tc)
@@ -131,10 +131,9 @@ function FishWindowConfig({ fs }: { fs: FishSchedule }) {
 
   function handleSave() {
     const updated: FishSchedule = { qpc, tc, hl, hd }
-    setFishSchedule(updated)
     const ok = publishCmd(deviceId, { c_ps: updated })
-    setFeedback(ok ? 'Configuração enviada!' : 'Dispositivo offline — salvo localmente.')
-    setTimeout(() => setFeedback(null), 3000)
+    setFeedback(ok ? 'Enviado! Aguardando confirmação do dispositivo...' : 'Dispositivo offline.')
+    setTimeout(() => setFeedback(null), 4000)
   }
 
   return (
@@ -218,8 +217,9 @@ function initSlots(schedules: DeviceSchedule[]): Slot[] {
 }
 
 function PetScheduleSection() {
-  const { schedules, setSchedules, deviceId } = useDeviceStore()
-  const [slots, setSlots] = useState<Slot[]>(() => initSlots(schedules))
+  const { deviceData, deviceId } = useDeviceStore()
+  const received = deviceData[deviceId]
+  const [slots, setSlots] = useState<Slot[]>(() => initSlots(received?.schedules ?? []))
   const [feedback, setFeedback] = useState<string | null>(null)
 
   function updateSlot(i: number, partial: Partial<Slot>) {
@@ -230,10 +230,9 @@ function PetScheduleSection() {
     const updated: DeviceSchedule[] = slots
       .map(s => { const [h, m] = s.time.split(':').map(Number); return { h, m, q: s.grams } })
       .sort((a, b) => a.h * 60 + a.m - (b.h * 60 + b.m))
-    setSchedules(updated)
-    const ok = publishCmdSequence(deviceId, [{ pf: 1 }, { c_pt: updated }])
-    setFeedback(ok ? 'Salvo no dispositivo!' : 'Dispositivo offline — salvo localmente.')
-    setTimeout(() => setFeedback(null), 3000)
+    const ok = publishCmdSequence(deviceId, [{ pf: 1 }, { am: true }, { c_pt: updated }])
+    setFeedback(ok ? 'Enviado! Aguardando confirmação do dispositivo...' : 'Dispositivo offline.')
+    setTimeout(() => setFeedback(null), 4000)
   }
 
   return (
@@ -282,7 +281,8 @@ const DEVICE_TYPES = [
 ]
 
 export default function Configuracao() {
-  const { deviceType, setDeviceType, fishSchedule, deviceId, connected } = useDeviceStore()
+  const { deviceType, setDeviceType, deviceData, deviceId, connected } = useDeviceStore()
+  const fishSchedule = deviceData[deviceId]?.fishSchedule
 
   function handleSetProfile(value: 'cao' | 'peixe') {
     setDeviceType(value)
@@ -321,7 +321,6 @@ export default function Configuracao() {
         ? <FishWindowConfig fs={fishSchedule} />
         : <PetScheduleSection />
       }
-
 
     </div>
   )

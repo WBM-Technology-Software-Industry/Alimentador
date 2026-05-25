@@ -1,5 +1,5 @@
 import mqtt, { type MqttClient } from 'mqtt'
-import { useDeviceStore, type DeviceSchedule } from '../store/deviceStore'
+import { useDeviceStore, type DeviceSchedule, type FishSchedule } from '../store/deviceStore'
 import { notify } from '../store/notificationStore'
 
 let client: MqttClient | null = null
@@ -34,7 +34,7 @@ export function connectMqtt(brokerUrl: string, deviceId: string) {
   client.on('message', (_topic, payload) => {
     try {
       const d = JSON.parse(payload.toString()) as Record<string, unknown>
-      const { setTelemetry, setSchedules, schedules, fishSchedule, setFishSchedule } = useDeviceStore.getState()
+      const { setTelemetry, setDeviceData, deviceId } = useDeviceStore.getState()
 
       setTelemetry({
         eg:      typeof d.eg === 'number' ? d.eg : undefined,
@@ -46,7 +46,6 @@ export function connectMqtt(brokerUrl: string, deviceId: string) {
         ts:      typeof d.ts === 'string' ? d.ts : undefined,
         pf:      typeof d.pf === 'number' ? d.pf : undefined,
       })
-
 
       if (typeof d.er === 'number' && d.er > 0) {
         const ERR: Record<number, string> = {
@@ -64,18 +63,16 @@ export function connectMqtt(brokerUrl: string, deviceId: string) {
         notify.info('Alimentando...')
       }
 
-      // Sincroniza agendamentos só se o app ainda não tiver dados locais
-      if (Array.isArray(d.c_pt) && schedules.length === 0) {
-        setSchedules(d.c_pt as DeviceSchedule[])
+      // Sempre atualiza dados recebidos do dispositivo no localStorage por device
+      if (Array.isArray(d.c_pt)) {
+        setDeviceData(deviceId, { schedules: d.c_pt as DeviceSchedule[] })
       }
 
       if (d.c_ps && typeof d.c_ps === 'object') {
         const ps = d.c_ps as Record<string, unknown>
         if (typeof ps.qpc === 'number' && typeof ps.tc === 'number' &&
             typeof ps.hl === 'number' && typeof ps.hd === 'number') {
-          if (!fishSchedule) {
-            setFishSchedule({ qpc: ps.qpc, tc: ps.tc, hl: ps.hl, hd: ps.hd })
-          }
+          setDeviceData(deviceId, { fishSchedule: ps as unknown as FishSchedule })
         }
       }
     } catch {
