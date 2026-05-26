@@ -98,7 +98,7 @@ export default function Historico() {
   }
 
   return (
-    <div className="p-4 flex flex-col gap-4">
+    <div className="p-4 lg:p-6 lg:max-w-3xl lg:mx-auto flex flex-col gap-4">
 
       {/* Filtros */}
       <div className="flex flex-col gap-2">

@@ -288,37 +288,45 @@ export default function Configuracao() {
   }
 
   return (
-    <div className="p-4 flex flex-col gap-4">
+    <div className="p-4 lg:p-6 lg:max-w-5xl lg:mx-auto flex flex-col gap-4">
 
       <DeviceIdConfig />
 
-      {/* Perfil do dispositivo */}
-      <div className="bg-white rounded-2xl shadow p-5">
-        <h2 className="text-gray-500 text-sm font-medium mb-3">Perfil do dispositivo</h2>
-        <div className="flex rounded-xl overflow-hidden border border-gray-200">
-          {DEVICE_TYPES.map((t) => (
-            <button
-              key={t.value}
-              disabled={!connected}
-              onClick={() => handleSetProfile(t.value)}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-all ${
-                deviceType === t.value
-                  ? 'bg-brand-600 text-[#1A1A1A]'
-                  : 'bg-white text-gray-500 hover:bg-gray-50'
-              }`}
-            >
-              <span>{t.icon}</span>{t.label}
-            </button>
-          ))}
+      <div className="flex flex-col lg:grid lg:grid-cols-2 gap-4">
+        {/* Coluna esquerda: perfil + modo */}
+        <div className="flex flex-col gap-4">
+          {/* Perfil do dispositivo */}
+          <div className="bg-white rounded-2xl shadow p-5">
+            <h2 className="text-gray-500 text-sm font-medium mb-3">Perfil do dispositivo</h2>
+            <div className="flex rounded-xl overflow-hidden border border-gray-200">
+              {DEVICE_TYPES.map((t) => (
+                <button
+                  key={t.value}
+                  disabled={!connected}
+                  onClick={() => handleSetProfile(t.value)}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-all ${
+                    deviceType === t.value
+                      ? 'bg-brand-600 text-[#1A1A1A]'
+                      : 'bg-white text-gray-500 hover:bg-gray-50'
+                  }`}
+                >
+                  <span>{t.icon}</span>{t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <ModoOperacao />
+        </div>
+
+        {/* Coluna direita: agenda */}
+        <div className="flex flex-col gap-4">
+          {deviceType === 'peixe' && fishSchedule
+            ? <FishWindowConfig key={deviceId} fs={fishSchedule} />
+            : <PetScheduleSection key={deviceId} />
+          }
         </div>
       </div>
-
-      <ModoOperacao />
-
-      {deviceType === 'peixe' && fishSchedule
-        ? <FishWindowConfig key={deviceId} fs={fishSchedule} />
-        : <PetScheduleSection key={deviceId} />
-      }
 
     </div>
   )

@@ -57,7 +57,7 @@ export default function Estoque() {
   }
 
   return (
-    <div className="p-4 flex flex-col gap-4">
+    <div className="p-4 lg:p-6 lg:max-w-5xl lg:mx-auto flex flex-col gap-4">
 
       {feedback && (
         <div className={`flex items-center gap-2 rounded-xl px-4 py-3 text-sm ${
@@ -67,26 +67,28 @@ export default function Estoque() {
         </div>
       )}
 
-      <ActionCard icon={RotateCcw} title="Enchi o reservatório" description={`Define ${ctx.foodLabel} como 100% cheio`}>
-        <button
-          onClick={() => send({ rs: 1 }, 'Reservatório marcado como cheio!')}
-          className="w-full bg-brand-600 hover:bg-brand-700 text-[#1A1A1A] font-medium py-2 rounded-xl text-sm"
-        >
-          Reservatório cheio (100%)
-        </button>
-      </ActionCard>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ActionCard icon={RotateCcw} title="Enchi o reservatório" description={`Define ${ctx.foodLabel} como 100% cheio`}>
+          <button
+            onClick={() => send({ rs: 1 }, 'Reservatório marcado como cheio!')}
+            className="w-full bg-brand-600 hover:bg-brand-700 text-[#1A1A1A] font-medium py-2 rounded-xl text-sm"
+          >
+            Reservatório cheio (100%)
+          </button>
+        </ActionCard>
 
-      <ActionCard icon={Plus} title={`Adicionar ${ctx.foodLabel}`} description="Soma ao estoque atual">
-        <GramsInput placeholder="Quantidade em gramas" onConfirm={(v) => send({ ad: v }, `+${v}g adicionado!`)} confirmLabel="Adicionar" />
-      </ActionCard>
+        <ActionCard icon={Plus} title={`Adicionar ${ctx.foodLabel}`} description="Soma ao estoque atual">
+          <GramsInput placeholder="Quantidade em gramas" onConfirm={(v) => send({ ad: v }, `+${v}g adicionado!`)} confirmLabel="Adicionar" />
+        </ActionCard>
 
-      <ActionCard icon={SlidersHorizontal} title="Ajustar estoque" description="Sobrescreve com valor exato medido">
-        <GramsInput placeholder="Valor exato em gramas" onConfirm={(v) => send({ eg: v }, `Estoque ajustado para ${v}g!`)} confirmLabel="Ajustar" />
-      </ActionCard>
+        <ActionCard icon={SlidersHorizontal} title="Ajustar estoque" description="Sobrescreve com valor exato medido">
+          <GramsInput placeholder="Valor exato em gramas" onConfirm={(v) => send({ eg: v }, `Estoque ajustado para ${v}g!`)} confirmLabel="Ajustar" />
+        </ActionCard>
 
-      <ActionCard icon={Database} title="Alterar capacidade total" description="Mudei o reservatório para outro tamanho">
-        <GramsInput placeholder="Nova capacidade em gramas" onConfirm={(v) => send({ cp: v }, `Capacidade definida para ${v}g!`)} confirmLabel="Salvar" />
-      </ActionCard>
+        <ActionCard icon={Database} title="Alterar capacidade total" description="Mudei o reservatório para outro tamanho">
+          <GramsInput placeholder="Nova capacidade em gramas" onConfirm={(v) => send({ cp: v }, `Capacidade definida para ${v}g!`)} confirmLabel="Salvar" />
+        </ActionCard>
+      </div>
     </div>
   )
 }
