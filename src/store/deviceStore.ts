@@ -26,9 +26,11 @@ export type FishSchedule = {
 export type PerDeviceData = {
   schedules: DeviceSchedule[]
   fishSchedule: FishSchedule | null
-  eg: number   // estoque atual em gramas
-  ep: number   // estoque em porcentagem
-  cp: number   // capacidade total em gramas
+  eg: number
+  ep: number
+  cp: number
+  tp: number
+  er: number
 }
 
 type DeviceState = {
@@ -109,11 +111,13 @@ export const useDeviceStore = create<DeviceState>()(
         deviceData: {
           ...s.deviceData,
           [deviceId]: {
-            schedules: s.deviceData[deviceId]?.schedules ?? [],
+            schedules:    s.deviceData[deviceId]?.schedules    ?? [],
             fishSchedule: s.deviceData[deviceId]?.fishSchedule ?? null,
             eg: s.deviceData[deviceId]?.eg ?? 0,
             ep: s.deviceData[deviceId]?.ep ?? 0,
             cp: s.deviceData[deviceId]?.cp ?? 10000,
+            tp: s.deviceData[deviceId]?.tp ?? 0,
+            er: s.deviceData[deviceId]?.er ?? 0,
             ...patch,
           },
         },
