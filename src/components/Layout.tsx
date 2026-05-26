@@ -1,5 +1,6 @@
+import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, Package, History, Settings } from 'lucide-react'
+import { LayoutDashboard, Package, History, Settings, Sun, Moon } from 'lucide-react'
 import { useDeviceStore } from '../store/deviceStore'
 import NotificationToast from './NotificationToast'
 import {
@@ -19,23 +20,42 @@ const nav = [
   { to: '/historico',    icon: History,         label: 'Histórico' },
 ]
 
+function useDarkMode() {
+  const [dark, setDark] = useState(() => localStorage.getItem('theme') === 'dark')
+
+  useEffect(() => {
+    const root = document.documentElement
+    if (dark) {
+      root.classList.add('dark')
+      localStorage.setItem('theme', 'dark')
+    } else {
+      root.classList.remove('dark')
+      localStorage.setItem('theme', 'light')
+    }
+  }, [dark])
+
+  return { dark, toggle: () => setDark(d => !d) }
+}
+
 export default function Layout({ children }: { children: React.ReactNode }) {
   const connected = useDeviceStore((s) => s.connected)
+  const { dark, toggle } = useDarkMode()
 
   return (
     <TooltipProvider delayDuration={0}>
       <SidebarProvider>
-        <div className="min-h-screen bg-gray-50 flex">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
 
           {/* ── Sidebar (desktop) ──────────────────────── */}
           <div className="hidden lg:flex fixed top-0 left-0 h-full z-40">
             <Sidebar>
+
+              {/* Sidebar header — só texto ControlFeed */}
               <SidebarHeader>
                 <div className="flex items-center justify-between">
-                  <div className="flex flex-col gap-2 overflow-hidden">
-                    <img src={wbmLogo} alt="WBM Technology" className="h-7 w-auto group-data-[collapsed=true]:hidden" />
-                    <img src={controlFeedLogo} alt="Control Feed" className="h-4 w-auto group-data-[collapsed=true]:hidden" />
-                  </div>
+                  <span className="text-sm font-bold text-gray-100 group-data-[collapsed=true]:hidden tracking-wide">
+                    ControlFeed
+                  </span>
                   <SidebarTrigger />
                 </div>
               </SidebarHeader>
@@ -57,25 +77,36 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </SidebarMenu>
               </SidebarContent>
 
+              {/* Sidebar footer — só toggle dark/light */}
               <SidebarFooter>
-                <div className="flex items-center gap-2">
-                  <span className={`w-2 h-2 rounded-full shrink-0 ${connected ? 'bg-brand-500' : 'bg-red-400'}`} />
-                  <span className={`text-xs font-medium group-data-[collapsed=true]:hidden ${connected ? 'text-brand-400' : 'text-red-400'}`}>
-                    {connected ? 'Online' : 'Offline'}
+                <button
+                  onClick={toggle}
+                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-gray-400 hover:text-gray-100 hover:bg-gray-700 transition-colors w-full"
+                >
+                  {dark
+                    ? <Sun size={16} className="shrink-0" />
+                    : <Moon size={16} className="shrink-0" />
+                  }
+                  <span className="text-xs font-medium group-data-[collapsed=true]:hidden">
+                    {dark ? 'Modo claro' : 'Modo escuro'}
                   </span>
-                </div>
+                </button>
               </SidebarFooter>
+
             </Sidebar>
           </div>
 
           {/* ── Content area ───────────────────────────── */}
           <div className="flex-1 flex flex-col min-h-screen lg:ml-56 transition-all duration-300 overflow-x-hidden">
 
-            {/* Header (mobile) */}
-            <header className="lg:hidden bg-gray-200 px-4 py-2 flex items-center justify-between gap-3 shadow-md rounded-b-3xl">
+            {/* Header mobile */}
+            <header className="lg:hidden bg-gray-200 dark:bg-gray-800 px-4 py-2 flex items-center justify-between gap-3 shadow-md rounded-b-3xl">
               <img src={wbmLogo} alt="WBM Technology" className="h-9 w-auto shrink-0" />
               <img src={controlFeedLogo} alt="Control Feed" className="h-5 w-auto" />
-              <div className="flex items-center gap-1.5 shrink-0">
+              <div className="flex items-center gap-2">
+                <button onClick={toggle} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                  {dark ? <Sun size={16} /> : <Moon size={16} />}
+                </button>
                 <span className={`w-2 h-2 rounded-full ${connected ? 'bg-brand-500' : 'bg-red-400'}`} />
                 <span className={`text-xs font-medium ${connected ? 'text-brand-600' : 'text-red-500'}`}>
                   {connected ? 'Online' : 'Offline'}
@@ -83,16 +114,23 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               </div>
             </header>
 
-            {/* Desktop top bar */}
-            <header className="hidden lg:flex items-center justify-between px-6 py-3 bg-white border-b border-gray-100 shadow-sm">
-              <div className="flex items-center gap-3">
-                <img src={controlFeedLogo} alt="Control Feed" className="h-5 w-auto" />
-              </div>
-              <div className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${connected ? 'bg-brand-500' : 'bg-red-400'}`} />
-                <span className={`text-xs font-semibold ${connected ? 'text-brand-600' : 'text-red-500'}`}>
-                  {connected ? 'Online' : 'Offline'}
-                </span>
+            {/* Desktop top bar — sem imagem, só toggle e status */}
+            <header className="hidden lg:flex items-center justify-between px-6 py-3 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 shadow-sm">
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">ControlFeed</span>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={toggle}
+                  className="flex items-center gap-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                >
+                  {dark ? <Sun size={16} /> : <Moon size={16} />}
+                  <span className="text-xs">{dark ? 'Claro' : 'Escuro'}</span>
+                </button>
+                <div className="flex items-center gap-1.5">
+                  <span className={`w-2 h-2 rounded-full ${connected ? 'bg-brand-500' : 'bg-red-400'}`} />
+                  <span className={`text-xs font-semibold ${connected ? 'text-brand-600' : 'text-red-500'}`}>
+                    {connected ? 'Online' : 'Offline'}
+                  </span>
+                </div>
               </div>
             </header>
 
@@ -102,10 +140,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               {children}
             </main>
 
-            {/* Desktop footer */}
-            <footer className="hidden lg:flex items-center justify-between px-6 py-3 bg-white border-t border-gray-100">
+            {/* Desktop footer — sem imagem */}
+            <footer className="hidden lg:flex items-center justify-between px-6 py-3 bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700">
               <div className="flex items-center gap-3">
-                <img src={wbmLogo} alt="WBM Technology" className="h-6 w-auto" />
                 <Separator orientation="vertical" className="h-4" />
                 <span className="text-xs text-gray-400">ControlFeed — Sistema de Alimentação Automática</span>
               </div>
@@ -114,7 +151,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* ── Bottom nav (mobile) ────────────────────── */}
-          <nav className="lg:hidden fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-gray-200 border-t border-gray-300 flex z-50 rounded-t-3xl">
+          <nav className="lg:hidden fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-gray-200 dark:bg-gray-800 border-t border-gray-300 dark:border-gray-700 flex z-50 rounded-t-3xl">
             {nav.map(({ to, icon: Icon, label }) => (
               <NavLink
                 key={to}
@@ -122,7 +159,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 end={to === '/'}
                 className={({ isActive }) =>
                   `flex-1 flex flex-col items-center py-2 gap-0.5 text-xs transition-colors ${
-                    isActive ? 'text-brand-600' : 'text-gray-500 hover:text-gray-700'
+                    isActive ? 'text-brand-600' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
                   }`
                 }
               >
