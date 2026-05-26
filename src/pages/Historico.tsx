@@ -1,9 +1,9 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useDeviceStore } from '../store/deviceStore'
 import { api, type ApiFeedEntry } from '../api/client'
-import { format, isToday, isYesterday, subDays, startOfDay } from 'date-fns'
+import { format, isToday, isYesterday, subDays, startOfDay, endOfDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { CalendarClock, Hand, Trash2 } from 'lucide-react'
+import { CalendarClock, Hand, Trash2, Calendar } from 'lucide-react'
 
 type Entry = {
   id: string | number
@@ -21,7 +21,13 @@ const PERIODS: { value: Period; label: string }[] = [
   { value: 'all',  label: 'Tudo' },
 ]
 
-function filterByPeriod(entries: Entry[], period: Period): Entry[] {
+function applyFilter(entries: Entry[], period: Period, customDate: string | null): Entry[] {
+  if (customDate) {
+    const date = new Date(customDate + 'T00:00:00')
+    const from = startOfDay(date).getTime()
+    const to   = endOfDay(date).getTime()
+    return entries.filter(e => e.timestamp >= from && e.timestamp <= to)
+  }
   if (period === 'all') return entries
   const cutoff = period === 'today'
     ? startOfDay(new Date()).getTime()
@@ -44,6 +50,7 @@ export default function Historico() {
   const [entries, setEntries] = useState<Entry[]>([])
   const [loading, setLoading] = useState(true)
   const [period, setPeriod] = useState<Period>('7d')
+  const [customDate, setCustomDate] = useState<string | null>(null)
   const [confirming, setConfirming] = useState(false)
 
   useEffect(() => {
@@ -64,7 +71,16 @@ export default function Historico() {
       .finally(() => setLoading(false))
   }, [deviceId])
 
-  const filtered = useMemo(() => filterByPeriod(entries, period), [entries, period])
+  const filtered = useMemo(() => applyFilter(entries, period, customDate), [entries, period, customDate])
+
+  function selectPeriod(p: Period) {
+    setPeriod(p)
+    setCustomDate(null)
+  }
+
+  function selectDate(value: string) {
+    setCustomDate(value || null)
+  }
 
   async function handleClear() {
     try { await api.clearHistory(deviceId) } catch { /* API indisponível */ }
@@ -84,21 +100,39 @@ export default function Historico() {
   return (
     <div className="p-4 flex flex-col gap-4">
 
-      {/* Filtro de período */}
-      <div className="flex gap-2">
-        {PERIODS.map(p => (
-          <button
-            key={p.value}
-            onClick={() => setPeriod(p.value)}
-            className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${
-              period === p.value
-                ? 'bg-brand-600 text-[#1A1A1A]'
-                : 'bg-white text-gray-500 shadow'
-            }`}
-          >
-            {p.label}
-          </button>
-        ))}
+      {/* Filtros */}
+      <div className="flex flex-col gap-2">
+        <div className="flex gap-2">
+          {PERIODS.map(p => (
+            <button
+              key={p.value}
+              onClick={() => selectPeriod(p.value)}
+              className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${
+                !customDate && period === p.value
+                  ? 'bg-brand-600 text-[#1A1A1A]'
+                  : 'bg-white text-gray-500 shadow'
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+
+        <div className={`flex items-center gap-2 bg-white rounded-xl shadow px-3 py-2 ${customDate ? 'ring-2 ring-brand-500' : ''}`}>
+          <Calendar size={15} className={customDate ? 'text-brand-600' : 'text-gray-400'} />
+          <input
+            type="date"
+            value={customDate ?? ''}
+            max={format(new Date(), 'yyyy-MM-dd')}
+            onChange={e => selectDate(e.target.value)}
+            className="flex-1 text-sm text-gray-700 outline-none bg-transparent"
+          />
+          {customDate && (
+            <button onClick={() => setCustomDate(null)} className="text-xs text-gray-400 hover:text-gray-600">
+              ✕
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Confirmação de limpeza */}
