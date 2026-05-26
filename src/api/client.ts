@@ -33,9 +33,15 @@ export type ApiErrorLog = {
   errorMessage: string
 }
 
+async function del(path: string): Promise<void> {
+  await fetch(`${BASE}${path}`, { method: 'DELETE' })
+}
+
 export const api = {
   history:   (deviceId: string, limit = 100) =>
     get<ApiFeedEntry[]>(`/api/devices/${deviceId}/history?limit=${limit}`),
+  clearHistory: (deviceId: string) =>
+    del(`/api/devices/${deviceId}/history`),
   telemetry: (deviceId: string, limit = 200) =>
     get<ApiTelemetry[]>(`/api/devices/${deviceId}/telemetry?limit=${limit}`),
   latestTelemetry: (deviceId: string) =>

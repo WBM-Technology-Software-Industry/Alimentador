@@ -1,15 +1,32 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useDeviceStore } from '../store/deviceStore'
 import { api, type ApiFeedEntry } from '../api/client'
-import { format, isToday, isYesterday } from 'date-fns'
+import { format, isToday, isYesterday, subDays, startOfDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { CalendarClock, Hand } from 'lucide-react'
+import { CalendarClock, Hand, Trash2 } from 'lucide-react'
 
 type Entry = {
   id: string | number
   timestamp: number
   grams: number
   source: 'manual' | 'scheduled'
+}
+
+type Period = 'today' | '7d' | '30d' | 'all'
+
+const PERIODS: { value: Period; label: string }[] = [
+  { value: 'today', label: 'Hoje' },
+  { value: '7d',   label: '7 dias' },
+  { value: '30d',  label: '30 dias' },
+  { value: 'all',  label: 'Tudo' },
+]
+
+function filterByPeriod(entries: Entry[], period: Period): Entry[] {
+  if (period === 'all') return entries
+  const cutoff = period === 'today'
+    ? startOfDay(new Date()).getTime()
+    : subDays(new Date(), period === '7d' ? 7 : 30).getTime()
+  return entries.filter(e => e.timestamp >= cutoff)
 }
 
 function groupByDay(entries: Entry[]) {
@@ -23,9 +40,11 @@ function groupByDay(entries: Entry[]) {
 }
 
 export default function Historico() {
-  const { deviceId, feedHistory } = useDeviceStore()
+  const { deviceId, feedHistory, clearFeedHistory } = useDeviceStore()
   const [entries, setEntries] = useState<Entry[]>([])
   const [loading, setLoading] = useState(true)
+  const [period, setPeriod] = useState<Period>('7d')
+  const [confirming, setConfirming] = useState(false)
 
   useEffect(() => {
     if (!deviceId) return
@@ -40,11 +59,19 @@ export default function Historico() {
         })))
       })
       .catch(() => {
-        // API indisponível — usa histórico local do store
         setEntries(feedHistory.map(e => ({ ...e })))
       })
       .finally(() => setLoading(false))
-  }, [deviceId, feedHistory])
+  }, [deviceId])
+
+  const filtered = useMemo(() => filterByPeriod(entries, period), [entries, period])
+
+  async function handleClear() {
+    try { await api.clearHistory(deviceId) } catch { /* API indisponível */ }
+    clearFeedHistory()
+    setEntries([])
+    setConfirming(false)
+  }
 
   if (loading) {
     return (
@@ -54,43 +81,87 @@ export default function Historico() {
     )
   }
 
-  if (entries.length === 0) {
-    return (
-      <div className="flex flex-col items-center gap-2 py-24 text-gray-400 px-4">
-        <span className="text-5xl">🍖</span>
-        <p className="text-sm font-medium">Nenhuma alimentação registrada</p>
-      </div>
-    )
-  }
-
   return (
     <div className="p-4 flex flex-col gap-4">
-      {Array.from(groupByDay(entries).entries()).map(([day, dayEntries]) => (
-        <div key={day}>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{day}</p>
-          <div className="flex flex-col gap-2">
-            {dayEntries.map((e) => (
-              <div key={e.id} className="bg-white rounded-xl shadow px-4 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    e.source === 'manual' ? 'bg-brand-100' : 'bg-blue-50'}`}>
-                    {e.source === 'manual'
-                      ? <Hand size={15} className="text-brand-700" />
-                      : <CalendarClock size={15} className="text-blue-500" />}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-800">{e.grams > 0 ? `${e.grams}g` : '—'}</p>
-                    <p className="text-xs text-gray-400">{e.source === 'manual' ? 'Manual' : 'Agendado'}</p>
-                  </div>
-                </div>
-                <p className="text-sm text-gray-500 tabular-nums">
-                  {format(new Date(e.timestamp), 'HH:mm')}
-                </p>
-              </div>
-            ))}
+
+      {/* Filtro de período */}
+      <div className="flex gap-2">
+        {PERIODS.map(p => (
+          <button
+            key={p.value}
+            onClick={() => setPeriod(p.value)}
+            className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${
+              period === p.value
+                ? 'bg-brand-600 text-[#1A1A1A]'
+                : 'bg-white text-gray-500 shadow'
+            }`}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Confirmação de limpeza */}
+      {confirming && (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex flex-col gap-3">
+          <p className="text-sm font-semibold text-red-700">Limpar todo o histórico?</p>
+          <p className="text-xs text-red-500">Esta ação não pode ser desfeita.</p>
+          <div className="flex gap-2">
+            <button onClick={handleClear}
+              className="flex-1 py-2 rounded-xl bg-red-600 text-white text-sm font-semibold">
+              Confirmar
+            </button>
+            <button onClick={() => setConfirming(false)}
+              className="flex-1 py-2 rounded-xl bg-gray-100 text-gray-600 text-sm font-semibold">
+              Cancelar
+            </button>
           </div>
         </div>
-      ))}
+      )}
+
+      {filtered.length === 0 ? (
+        <div className="flex flex-col items-center gap-2 py-20 text-gray-400">
+          <span className="text-5xl">🍖</span>
+          <p className="text-sm font-medium">Nenhuma alimentação neste período</p>
+        </div>
+      ) : (
+        <>
+          <div className="flex justify-end">
+            <button onClick={() => setConfirming(true)}
+              className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-600 transition-colors">
+              <Trash2 size={14} />
+              Limpar histórico
+            </button>
+          </div>
+
+          {Array.from(groupByDay(filtered).entries()).map(([day, dayEntries]) => (
+            <div key={day}>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{day}</p>
+              <div className="flex flex-col gap-2">
+                {dayEntries.map((e) => (
+                  <div key={e.id} className="bg-white rounded-xl shadow px-4 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                        e.source === 'manual' ? 'bg-brand-100' : 'bg-blue-50'}`}>
+                        {e.source === 'manual'
+                          ? <Hand size={15} className="text-brand-700" />
+                          : <CalendarClock size={15} className="text-blue-500" />}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">{e.grams > 0 ? `${e.grams}g` : '—'}</p>
+                        <p className="text-xs text-gray-400">{e.source === 'manual' ? 'Manual' : 'Agendado'}</p>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-500 tabular-nums">
+                      {format(new Date(e.timestamp), 'HH:mm')}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </>
+      )}
     </div>
   )
 }

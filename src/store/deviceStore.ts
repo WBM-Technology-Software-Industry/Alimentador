@@ -70,6 +70,7 @@ type DeviceState = {
   setTelemetry: (data: Partial<DeviceState>) => void
   setDeviceData: (deviceId: string, patch: Partial<PerDeviceData>) => void
   addFeedEntry: (entry: FeedEntry) => void
+  clearFeedHistory: () => void
   setManualGrams: (g: number) => void
 }
 
@@ -119,6 +120,7 @@ export const useDeviceStore = create<DeviceState>()(
       })),
       addFeedEntry: (entry) =>
         set((s) => ({ feedHistory: [entry, ...s.feedHistory].slice(0, 200) })),
+      clearFeedHistory: () => set({ feedHistory: [] }),
       setManualGrams: (manualGrams) => set({ manualGrams }),
     }),
     { name: 'feeder-wbm-storage', version: 3 }
