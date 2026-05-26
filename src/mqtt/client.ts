@@ -8,7 +8,7 @@ export function getMqttClient() {
   return client
 }
 
-export function connectMqtt(brokerUrl: string, deviceId: string) {
+export function connectMqtt(brokerUrl: string, _deviceId?: string) {
   if (client) {
     client.end(true)
     client = null
