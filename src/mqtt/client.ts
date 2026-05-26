@@ -3,6 +3,7 @@ import { useDeviceStore, type DeviceSchedule, type FishSchedule } from '../store
 import { notify } from '../store/notificationStore'
 
 let client: MqttClient | null = null
+let lastNotifiedError = 0
 
 export function getMqttClient() {
   return client
@@ -53,16 +54,21 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
           pf:      typeof d.pf === 'number' ? d.pf : undefined,
         })
 
-        if (typeof d.er === 'number' && d.er > 0) {
-          const ERR: Record<number, string> = {
-            1:  'Motor desconectado ou fusível queimado.',
-            2:  'Motor travado por objeto estranho ou ração úmida.',
-            3:  'Sensor capacitivo detectou falta de ração.',
-            4:  'Tensão baixa — verifique a alimentação elétrica.',
-            6:  'Alerta de nível de ração baixo — reabasteça assim que possível.',
-            11: 'Motor ligado por tempo excessivo sem atingir o peso.',
+        if (typeof d.er === 'number') {
+          if (d.er > 0 && d.er !== lastNotifiedError) {
+            lastNotifiedError = d.er
+            const ERR: Record<number, string> = {
+              1:  'Motor desconectado ou fusível queimado.',
+              2:  'Motor travado por objeto estranho ou ração úmida.',
+              3:  'Sensor capacitivo detectou falta de ração.',
+              4:  'Tensão baixa — verifique a alimentação elétrica.',
+              6:  'Alerta de nível de ração baixo — abasteça assim que possível.',
+              11: 'Motor ligado por tempo excessivo sem atingir o peso.',
+            }
+            notify.error(ERR[d.er] ?? `Erro no dispositivo (${d.er}).`)
+          } else if (d.er === 0) {
+            lastNotifiedError = 0
           }
-          notify.error(ERR[d.er as number] ?? `Erro no dispositivo (${d.er}).`)
         }
 
         if (typeof d.al === 'boolean' && d.al) {
