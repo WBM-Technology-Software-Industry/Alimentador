@@ -34,7 +34,7 @@ export function connectMqtt(brokerUrl: string, deviceId: string) {
   client.on('message', (_topic, payload) => {
     try {
       const d = JSON.parse(payload.toString()) as Record<string, unknown>
-      const { setTelemetry, setDeviceData, deviceId } = useDeviceStore.getState()
+      const { setTelemetry, setDeviceData, addFeedEntry, deviceId, al: prevAl, eg: prevEg, manualGrams } = useDeviceStore.getState()
 
       setTelemetry({
         eg:      typeof d.eg === 'number' ? d.eg : undefined,
@@ -61,6 +61,17 @@ export function connectMqtt(brokerUrl: string, deviceId: string) {
 
       if (typeof d.al === 'boolean' && d.al) {
         notify.info('Alimentando...')
+      }
+
+      // Register feed event when al transitions true → false (feeding completed)
+      if (typeof d.al === 'boolean' && !d.al && prevAl) {
+        const gramsUsed = typeof d.eg === 'number' && prevEg > 0 ? Math.max(0, Math.round(prevEg - d.eg)) : manualGrams
+        addFeedEntry({
+          id: `${Date.now()}-${deviceId}`,
+          timestamp: Date.now(),
+          grams: gramsUsed,
+          source: typeof d.am === 'boolean' ? (d.am ? 'scheduled' : 'manual') : 'manual',
+        })
       }
 
       // Sempre atualiza dados recebidos do dispositivo no localStorage por device

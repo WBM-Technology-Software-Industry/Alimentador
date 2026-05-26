@@ -1,13 +1,13 @@
 import { useDeviceStore } from '../store/deviceStore'
 import StockGauge from '../components/StockGauge'
-import type { DeviceType } from '../store/deviceStore'
+import { connectMqtt } from '../mqtt/client'
 
 const ERROR_LABELS: Record<number, string> = {
   1:  'Motor desconectado ou fusível queimado.',
   2:  'Motor travado por objeto estranho ou ração úmida.',
   3:  'Sensor capacitivo detectou falta de ração.',
   4:  'Tensão baixa — verifique a alimentação elétrica.',
-  6:  'Nível de ração baixo — reabasteça em breve.',
+  6:  'Alerta de nível de ração baixo — reabasteça assim que possível.',
   11: 'Motor ligado por tempo excessivo sem atingir o peso.',
 }
 
@@ -16,43 +16,7 @@ const DEVICES = [
   { label: 'Alimentador 2', id: 'ALIMENTADOR_2' },
 ]
 
-function ModeAnimation({ deviceType }: { deviceType: DeviceType }) {
-  if (deviceType === 'peixe') {
-    return (
-      <div className="relative w-full bg-blue-50 rounded-2xl overflow-hidden flex flex-col items-center justify-center gap-1" style={{ height: '9rem' }}>
-        <div className="absolute bottom-0 left-0 right-0 h-8 bg-blue-100 rounded-b-2xl opacity-60" />
-        <div className="absolute bottom-3 left-0 right-0 h-5 bg-blue-200 rounded-b-2xl opacity-40" />
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="absolute animate-bubble rounded-full border-2 border-blue-300"
-            style={{ width: 10, height: 10, left: `${25 + i * 25}%`, bottom: '30%', animationDelay: `${i * 0.6}s` }} />
-        ))}
-        <span className="animate-swim text-5xl select-none z-10">🐟</span>
-        <span className="text-xs font-medium text-blue-400 z-10">Modo Piscicultura</span>
-      </div>
-    )
-  }
-
-  return (
-    <div className="relative w-full bg-amber-50 rounded-2xl overflow-hidden flex flex-col items-center justify-center gap-3" style={{ height: '9rem' }}>
-      <div className="flex flex-col items-center gap-2 z-10">
-        <div className="flex gap-2 items-end" style={{ height: 32 }}>
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="animate-kibble rounded-full bg-amber-600"
-              style={{ width: 12, height: 12, animationDelay: `${i * 0.4}s` }} />
-          ))}
-        </div>
-        <div style={{
-          width: 64, height: 28,
-          background: '#d97706',
-          borderRadius: '0 0 40px 40px',
-        }} />
-      </div>
-      <span className="text-xs font-medium text-amber-500">Modo Pet</span>
-    </div>
-  )
-}
-
-function FeederLevelCard({ label, id }: { label: string; id: string }) {
+function FeederLevelCard({ label, id, active, onClick }: { label: string; id: string; active: boolean; onClick: () => void }) {
   const deviceData = useDeviceStore((s) => s.deviceData)
   const data = deviceData[id]
   const ep = data?.ep ?? 0
@@ -63,9 +27,14 @@ function FeederLevelCard({ label, id }: { label: string; id: string }) {
   const color = ep > 50 ? '#28CC08' : ep > 20 ? '#f59e0b' : '#ef4444'
 
   return (
-    <div className="flex-1 bg-white rounded-2xl shadow p-4 flex flex-col gap-3">
+    <button
+      onClick={onClick}
+      className={`flex-1 bg-white rounded-2xl shadow p-4 flex flex-col gap-3 text-left transition-all ${
+        active ? 'ring-2 ring-brand-500' : 'opacity-70'
+      }`}
+    >
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-gray-600">{label}</span>
+        <span className={`text-xs font-semibold ${active ? 'text-brand-600' : 'text-gray-600'}`}>{label}</span>
         {hasData
           ? <span className="text-xs font-bold" style={{ color }}>{Math.round(ep)}%</span>
           : <span className="text-xs text-gray-300">—</span>
@@ -87,22 +56,33 @@ function FeederLevelCard({ label, id }: { label: string; id: string }) {
       ) : (
         <span className="text-xs text-gray-300 text-center">Aguardando dados...</span>
       )}
-    </div>
+    </button>
   )
 }
 
 export default function Dashboard() {
-  const { tp, er, deviceType, eg, ep, cp } = useDeviceStore()
+  const { tp, er, eg, ep, cp, deviceId, brokerUrl, setBrokerConfig, setConnected } = useDeviceStore()
+
+  function handleSelectDevice(id: string) {
+    if (id === deviceId) return
+    setBrokerConfig(brokerUrl, id)
+    setConnected(false)
+    connectMqtt(brokerUrl, id)
+  }
 
   return (
     <div className="p-4 flex flex-col gap-4">
 
-      <ModeAnimation deviceType={deviceType} />
-
       {/* Nível dos alimentadores */}
       <div className="flex gap-3">
         {DEVICES.map((d) => (
-          <FeederLevelCard key={d.id} label={d.label} id={d.id} />
+          <FeederLevelCard
+            key={d.id}
+            label={d.label}
+            id={d.id}
+            active={d.id === deviceId}
+            onClick={() => handleSelectDevice(d.id)}
+          />
         ))}
       </div>
 
