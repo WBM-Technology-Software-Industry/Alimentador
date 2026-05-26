@@ -1,9 +1,16 @@
-import { useDeviceStore, type FeedEntry } from '../store/deviceStore'
+import { useEffect, useState } from 'react'
+import { useDeviceStore } from '../store/deviceStore'
+import { api, type ApiFeedEntry } from '../api/client'
 import { format, isToday, isYesterday } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { CalendarClock, Hand } from 'lucide-react'
 
-type Entry = FeedEntry
+type Entry = {
+  id: string | number
+  timestamp: number
+  grams: number
+  source: 'manual' | 'scheduled'
+}
 
 function groupByDay(entries: Entry[]) {
   const map = new Map<string, Entry[]>()
@@ -16,9 +23,38 @@ function groupByDay(entries: Entry[]) {
 }
 
 export default function Historico() {
-  const { feedHistory } = useDeviceStore()
+  const { deviceId, feedHistory } = useDeviceStore()
+  const [entries, setEntries] = useState<Entry[]>([])
+  const [loading, setLoading] = useState(true)
 
-  if (feedHistory.length === 0) {
+  useEffect(() => {
+    if (!deviceId) return
+    setLoading(true)
+    api.history(deviceId)
+      .then((data: ApiFeedEntry[]) => {
+        setEntries(data.map(e => ({
+          id: e.id,
+          timestamp: new Date(e.timestamp).getTime(),
+          grams: e.grams,
+          source: e.source,
+        })))
+      })
+      .catch(() => {
+        // API indisponível — usa histórico local do store
+        setEntries(feedHistory.map(e => ({ ...e })))
+      })
+      .finally(() => setLoading(false))
+  }, [deviceId, feedHistory])
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center gap-2 py-24 text-gray-400 px-4">
+        <span className="text-sm">Carregando...</span>
+      </div>
+    )
+  }
+
+  if (entries.length === 0) {
     return (
       <div className="flex flex-col items-center gap-2 py-24 text-gray-400 px-4">
         <span className="text-5xl">🍖</span>
@@ -29,11 +65,11 @@ export default function Historico() {
 
   return (
     <div className="p-4 flex flex-col gap-4">
-      {Array.from(groupByDay(feedHistory).entries()).map(([day, entries]) => (
+      {Array.from(groupByDay(entries).entries()).map(([day, dayEntries]) => (
         <div key={day}>
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{day}</p>
           <div className="flex flex-col gap-2">
-            {entries.map((e) => (
+            {dayEntries.map((e) => (
               <div key={e.id} className="bg-white rounded-xl shadow px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
