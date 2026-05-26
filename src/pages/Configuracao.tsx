@@ -166,13 +166,13 @@ function FishWindowConfig({ fs }: { fs: FishSchedule }) {
         )}
 
         <div className="flex gap-3">
-          <div className="flex flex-col gap-1 w-44">
+          <div className="flex flex-col gap-1 flex-1 min-w-0">
             <label className="text-xs text-gray-500">Início (hora)</label>
             <input type="number" min={0} max={23} value={hl}
               onChange={(e) => setHl(parseInt(e.target.value) || 0)}
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500" />
           </div>
-          <div className="flex flex-col gap-1 w-44">
+          <div className="flex flex-col gap-1 flex-1 min-w-0">
             <label className="text-xs text-gray-500">Fim (hora)</label>
             <input type="number" min={0} max={23} value={hd}
               onChange={(e) => setHd(parseInt(e.target.value) || 0)}
@@ -181,13 +181,13 @@ function FishWindowConfig({ fs }: { fs: FishSchedule }) {
         </div>
 
         <div className="flex gap-3">
-          <div className="flex flex-col gap-1 w-44">
+          <div className="flex flex-col gap-1 flex-1 min-w-0">
             <label className="text-xs text-gray-500">Intervalo (min)</label>
             <input type="number" min={1} value={tc}
               onChange={(e) => setTc(parseInt(e.target.value) || 0)}
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500" />
           </div>
-          <div className="flex flex-col gap-1 w-44">
+          <div className="flex flex-col gap-1 flex-1 min-w-0">
             <label className="text-xs text-gray-500">Quantidade (g)</label>
             <input type="number" min={1} value={qpc}
               onChange={(e) => setQpc(parseInt(e.target.value) || 0)}

@@ -69,7 +69,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* ── Content area ───────────────────────────── */}
-          <div className="flex-1 flex flex-col min-h-screen lg:ml-56 transition-all duration-300">
+          <div className="flex-1 flex flex-col min-h-screen lg:ml-56 transition-all duration-300 overflow-x-hidden">
 
             {/* Header (mobile) */}
             <header className="lg:hidden bg-gray-200 px-4 py-2 flex items-center justify-between gap-3 shadow-md rounded-b-3xl">
