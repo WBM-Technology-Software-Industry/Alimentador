@@ -1,6 +1,5 @@
 import { useDeviceStore } from '../store/deviceStore'
 import StockGauge from '../components/StockGauge'
-import { connectMqtt } from '../mqtt/client'
 
 const ERROR_LABELS: Record<number, string> = {
   1:  'Motor desconectado ou fusível queimado.',
@@ -61,7 +60,7 @@ function FeederLevelCard({ label, id, active, onClick }: { label: string; id: st
 }
 
 export default function Dashboard() {
-  const { tp, er, deviceId, brokerUrl, setBrokerConfig, setConnected, deviceData } = useDeviceStore()
+  const { tp, er, deviceId, brokerUrl, setBrokerConfig, deviceData } = useDeviceStore()
   const active = deviceData[deviceId]
   const eg = active?.eg ?? 0
   const ep = active?.ep ?? 0
@@ -70,8 +69,6 @@ export default function Dashboard() {
   function handleSelectDevice(id: string) {
     if (id === deviceId) return
     setBrokerConfig(brokerUrl, id)
-    setConnected(false)
-    connectMqtt(brokerUrl, id)
   }
 
   return (

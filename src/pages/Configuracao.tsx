@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useDeviceStore, type FishSchedule, type DeviceSchedule } from '../store/deviceStore'
-import { publishCmd, publishCmdSequence, connectMqtt } from '../mqtt/client'
+import { publishCmd, publishCmdSequence } from '../mqtt/client'
 import { CheckCircle2 } from 'lucide-react'
 
 function pad(n: number) { return String(n).padStart(2, '0') }
@@ -11,13 +11,11 @@ const DEVICES = [
 ]
 
 function DeviceIdConfig() {
-  const { deviceId, brokerUrl, setBrokerConfig, setConnected } = useDeviceStore()
+  const { deviceId, brokerUrl, setBrokerConfig } = useDeviceStore()
 
   function handleSelect(id: string) {
     if (id === deviceId) return
     setBrokerConfig(brokerUrl, id)
-    setConnected(false)
-    connectMqtt(brokerUrl, id)
   }
 
   return (
