@@ -37,9 +37,21 @@ async function del(path: string): Promise<void> {
   await fetch(`${BASE}${path}`, { method: 'DELETE' })
 }
 
+async function post<T>(path: string, body: object): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) throw new Error(`API ${res.status}`)
+  return res.json()
+}
+
 export const api = {
   history:   (deviceId: string, limit = 100) =>
     get<ApiFeedEntry[]>(`/api/devices/${deviceId}/history?limit=${limit}`),
+  postFeedEntry: (deviceId: string, grams: number, source: 'manual' | 'scheduled') =>
+    post<ApiFeedEntry>(`/api/devices/${deviceId}/history`, { grams, source }),
   clearHistory: (deviceId: string) =>
     del(`/api/devices/${deviceId}/history`),
   telemetry: (deviceId: string, limit = 200) =>

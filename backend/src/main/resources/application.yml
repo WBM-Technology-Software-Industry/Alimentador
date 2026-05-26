@@ -1,0 +1,23 @@
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/feeder}
+    username: ${DATABASE_USER:feeder}
+    password: ${DATABASE_PASSWORD:feeder}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    open-in-view: false
+  flyway:
+    enabled: true
+
+mqtt:
+  broker-url: ${MQTT_BROKER_URL:tcp://152.67.43.175:1883}
+  devices: ${MQTT_DEVICES:ALIMENTADOR_1,ALIMENTADOR_2}
+
+server:
+  port: ${PORT:8080}
+
+logging:
+  level:
+    com.wbm.feeder: INFO

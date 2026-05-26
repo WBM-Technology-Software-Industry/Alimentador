@@ -1,54 +1,37 @@
 services:
-
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: dashboard_db
-      POSTGRES_USER: dashboard
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: feeder
+      POSTGRES_USER: feeder
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-feeder123}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U dashboard -d dashboard_db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    ports:
+      - "5432:5432"
 
   backend:
     build: ./backend
     restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/feeder
+      DATABASE_USER: feeder
+      DATABASE_PASSWORD: ${DB_PASSWORD:-feeder123}
+      MQTT_BROKER_URL: ${MQTT_BROKER_URL:-tcp://152.67.43.175:1883}
     ports:
       - "8080:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/dashboard_db
-      SPRING_DATASOURCE_USERNAME: dashboard
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
-      APP_JWT_SECRET: ${JWT_SECRET}
-      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
-      MAIL_PORT: ${MAIL_PORT:-587}
-      MAIL_USERNAME: ${MAIL_USERNAME}
-      MAIL_PASSWORD: ${MAIL_PASSWORD}
-      FRONTEND_URL: https://dashboard.wbmtechnologysoftware.com.br
-    volumes:
-      - uploads_data:/app/uploads
 
   frontend:
-    build:
-      context: ./frontend
-      args:
-        NEXT_PUBLIC_API_BASE: https://dashboard.wbmtechnologysoftware.com.br/api
-        NEXT_PUBLIC_API_KEY: ${NEXT_PUBLIC_API_KEY}
-        NEXT_PUBLIC_DISCORD_WEBHOOK_URL: ${NEXT_PUBLIC_DISCORD_WEBHOOK_URL}
+    build: ./Alimentador
     restart: unless-stopped
     ports:
-      - "3001:3000"
-    depends_on:
-      - backend
+      - "3000:3000"
+    environment:
+      VITE_MQTT_BROKER_URL: ${VITE_MQTT_BROKER_URL}
+      VITE_API_URL: http://backend:8080
 
 volumes:
   postgres_data:
-  uploads_data:
