@@ -15,9 +15,12 @@ const DEVICES = [
   { label: 'Alimentador 2', id: 'ALIMENTADOR_2' },
 ]
 
+function Skeleton({ className }: { className: string }) {
+  return <div className={`animate-pulse bg-gray-200 rounded-lg ${className}`} />
+}
+
 function FeederLevelCard({ label, id, active, onClick }: { label: string; id: string; active: boolean; onClick: () => void }) {
-  const deviceData = useDeviceStore((s) => s.deviceData)
-  const data = deviceData[id]
+  const data = useDeviceStore((s) => s.deviceData[id])
   const ep = data?.ep ?? 0
   const eg = data?.eg ?? 0
   const cp = data?.cp ?? 10000
@@ -36,15 +39,15 @@ function FeederLevelCard({ label, id, active, onClick }: { label: string; id: st
         <span className={`text-xs font-semibold ${active ? 'text-brand-600' : 'text-gray-600'}`}>{label}</span>
         {hasData
           ? <span className="text-xs font-bold" style={{ color }}>{Math.round(ep)}%</span>
-          : <span className="text-xs text-gray-300">—</span>
+          : <Skeleton className="w-8 h-3" />
         }
       </div>
 
       <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-        <div
-          className="h-full rounded-full transition-all duration-500"
-          style={{ width: `${ep}%`, backgroundColor: color }}
-        />
+        {hasData
+          ? <div className="h-full rounded-full transition-all duration-500" style={{ width: `${ep}%`, backgroundColor: color }} />
+          : <div className="h-full w-full animate-pulse bg-gray-200 rounded-full" />
+        }
       </div>
 
       {hasData ? (
@@ -53,7 +56,10 @@ function FeederLevelCard({ label, id, active, onClick }: { label: string; id: st
           <span>de {(cp / 1000).toFixed(1)} kg</span>
         </div>
       ) : (
-        <span className="text-xs text-gray-300 text-center">Aguardando dados...</span>
+        <div className="flex justify-between">
+          <Skeleton className="w-16 h-3" />
+          <Skeleton className="w-16 h-3" />
+        </div>
       )}
     </button>
   )
@@ -62,6 +68,7 @@ function FeederLevelCard({ label, id, active, onClick }: { label: string; id: st
 export default function Dashboard() {
   const { deviceId, brokerUrl, setBrokerConfig, deviceData } = useDeviceStore()
   const active = deviceData[deviceId]
+  const hasData = !!active
   const eg = active?.eg ?? 0
   const ep = active?.ep ?? 0
   const cp = active?.cp ?? 10000
@@ -76,7 +83,6 @@ export default function Dashboard() {
   return (
     <div className="p-4 flex flex-col gap-4">
 
-      {/* Nível dos alimentadores */}
       <div className="flex gap-3">
         {DEVICES.map((d) => (
           <FeederLevelCard
@@ -90,22 +96,42 @@ export default function Dashboard() {
       </div>
 
       <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-4">
-        <StockGauge ep={ep} eg={eg} cp={cp} />
+        {hasData ? (
+          <StockGauge ep={ep} eg={eg} cp={cp} />
+        ) : (
+          <div className="flex flex-col items-center gap-3 py-4">
+            <Skeleton className="w-36 h-36 rounded-full" />
+            <Skeleton className="w-24 h-4" />
+          </div>
+        )}
+
         <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-          <div className="h-full rounded-full transition-all duration-500"
-            style={{ width: `${ep}%`, backgroundColor: ep > 50 ? '#28CC08' : ep > 20 ? '#f59e0b' : '#ef4444' }} />
+          {hasData
+            ? <div className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${ep}%`, backgroundColor: ep > 50 ? '#28CC08' : ep > 20 ? '#f59e0b' : '#ef4444' }} />
+            : <div className="h-full w-full animate-pulse bg-gray-200 rounded-full" />
+          }
         </div>
+
         <hr className="border-gray-100" />
+
         <div className="flex justify-between items-center">
           <span className="text-sm text-gray-500">Temperatura</span>
-          <span className="text-sm font-semibold text-gray-800">{tp}°C</span>
+          {hasData
+            ? <span className="text-sm font-semibold text-gray-800">{tp}°C</span>
+            : <Skeleton className="w-12 h-4" />
+          }
         </div>
+
         <hr className="border-gray-100" />
+
         <div className="flex justify-between items-center">
           <span className="text-sm text-gray-500">Erro</span>
-          {er > 0
-            ? <span className="text-sm font-semibold text-red-600">{ERROR_LABELS[er] ?? `Código ${er}`}</span>
-            : <span className="text-sm font-semibold text-gray-400">Nenhum</span>
+          {!hasData
+            ? <Skeleton className="w-20 h-4" />
+            : er > 0
+              ? <span className="text-sm font-semibold text-red-600">{ERROR_LABELS[er] ?? `Código ${er}`}</span>
+              : <span className="text-sm font-semibold text-gray-400">Nenhum</span>
           }
         </div>
       </div>
