@@ -64,6 +64,12 @@ export function connectMqtt(brokerUrl: string, deviceId: string) {
       }
 
       // Sempre atualiza dados recebidos do dispositivo no localStorage por device
+      const stockPatch: Partial<{ eg: number; ep: number; cp: number }> = {}
+      if (typeof d.eg === 'number') stockPatch.eg = d.eg
+      if (typeof d.ep === 'number') stockPatch.ep = d.ep
+      if (typeof d.cp === 'number') stockPatch.cp = d.cp
+      if (Object.keys(stockPatch).length) setDeviceData(deviceId, stockPatch)
+
       if (Array.isArray(d.c_pt)) {
         setDeviceData(deviceId, { schedules: d.c_pt as DeviceSchedule[] })
       }
