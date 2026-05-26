@@ -62,7 +62,7 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
               2:  'Motor travado por objeto estranho ou ração úmida.',
               3:  'Sensor capacitivo detectou falta de ração.',
               4:  'Tensão baixa — verifique a alimentação elétrica.',
-              6:  'Alerta de nível de ração baixo — abasteça assim que possível.',
+              6:  'Alerta de nível baixo.',
               11: 'Motor ligado por tempo excessivo sem atingir o peso.',
             }
             notify.error(ERR[d.er] ?? `Erro no dispositivo (${d.er}).`)
