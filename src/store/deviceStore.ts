@@ -62,6 +62,7 @@ type DeviceState = {
 
   // Histórico local
   feedHistory: FeedEntry[]
+  lastFeedAt: number
 
   // Quantidade para trato manual
   manualGrams: number
@@ -74,6 +75,7 @@ type DeviceState = {
   setDeviceData: (deviceId: string, patch: Partial<PerDeviceData>) => void
   addFeedEntry: (entry: FeedEntry) => void
   clearFeedHistory: () => void
+  bumpLastFeedAt: () => void
   setManualGrams: (g: number) => void
 }
 
@@ -99,6 +101,7 @@ export const useDeviceStore = create<DeviceState>()(
 
       deviceData: {},
       feedHistory: [],
+      lastFeedAt: 0,
       manualGrams: 100,
 
       setDeviceType: (deviceType) => set({ deviceType }),
@@ -127,6 +130,7 @@ export const useDeviceStore = create<DeviceState>()(
       addFeedEntry: (entry) =>
         set((s) => ({ feedHistory: [entry, ...s.feedHistory].slice(0, 200) })),
       clearFeedHistory: () => set({ feedHistory: [] }),
+      bumpLastFeedAt: () => set({ lastFeedAt: Date.now() }),
       setManualGrams: (manualGrams) => set({ manualGrams }),
     }),
     { name: 'feeder-wbm-storage', version: 3 }

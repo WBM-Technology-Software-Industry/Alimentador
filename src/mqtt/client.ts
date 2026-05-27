@@ -40,7 +40,7 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
 
     try {
       const d = JSON.parse(payload.toString()) as Record<string, unknown>
-      const { setTelemetry, setDeviceData, addFeedEntry, deviceId, al: prevAl, eg: prevEg, manualGrams } = useDeviceStore.getState()
+      const { setTelemetry, setDeviceData, addFeedEntry, bumpLastFeedAt, deviceId, al: prevAl, eg: prevEg, manualGrams } = useDeviceStore.getState()
 
       // Live telemetry and notifications only for the active device
       if (msgDeviceId === deviceId) {
@@ -80,8 +80,8 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
           const gramsUsed = typeof d.eg === 'number' && prevEg > 0 ? Math.max(0, Math.round(prevEg - d.eg)) : manualGrams
           const source = typeof d.am === 'boolean' ? (d.am ? 'scheduled' : 'manual') : 'manual'
           // Salva no banco via API (fonte de verdade)
+          bumpLastFeedAt()
           api.postFeedEntry(msgDeviceId, gramsUsed, source).catch(() => {
-            // API indisponível — salva só localmente
             addFeedEntry({
               id: `${Date.now()}-${msgDeviceId}`,
               timestamp: Date.now(),

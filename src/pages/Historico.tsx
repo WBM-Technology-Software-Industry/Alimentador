@@ -46,7 +46,7 @@ function groupByDay(entries: Entry[]) {
 }
 
 export default function Historico() {
-  const { deviceId, feedHistory, clearFeedHistory } = useDeviceStore()
+  const { deviceId, feedHistory, clearFeedHistory, lastFeedAt } = useDeviceStore()
   const [entries, setEntries] = useState<Entry[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -75,9 +75,13 @@ export default function Historico() {
 
   useEffect(() => {
     fetchHistory()
-    const interval = setInterval(() => fetchHistory(true), 15000)
+    const interval = setInterval(() => fetchHistory(true), 30000)
     return () => clearInterval(interval)
   }, [deviceId])
+
+  useEffect(() => {
+    if (lastFeedAt > 0) fetchHistory(true)
+  }, [lastFeedAt])
 
   const filtered = useMemo(() => applyFilter(entries, period, customDate), [entries, period, customDate])
 
