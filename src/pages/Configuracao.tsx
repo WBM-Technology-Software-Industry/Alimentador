@@ -189,7 +189,7 @@ function FishWindowConfig({ fs }: { fs: FishSchedule }) {
           </div>
           <div className="flex flex-col gap-1 flex-1 min-w-0">
             <label className="text-xs text-gray-500">Quantidade (g)</label>
-            <input type="number" min={1} value={qpc}
+            <input type="number" min={1} value={qpc || ''}
               onChange={(e) => setQpc(parseInt(e.target.value) || 0)}
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500" />
           </div>
@@ -256,7 +256,7 @@ function PetScheduleSection() {
               </div>
               <div className="flex flex-col gap-1 flex-1 min-w-0">
                 <label className="text-xs text-gray-500">Gramas</label>
-                <input type="number" min={1} value={slot.grams}
+                <input type="number" min={1} value={slot.grams || ''}
                   onChange={(e) => updateSlot(i, { grams: parseInt(e.target.value) || 0 })}
                   className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500" />
               </div>
