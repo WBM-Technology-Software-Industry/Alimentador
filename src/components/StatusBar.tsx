@@ -65,12 +65,16 @@ const STATUS_TEXT = {
 export default function StatusBar() {
   const deviceId   = useDeviceStore((s) => s.deviceId)
   const deviceType = useDeviceStore((s) => s.deviceType)
-  const al         = useDeviceStore((s) => s.al)
+  const deviceData = useDeviceStore((s) => s.deviceData)
   const cmdLog     = useDeviceStore((s) => s.cmdLog)
 
   const deviceLabel = DEVICE_LABELS[deviceId] ?? (deviceId || '—')
   const profile     = deviceType === 'peixe' ? '🐟 Peixe' : '🐾 Cão'
-  const operation   = al ? 'Alimentando...' : 'Aguardando'
+
+  // Todos os dispositivos que estão alimentando agora
+  const feedingDevices = Object.entries(deviceData)
+    .filter(([, d]) => d.al)
+    .map(([id]) => DEVICE_LABELS[id] ?? id)
 
   const recent = cmdLog.slice(0, 3)
 
@@ -80,9 +84,14 @@ export default function StatusBar() {
       <span className="text-gray-300 dark:text-gray-600">·</span>
       <span className="text-gray-500 dark:text-gray-400 shrink-0">{profile}</span>
       <span className="text-gray-300 dark:text-gray-600">·</span>
-      <span className={`font-medium shrink-0 ${al ? 'text-brand-600 animate-pulse' : 'text-gray-400'}`}>
-        {operation}
-      </span>
+
+      {feedingDevices.length > 0 ? (
+        <span className="font-semibold text-brand-600 animate-pulse shrink-0">
+          {feedingDevices.join(' e ')} alimentando...
+        </span>
+      ) : (
+        <span className="text-gray-400 shrink-0">Aguardando</span>
+      )}
 
       {recent.length > 0 && (
         <>

@@ -3,6 +3,11 @@ import { useDeviceStore, type DeviceSchedule, type FishSchedule } from '../store
 import { notify } from '../store/notificationStore'
 
 
+const DEVICE_LABELS: Record<string, string> = {
+  ALIMENTADOR_1: 'Alimentador 1',
+  ALIMENTADOR_2: 'Alimentador 2',
+}
+
 let client: MqttClient | null = null
 let lastNotifiedError = 0
 
@@ -122,8 +127,11 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
         }
 
         if (typeof d.al === 'boolean' && d.al) {
-          notify.info('Alimentando...')
-          if (!prevAl) confirmCmdByType('feed')
+          const label = DEVICE_LABELS[deviceId] ?? deviceId
+          if (!prevAl) {
+            notify.info(`${label} alimentando...`)
+            confirmCmdByType('feed')
+          }
         }
 
         if (typeof d.al === 'boolean' && !d.al && prevAl) {
