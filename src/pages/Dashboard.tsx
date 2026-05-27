@@ -65,7 +65,7 @@ function FeederLevelCard({ label, id, active, onClick }: {
 }
 
 export default function Dashboard() {
-  const { deviceId, brokerUrl, setBrokerConfig, deviceData, al } = useDeviceStore()
+  const { deviceId, brokerUrl, setBrokerConfig, deviceData } = useDeviceStore()
   const active = deviceData[deviceId]
   const hasData = !!active
   const eg = active?.eg ?? 0
@@ -73,6 +73,7 @@ export default function Dashboard() {
   const cp = active?.cp ?? 10000
   const tp = active?.tp ?? 0
   const er = active?.er ?? 0
+  const al = active?.al ?? false
 
   function handleSelectDevice(id: string) {
     if (id === deviceId) return

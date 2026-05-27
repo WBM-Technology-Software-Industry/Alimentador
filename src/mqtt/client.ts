@@ -93,12 +93,13 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
       }
 
       // Always persist data for every device that sends a message
-      const devicePatch: Partial<{ eg: number; ep: number; cp: number; tp: number; er: number }> = {}
-      if (typeof d.eg === 'number') devicePatch.eg = d.eg
-      if (typeof d.ep === 'number') devicePatch.ep = d.ep
-      if (typeof d.cp === 'number') devicePatch.cp = d.cp
-      if (typeof d.tp === 'number') devicePatch.tp = d.tp
-      if (typeof d.er === 'number') devicePatch.er = d.er
+      const devicePatch: Partial<{ eg: number; ep: number; cp: number; tp: number; er: number; al: boolean }> = {}
+      if (typeof d.eg === 'number')  devicePatch.eg = d.eg
+      if (typeof d.ep === 'number')  devicePatch.ep = d.ep
+      if (typeof d.cp === 'number')  devicePatch.cp = d.cp
+      if (typeof d.tp === 'number')  devicePatch.tp = d.tp
+      if (typeof d.er === 'number')  devicePatch.er = d.er
+      if (typeof d.al === 'boolean') devicePatch.al = d.al
       if (Object.keys(devicePatch).length) setDeviceData(msgDeviceId, devicePatch)
 
       if (Array.isArray(d.c_pt)) {

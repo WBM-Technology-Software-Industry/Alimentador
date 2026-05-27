@@ -31,6 +31,7 @@ export type PerDeviceData = {
   cp: number
   tp: number
   er: number
+  al: boolean
 }
 
 type DeviceState = {
@@ -118,6 +119,7 @@ export const useDeviceStore = create<DeviceState>()(
             cp: s.deviceData[deviceId]?.cp ?? 10000,
             tp: s.deviceData[deviceId]?.tp ?? 0,
             er: s.deviceData[deviceId]?.er ?? 0,
+            al: s.deviceData[deviceId]?.al ?? false,
             ...patch,
           },
         },
