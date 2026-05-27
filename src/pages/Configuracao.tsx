@@ -308,7 +308,10 @@ const DEVICE_TYPES = [
 
 export default function Configuracao() {
   const { deviceType, setDeviceType, deviceData, deviceId, connected } = useDeviceStore()
-  const fishSchedule = deviceData[deviceId]?.fishSchedule
+  const fishSchedule    = deviceData[deviceId]?.fishSchedule
+  const devicePf        = deviceData[deviceId]?.pf   // pf real do dispositivo (null = não recebido ainda)
+  const deviceProfile   = devicePf === null || devicePf === undefined ? null : devicePf === 1 ? 'cao' : 'peixe'
+  const profileMismatch = deviceProfile !== null && deviceProfile !== deviceType
 
   function handleSetProfile(value: 'cao' | 'peixe') {
     setDeviceType(value)
@@ -324,8 +327,8 @@ export default function Configuracao() {
         {/* Coluna esquerda: perfil + modo */}
         <div className="flex flex-col gap-4">
           {/* Perfil do dispositivo */}
-          <div className="bg-white rounded-2xl shadow p-5">
-            <h2 className="text-gray-500 text-sm font-medium mb-3">Perfil do dispositivo</h2>
+          <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-3">
+            <h2 className="text-gray-500 text-sm font-medium">Perfil do dispositivo</h2>
             <div className="flex rounded-xl overflow-hidden border border-gray-200">
               {DEVICE_TYPES.map((t) => (
                 <button
@@ -342,6 +345,20 @@ export default function Configuracao() {
                 </button>
               ))}
             </div>
+            {/* Indicador do perfil real do dispositivo */}
+            {deviceProfile === null ? (
+              <p className="text-xs text-gray-400 italic">Aguardando dado do dispositivo...</p>
+            ) : profileMismatch ? (
+              <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-amber-700 text-xs font-medium">
+                <span>⚠</span>
+                Dispositivo está em modo <strong>{deviceProfile === 'cao' ? '🐾 Cão' : '🐟 Peixe'}</strong> — diferente do selecionado aqui.
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-3 py-2 text-green-700 text-xs font-medium">
+                <span>✓</span>
+                Dispositivo confirmado em modo <strong>{deviceType === 'cao' ? '🐾 Cão' : '🐟 Peixe'}</strong>.
+              </div>
+            )}
           </div>
 
           <ModoOperacao />
