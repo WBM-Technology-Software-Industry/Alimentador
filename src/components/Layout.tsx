@@ -92,7 +92,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
 
         {/* Header desktop */}
         <header className="hidden lg:flex items-center justify-between px-6 py-3 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 shadow-sm">
-          <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">ControlFeed</span>
+          <img src={wbmLogo} alt="WBM Technology" className="h-8 w-auto" />
           <div className="flex items-center gap-4">
             <button
               onClick={toggle}
