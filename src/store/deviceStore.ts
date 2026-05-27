@@ -23,6 +23,14 @@ export type FishSchedule = {
   hd: number   // hora de fim
 }
 
+export type CachedEntry = {
+  id: string | number
+  timestamp: number
+  grams: number
+  source: 'manual' | 'scheduled'
+  deviceId: string
+}
+
 export type PerDeviceData = {
   schedules: DeviceSchedule[]
   fishSchedule: FishSchedule | null
@@ -32,6 +40,7 @@ export type PerDeviceData = {
   tp: number
   er: number
   al: boolean
+  historyCache: CachedEntry[]
 }
 
 type DeviceState = {
@@ -125,7 +134,8 @@ export const useDeviceStore = create<DeviceState>()(
             cp: s.deviceData[deviceId]?.cp ?? 10000,
             tp: s.deviceData[deviceId]?.tp ?? 0,
             er: s.deviceData[deviceId]?.er ?? 0,
-            al: s.deviceData[deviceId]?.al ?? false,
+            al:           s.deviceData[deviceId]?.al           ?? false,
+            historyCache: s.deviceData[deviceId]?.historyCache ?? [],
             ...patch,
           },
         },
@@ -137,6 +147,6 @@ export const useDeviceStore = create<DeviceState>()(
       setOptimisticFeed: (optimisticFeed) => set({ optimisticFeed }),
       setManualGrams: (manualGrams) => set({ manualGrams }),
     }),
-    { name: 'feeder-wbm-storage', version: 3 }
+    { name: 'feeder-wbm-storage', version: 4 }
   )
 )

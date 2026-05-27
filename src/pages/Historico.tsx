@@ -52,9 +52,10 @@ function groupByDay(entries: Entry[]) {
 }
 
 export default function Historico() {
-  const { deviceId, feedHistory, clearFeedHistory, lastFeedAt, optimisticFeed } = useDeviceStore()
-  const [entries, setEntries] = useState<Entry[]>([])
-  const [loading, setLoading] = useState(true)
+  const { deviceId, deviceData, setDeviceData, clearFeedHistory, lastFeedAt, optimisticFeed } = useDeviceStore()
+  const cachedEntries = deviceData[deviceId]?.historyCache ?? []
+  const [entries, setEntries] = useState<Entry[]>(cachedEntries)
+  const [loading, setLoading] = useState(cachedEntries.length === 0)
   const [refreshing, setRefreshing] = useState(false)
   const [period, setPeriod] = useState<Period>('7d')
   const [customDate, setCustomDate] = useState<string | null>(null)
@@ -62,7 +63,7 @@ export default function Historico() {
 
   function fetchHistory(silent = true) {
     if (!deviceId) return
-    if (!silent) setLoading(true)
+    if (!silent && entries.length === 0) setLoading(true)
     else setRefreshing(true)
     api.history(deviceId)
       .then((data: ApiFeedEntry[]) => {
@@ -73,6 +74,8 @@ export default function Historico() {
           source: e.source,
           deviceId: e.deviceId,
         }))
+        // Persist to localStorage so next mount is instant
+        setDeviceData(deviceId, { historyCache: mapped })
         // Read fresh from store to avoid stale closure
         const { optimisticFeed: opt, setOptimisticFeed: clearOpt } = useDeviceStore.getState()
         if (opt && opt.deviceId === deviceId) {
@@ -90,9 +93,7 @@ export default function Historico() {
           setEntries(mapped)
         }
       })
-      .catch(() => {
-        setEntries(feedHistory.map(e => ({ ...e, deviceId: deviceId })))
-      })
+      .catch(() => {/* mantém os dados em cache */})
       .finally(() => { setLoading(false); setRefreshing(false) })
   }
 
@@ -126,6 +127,7 @@ export default function Historico() {
   async function handleClear() {
     try { await api.clearHistory(deviceId) } catch { /* API indisponível */ }
     clearFeedHistory()
+    setDeviceData(deviceId, { historyCache: [] })
     setEntries([])
     setConfirming(false)
   }
