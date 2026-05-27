@@ -26,6 +26,7 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
   client.on('connect', () => {
     store.setConnected(true)
     client!.subscribe('devices/+/status', { qos: 1 })
+    client!.subscribe('devices/+/cmd',    { qos: 0 })
     notify.success('Dispositivo conectado.')
   })
 
@@ -34,6 +35,19 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
   client.on('offline',    () => { store.setConnected(false); notify.warning('Conexão offline.') })
 
   client.on('message', (topic, payload) => {
+    // cmd topic: show optimistic entry on ALL clients the moment a sim command is published
+    const cmdMatch = topic.match(/^devices\/(.+)\/cmd$/)
+    if (cmdMatch) {
+      try {
+        const cmd = JSON.parse(payload.toString()) as Record<string, unknown>
+        const { deviceId, setOptimisticFeed } = useDeviceStore.getState()
+        if (cmdMatch[1] === deviceId && typeof cmd.sim === 'number' && cmd.sim > 0) {
+          setOptimisticFeed({ id: `opt-${Date.now()}`, deviceId, grams: cmd.sim, timestamp: Date.now(), source: 'manual' })
+        }
+      } catch { /* ignore */ }
+      return
+    }
+
     const topicMatch = topic.match(/^devices\/(.+)\/status$/)
     if (!topicMatch) return
     const msgDeviceId = topicMatch[1]
