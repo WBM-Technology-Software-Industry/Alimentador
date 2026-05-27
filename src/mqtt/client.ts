@@ -1,7 +1,7 @@
 import mqtt, { type MqttClient } from 'mqtt'
 import { useDeviceStore, type DeviceSchedule, type FishSchedule } from '../store/deviceStore'
 import { notify } from '../store/notificationStore'
-import { api } from '../api/client'
+
 
 let client: MqttClient | null = null
 let lastNotifiedError = 0
@@ -40,7 +40,7 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
 
     try {
       const d = JSON.parse(payload.toString()) as Record<string, unknown>
-      const { setTelemetry, setDeviceData, addFeedEntry, bumpLastFeedAt, deviceId, al: prevAl, eg: prevEg, manualGrams } = useDeviceStore.getState()
+      const { setTelemetry, setDeviceData, bumpLastFeedAt, deviceId, al: prevAl } = useDeviceStore.getState()
 
       // Live telemetry and notifications only for the active device
       if (msgDeviceId === deviceId) {
@@ -77,9 +77,6 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
         }
 
         if (typeof d.al === 'boolean' && !d.al && prevAl) {
-          const gramsUsed = typeof d.eg === 'number' && prevEg > 0 ? Math.max(0, Math.round(prevEg - d.eg)) : manualGrams
-          const source = typeof d.am === 'boolean' ? (d.am ? 'scheduled' : 'manual') : 'manual'
-          // Salva no banco via API (fonte de verdade)
           bumpLastFeedAt()
         }
       }

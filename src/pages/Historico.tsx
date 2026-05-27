@@ -52,7 +52,7 @@ function groupByDay(entries: Entry[]) {
 }
 
 export default function Historico() {
-  const { deviceId, feedHistory, clearFeedHistory, lastFeedAt, optimisticFeed, setOptimisticFeed } = useDeviceStore()
+  const { deviceId, feedHistory, clearFeedHistory, lastFeedAt, optimisticFeed } = useDeviceStore()
   const [entries, setEntries] = useState<Entry[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -73,13 +73,21 @@ export default function Historico() {
           source: e.source,
           deviceId: e.deviceId,
         }))
-        setEntries(mapped)
-        if (optimisticFeed && mapped.some(e =>
-          e.deviceId === optimisticFeed.deviceId &&
-          e.grams === optimisticFeed.grams &&
-          Math.abs(e.timestamp - optimisticFeed.timestamp) < 120_000
-        )) {
-          setOptimisticFeed(null)
+        // Read fresh from store to avoid stale closure
+        const { optimisticFeed: opt, setOptimisticFeed: clearOpt } = useDeviceStore.getState()
+        if (opt && opt.deviceId === deviceId) {
+          const confirmed = mapped.some(e =>
+            e.grams === opt.grams &&
+            e.timestamp >= opt.timestamp - 10_000
+          )
+          if (confirmed) {
+            clearOpt(null)
+            setEntries(mapped)
+          } else {
+            setEntries([opt, ...mapped])
+          }
+        } else {
+          setEntries(mapped)
         }
       })
       .catch(() => {
@@ -87,6 +95,12 @@ export default function Historico() {
       })
       .finally(() => { setLoading(false); setRefreshing(false) })
   }
+
+  // Inject optimistic entry immediately whenever it changes
+  useEffect(() => {
+    if (!optimisticFeed || optimisticFeed.deviceId !== deviceId) return
+    setEntries(prev => prev.some(e => e.id === optimisticFeed.id) ? prev : [optimisticFeed, ...prev])
+  }, [optimisticFeed, deviceId])
 
   useEffect(() => {
     fetchHistory(false)
@@ -98,16 +112,7 @@ export default function Historico() {
     if (lastFeedAt > 0) fetchHistory(true)
   }, [lastFeedAt])
 
-  const allEntries = useMemo(() => {
-    if (!optimisticFeed || optimisticFeed.deviceId !== deviceId) return entries
-    const isDup = entries.some(e =>
-      e.grams === optimisticFeed.grams &&
-      Math.abs(e.timestamp - optimisticFeed.timestamp) < 120_000
-    )
-    return isDup ? entries : [optimisticFeed, ...entries]
-  }, [entries, optimisticFeed, deviceId])
-
-  const filtered = useMemo(() => applyFilter(allEntries, period, customDate), [allEntries, period, customDate])
+  const filtered = useMemo(() => applyFilter(entries, period, customDate), [entries, period, customDate])
 
   function selectPeriod(p: Period) {
     setPeriod(p)
