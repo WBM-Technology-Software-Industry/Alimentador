@@ -63,7 +63,9 @@ function AppShell({ children }: { children: React.ReactNode }) {
             </SidebarMenu>
           </SidebarContent>
 
-          <SidebarFooter />
+          <SidebarFooter>
+            <span className="text-xs text-gray-500 group-data-[collapsed=true]:hidden">v1.0.0</span>
+          </SidebarFooter>
         </Sidebar>
       </div>
 
