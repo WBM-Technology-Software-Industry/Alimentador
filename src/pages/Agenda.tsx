@@ -31,6 +31,14 @@ function AgendaCao() {
     ? `Dispositivo: ${confirmedSchedules.map(s => `${pad(s.h)}:${pad(s.m)} / ${s.q}g`).join(' · ')}`
     : 'Confirmado pelo dispositivo!'
 
+  const isSynced = confirmedSchedules.length > 0 && (() => {
+    const sorted = [...confirmedSchedules].sort((a, b) => a.h * 60 + a.m - (b.h * 60 + b.m))
+    return sorted.length === slots.length && sorted.every((s, i) => {
+      const [h, m] = slots[i]?.time.split(':').map(Number) ?? [0, 0]
+      return s.h === h && s.m === m && s.q === (slots[i]?.grams ?? 0)
+    })
+  })()
+
   function updateSlot(i: number, partial: Partial<Slot>) {
     setSlots(prev => prev.map((s, idx) => idx === i ? { ...s, ...partial } : s))
   }
@@ -51,7 +59,13 @@ function AgendaCao() {
       {/* Valor atual no dispositivo */}
       {received?.schedules?.length ? (
         <div className="bg-gray-50 rounded-xl p-3 flex flex-col gap-1.5">
-          <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Valor atual no dispositivo</span>
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Valor atual no dispositivo</span>
+            {isSynced
+              ? <span className="text-xs font-semibold text-green-600">✓ Sincronizado</span>
+              : <span className="text-xs font-semibold text-amber-500">⚠ Com alterações</span>
+            }
+          </div>
           {[...received.schedules]
             .sort((a, b) => a.h * 60 + a.m - (b.h * 60 + b.m))
             .map((s, i) => (
@@ -122,6 +136,9 @@ function AgendaPeixe() {
     ? `Dispositivo: ${received.qpc}g a cada ${received.tc}min — das ${pad(received.hl)}h às ${pad(received.hd)}h`
     : 'Confirmado pelo dispositivo!'
 
+  const isSynced = received !== null && received !== undefined
+    && received.qpc === qpc && received.tc === tc && received.hl === hl && received.hd === hd
+
   function handleSave() {
     const updated: FishSchedule = { qpc, tc, hl, hd }
     const ok = publishCmd(deviceId, { c_ps: updated })
@@ -135,7 +152,13 @@ function AgendaPeixe() {
 
       {/* Valor atual no dispositivo */}
       <div className="bg-white rounded-2xl shadow p-4 flex flex-col gap-3">
-        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Valor atual no dispositivo</span>
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Valor atual no dispositivo</span>
+          {received && (isSynced
+            ? <span className="text-xs font-semibold text-green-600">✓ Sincronizado</span>
+            : <span className="text-xs font-semibold text-amber-500">⚠ Com alterações</span>
+          )}
+        </div>
         {received ? (
           <>
             <div className="flex justify-between items-center">

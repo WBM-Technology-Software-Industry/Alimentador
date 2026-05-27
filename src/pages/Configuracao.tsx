@@ -143,6 +143,8 @@ function FishWindowConfig({ fs }: { fs: FishSchedule }) {
 
   // Dado ao vivo do dispositivo (atualiza com cada status MQTT)
   const live = deviceData[deviceId]?.fishSchedule
+  const isSynced = live !== null && live !== undefined
+    && live.qpc === qpc && live.tc === tc && live.hl === hl && live.hd === hd
   const confirmedText = live
     ? `Dispositivo: ${live.qpc}g a cada ${live.tc}min — das ${pad(live.hl)}h às ${pad(live.hd)}h`
     : 'Confirmado pelo dispositivo!'
@@ -158,7 +160,13 @@ function FishWindowConfig({ fs }: { fs: FishSchedule }) {
     <>
       {/* Valor atual no dispositivo */}
       <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-3">
-        <h2 className="text-gray-500 text-sm font-medium">Valor atual no dispositivo</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-gray-500 text-sm font-medium">Valor atual no dispositivo</h2>
+          {live && (isSynced
+            ? <span className="text-xs font-semibold text-green-600">✓ Sincronizado</span>
+            : <span className="text-xs font-semibold text-amber-500">⚠ Com alterações</span>
+          )}
+        </div>
         {live ? (
           <>
             <div className="flex justify-between items-center">
@@ -253,6 +261,14 @@ function PetScheduleSection() {
     ? `Dispositivo: ${deviceSchedules.map(s => `${pad(s.h)}:${pad(s.m)} / ${s.q}g`).join(' · ')}`
     : 'Confirmado pelo dispositivo!'
 
+  const isSynced = deviceSchedules.length > 0 && (() => {
+    const sorted = [...deviceSchedules].sort((a, b) => a.h * 60 + a.m - (b.h * 60 + b.m))
+    return sorted.every((s, i) => {
+      const [h, m] = slots[i]?.time.split(':').map(Number) ?? [0, 0]
+      return s.h === h && s.m === m && s.q === (slots[i]?.grams ?? 0)
+    }) && sorted.length === slots.length
+  })()
+
   function updateSlot(i: number, partial: Partial<Slot>) {
     setSlots(prev => prev.map((s, idx) => idx === i ? { ...s, ...partial } : s))
   }
@@ -273,7 +289,13 @@ function PetScheduleSection() {
       {/* Dado atual do dispositivo */}
       {deviceSchedules.length > 0 ? (
         <div className="bg-gray-50 rounded-xl p-3 flex flex-col gap-1.5">
-          <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Valor atual no dispositivo</span>
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Valor atual no dispositivo</span>
+            {isSynced
+              ? <span className="text-xs font-semibold text-green-600">✓ Sincronizado</span>
+              : <span className="text-xs font-semibold text-amber-500">⚠ Com alterações</span>
+            }
+          </div>
           {deviceSchedules.map((s, i) => (
             <div key={i} className="flex justify-between text-sm">
               <span className="text-gray-500">Refeição {i + 1}</span>
