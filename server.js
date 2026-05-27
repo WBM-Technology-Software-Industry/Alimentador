@@ -65,9 +65,12 @@ const server = createServer((req, res) => {
   let filePath = join(__dirname, 'dist', url === '/' ? 'index.html' : url)
   if (!existsSync(filePath)) filePath = join(__dirname, 'dist', 'index.html')
 
-  const mime = MIME[extname(filePath)] ?? 'application/octet-stream'
+  const ext  = extname(filePath)
+  const mime = MIME[ext] ?? 'application/octet-stream'
+  const headers = { 'Content-Type': mime }
+  if (ext === '.html') headers['Cache-Control'] = 'no-store'
   try {
-    res.writeHead(200, { 'Content-Type': mime })
+    res.writeHead(200, headers)
     res.end(readFileSync(filePath))
   } catch {
     res.writeHead(404)
