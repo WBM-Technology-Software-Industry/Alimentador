@@ -81,14 +81,6 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
           const source = typeof d.am === 'boolean' ? (d.am ? 'scheduled' : 'manual') : 'manual'
           // Salva no banco via API (fonte de verdade)
           bumpLastFeedAt()
-          api.postFeedEntry(msgDeviceId, gramsUsed, source).catch(() => {
-            addFeedEntry({
-              id: `${Date.now()}-${msgDeviceId}`,
-              timestamp: Date.now(),
-              grams: gramsUsed,
-              source,
-            })
-          })
         }
       }
 

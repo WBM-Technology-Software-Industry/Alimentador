@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useDeviceStore, type FishSchedule, type DeviceSchedule } from '../store/deviceStore'
 import { publishCmd, publishCmdSequence } from '../mqtt/client'
+import { api } from '../api/client'
 import { CheckCircle2 } from 'lucide-react'
 
 function pad(n: number) { return String(n).padStart(2, '0') }
@@ -41,7 +42,7 @@ function DeviceIdConfig() {
 }
 
 function ModoOperacao() {
-  const { am, deviceId, connected, setTelemetry, manualGrams, setManualGrams } = useDeviceStore()
+  const { am, deviceId, connected, setTelemetry, manualGrams, setManualGrams, bumpLastFeedAt, addFeedEntry } = useDeviceStore()
   const [feedback, setFeedback] = useState<string | null>(null)
 
   function toggleMode(automatic: boolean) {
@@ -57,6 +58,10 @@ function ModoOperacao() {
 
   function handleSendQuantity() {
     publishCmd(deviceId, { sim: manualGrams })
+    api.postFeedEntry(deviceId, manualGrams, 'manual').catch(() => {
+      addFeedEntry({ id: `${Date.now()}-${deviceId}`, timestamp: Date.now(), grams: manualGrams, source: 'manual' })
+    })
+    bumpLastFeedAt()
     setFeedback(`Trato de ${manualGrams}g disparado!`)
     setTimeout(() => setFeedback(null), 3000)
   }
