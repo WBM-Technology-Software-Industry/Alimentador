@@ -119,7 +119,6 @@ function AppShell({ children }: { children: React.ReactNode }) {
         {/* Footer desktop */}
         <footer className="hidden lg:flex items-center justify-between px-6 py-3 bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700">
           <span className="text-xs text-gray-400">ControlFeed — Sistema de Alimentação Automática</span>
-          <span className="text-xs text-gray-300">v1.0.0</span>
         </footer>
       </div>
 
