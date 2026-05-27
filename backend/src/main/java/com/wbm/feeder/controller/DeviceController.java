@@ -67,6 +67,13 @@ public class DeviceController {
         return ResponseEntity.ok(entry);
     }
 
+    @DeleteMapping("/history/{id}")
+    public ResponseEntity<Void> deleteHistoryEntry(@PathVariable String deviceId, @PathVariable Long id) {
+        if (!feedHistoryRepo.existsById(id)) return ResponseEntity.notFound().build();
+        feedHistoryRepo.deleteById(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @DeleteMapping("/history")
     public void clearHistory(@PathVariable String deviceId) {
         feedHistoryRepo.deleteByDeviceId(deviceId);
