@@ -1,6 +1,49 @@
-import { useDeviceStore } from '../store/deviceStore'
+import { useDeviceStore, type CmdLogEntry, type CmdType } from '../store/deviceStore'
 import { CheckCircle2, Clock, XCircle } from 'lucide-react'
 import { format } from 'date-fns'
+
+// ─── Hook reutilizável ───────────────────────────────────────────────────────
+
+export function useLastCmd(type: CmdType, sentAt: number | null): CmdLogEntry | null {
+  const cmdLog = useDeviceStore((s) => s.cmdLog)
+  if (!sentAt) return null
+  return cmdLog.find((c) => c.type === type && c.timestamp >= sentAt - 200) ?? null
+}
+
+// ─── Badge de status por página ─────────────────────────────────────────────
+
+export function CmdStatusBadge({
+  cmd,
+  offline = false,
+  confirmedText,
+}: {
+  cmd: CmdLogEntry | null
+  offline?: boolean
+  confirmedText?: string
+}) {
+  if (offline) {
+    return (
+      <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-red-700 text-sm">
+        <XCircle size={14} />
+        Dispositivo offline — verifique a conexão.
+      </div>
+    )
+  }
+  if (!cmd) return null
+
+  const cfg = {
+    sent:      { cls: 'bg-amber-50 border-amber-200 text-amber-700', Icon: Clock,        spin: true,  text: 'Enviado — aguardando confirmação do dispositivo...' },
+    confirmed: { cls: 'bg-green-50 border-green-200 text-green-700', Icon: CheckCircle2, spin: false, text: confirmedText ?? 'Confirmado pelo dispositivo!' },
+    timeout:   { cls: 'bg-red-50 border-red-200 text-red-700',       Icon: XCircle,      spin: false, text: 'Dispositivo não respondeu. Verifique a conexão.' },
+  }[cmd.status]
+
+  return (
+    <div className={`flex items-center gap-2 border rounded-xl px-3 py-2 text-sm ${cfg.cls}`}>
+      <cfg.Icon size={14} className={cfg.spin ? 'animate-pulse' : ''} />
+      {cfg.text}
+    </div>
+  )
+}
 
 const DEVICE_LABELS: Record<string, string> = {
   ALIMENTADOR_1: 'Alimentador 1',

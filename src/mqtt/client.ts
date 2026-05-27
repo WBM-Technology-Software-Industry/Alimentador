@@ -54,12 +54,17 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
             addCmd({ id, timestamp: ts, deviceId, label: 'Parar alimentação', type: 'stop' })
             setTimeout(() => timeoutCmd(id), 30_000)
           } else if (cmd.c_ps) {
+            const ps = cmd.c_ps as Record<string, unknown>
+            const label = (typeof ps.qpc === 'number' && typeof ps.tc === 'number' && typeof ps.hl === 'number' && typeof ps.hd === 'number')
+              ? `Janela: ${ps.qpc}g/${ps.tc}min ${ps.hl}h-${ps.hd}h`
+              : 'Config. piscicultura'
             const id = `cmd-${ts}`
-            addCmd({ id, timestamp: ts, deviceId, label: 'Config. piscicultura', type: 'config' })
+            addCmd({ id, timestamp: ts, deviceId, label, type: 'config' })
             setTimeout(() => timeoutCmd(id), 60_000)
           } else if (cmd.c_pt) {
+            const slots = Array.isArray(cmd.c_pt) ? cmd.c_pt.length : '?'
             const id = `cmd-${ts}`
-            addCmd({ id, timestamp: ts, deviceId, label: 'Config. agenda', type: 'config' })
+            addCmd({ id, timestamp: ts, deviceId, label: `Agenda: ${slots} refeições`, type: 'config' })
             setTimeout(() => timeoutCmd(id), 60_000)
           } else if (typeof cmd.pf === 'number') {
             const id = `cmd-${ts}`

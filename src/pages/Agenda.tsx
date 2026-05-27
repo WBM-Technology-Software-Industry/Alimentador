@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { CheckCircle2 } from 'lucide-react'
 import { useDeviceStore, type DeviceSchedule, type FishSchedule } from '../store/deviceStore'
 import { publishCmd, publishCmdSequence } from '../mqtt/client'
+import { CmdStatusBadge, useLastCmd } from '../components/StatusBar'
 
 function pad(n: number) { return String(n).padStart(2, '0') }
 
@@ -21,7 +21,15 @@ function AgendaCao() {
   const { deviceData, deviceId, connected } = useDeviceStore()
   const received = deviceData[deviceId]
   const [slots, setSlots] = useState<Slot[]>(() => initSlots(received?.schedules ?? []))
-  const [feedback, setFeedback] = useState<string | null>(null)
+  const [sentAt,  setSentAt]  = useState<number | null>(null)
+  const [offline, setOffline] = useState(false)
+  const lastCmd = useLastCmd('config', sentAt)
+
+  // Dado real do dispositivo após confirmação
+  const confirmedSchedules = received?.schedules ?? []
+  const confirmedText = confirmedSchedules.length > 0
+    ? `Dispositivo: ${confirmedSchedules.map(s => `${pad(s.h)}:${pad(s.m)} / ${s.q}g`).join(' · ')}`
+    : 'Confirmado pelo dispositivo!'
 
   function updateSlot(i: number, partial: Partial<Slot>) {
     setSlots(prev => prev.map((s, idx) => idx === i ? { ...s, ...partial } : s))
@@ -32,8 +40,8 @@ function AgendaCao() {
       .map(s => { const [h, m] = s.time.split(':').map(Number); return { h, m, q: s.grams } })
       .sort((a, b) => a.h * 60 + a.m - (b.h * 60 + b.m))
     const ok = publishCmdSequence(deviceId, [{ pf: 1 }, { am: true }, { c_pt: updated }])
-    setFeedback(ok ? 'Enviado! Aguardando confirmação do dispositivo...' : 'Dispositivo offline.')
-    setTimeout(() => setFeedback(null), 4000)
+    setOffline(!ok)
+    if (ok) setSentAt(Date.now())
   }
 
   return (
@@ -47,11 +55,7 @@ function AgendaCao() {
         </p>
       </div>
 
-      {feedback && (
-        <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-green-700 text-sm">
-          <CheckCircle2 size={16} />{feedback}
-        </div>
-      )}
+      <CmdStatusBadge cmd={lastCmd} offline={offline} confirmedText={confirmedText} />
 
       <div className="flex flex-col gap-3">
         {slots.map((slot, i) => (
@@ -66,7 +70,8 @@ function AgendaCao() {
               </div>
               <div className="flex flex-col gap-1 flex-1">
                 <label className="text-xs text-gray-500">Quantidade (g)</label>
-                <input type="number" min={1} value={slot.grams}
+                <input type="number" min={1} value={slot.grams || ''}
+                  onFocus={(e) => e.target.select()}
                   onChange={(e) => updateSlot(i, { grams: parseInt(e.target.value) || 0 })}
                   className="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500" />
               </div>
@@ -91,7 +96,9 @@ function AgendaCao() {
 function AgendaPeixe() {
   const { deviceData, deviceId, connected } = useDeviceStore()
   const received = deviceData[deviceId]?.fishSchedule
-  const [feedback, setFeedback] = useState<string | null>(null)
+  const [sentAt,  setSentAt]  = useState<number | null>(null)
+  const [offline, setOffline] = useState(false)
+  const lastCmd = useLastCmd('config', sentAt)
 
   const [qpc, setQpc] = useState(received?.qpc ?? 500)
   const [tc,  setTc]  = useState(received?.tc  ?? 120)
@@ -100,11 +107,16 @@ function AgendaPeixe() {
 
   const tratosPorDia = tc > 0 ? Math.floor(((hd - hl) * 60) / tc) : 0
 
+  // Dado real do dispositivo após confirmação
+  const confirmedText = received
+    ? `Dispositivo: ${received.qpc}g a cada ${received.tc}min — das ${pad(received.hl)}h às ${pad(received.hd)}h`
+    : 'Confirmado pelo dispositivo!'
+
   function handleSave() {
     const updated: FishSchedule = { qpc, tc, hl, hd }
     const ok = publishCmd(deviceId, { c_ps: updated })
-    setFeedback(ok ? 'Enviado! Aguardando confirmação do dispositivo...' : 'Dispositivo offline.')
-    setTimeout(() => setFeedback(null), 4000)
+    setOffline(!ok)
+    if (ok) setSentAt(Date.now())
   }
 
   return (
@@ -139,11 +151,7 @@ function AgendaPeixe() {
         </p>
       </div>
 
-      {feedback && (
-        <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-green-700 text-sm">
-          <CheckCircle2 size={16} />{feedback}
-        </div>
-      )}
+      <CmdStatusBadge cmd={lastCmd} offline={offline} confirmedText={confirmedText} />
 
       {/* Formulário de edição */}
       <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-4">
@@ -151,25 +159,33 @@ function AgendaPeixe() {
 
         <div className="flex flex-col gap-1">
           <label className="text-xs text-gray-500">Quantidade por trato (g)</label>
-          <input type="number" min={1} value={qpc} onChange={(e) => setQpc(parseInt(e.target.value) || 0)}
+          <input type="number" min={1} value={qpc || ''}
+            onFocus={(e) => e.target.select()}
+            onChange={(e) => setQpc(parseInt(e.target.value) || 0)}
             className="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500" />
         </div>
 
         <div className="flex flex-col gap-1">
           <label className="text-xs text-gray-500">Frequência — a cada quantos minutos</label>
-          <input type="number" min={1} value={tc} onChange={(e) => setTc(parseInt(e.target.value) || 0)}
+          <input type="number" min={1} value={tc || ''}
+            onFocus={(e) => e.target.select()}
+            onChange={(e) => setTc(parseInt(e.target.value) || 0)}
             className="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500" />
         </div>
 
         <div className="flex gap-3">
           <div className="flex flex-col gap-1 flex-1">
             <label className="text-xs text-gray-500">Início (hora)</label>
-            <input type="number" min={0} max={23} value={hl} onChange={(e) => setHl(parseInt(e.target.value) || 0)}
+            <input type="number" min={0} max={23} value={hl || ''}
+              onFocus={(e) => e.target.select()}
+              onChange={(e) => setHl(parseInt(e.target.value) || 0)}
               className="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500" />
           </div>
           <div className="flex flex-col gap-1 flex-1">
             <label className="text-xs text-gray-500">Fim (hora)</label>
-            <input type="number" min={0} max={23} value={hd} onChange={(e) => setHd(parseInt(e.target.value) || 0)}
+            <input type="number" min={0} max={23} value={hd || ''}
+              onFocus={(e) => e.target.select()}
+              onChange={(e) => setHd(parseInt(e.target.value) || 0)}
               className="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500" />
           </div>
         </div>

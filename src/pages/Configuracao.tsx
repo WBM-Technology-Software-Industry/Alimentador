@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useDeviceStore, type FishSchedule, type DeviceSchedule } from '../store/deviceStore'
 import { publishCmd, publishCmdSequence } from '../mqtt/client'
-import { CheckCircle2 } from 'lucide-react'
+import { CmdStatusBadge, useLastCmd } from '../components/StatusBar'
 
 function pad(n: number) { return String(n).padStart(2, '0') }
 
@@ -42,39 +42,34 @@ function DeviceIdConfig() {
 
 function ModoOperacao() {
   const { am, deviceId, connected, setTelemetry, manualGrams, setManualGrams, bumpLastFeedAt, setOptimisticFeed } = useDeviceStore()
-  const [feedback, setFeedback] = useState<string | null>(null)
+  const [sentAt,  setSentAt]  = useState<number | null>(null)
+  const [offline, setOffline] = useState(false)
+  const lastCmd = useLastCmd('mode', sentAt)
 
   function toggleMode(automatic: boolean) {
     const ok = publishCmd(deviceId, { am: automatic })
-    if (ok) {
-      setTelemetry({ am: automatic })
-      setFeedback(automatic ? 'Modo Automático ativado!' : 'Modo Manual ativado!')
-    } else {
-      setFeedback('Dispositivo offline — tente novamente.')
-    }
-    setTimeout(() => setFeedback(null), 3000)
+    setOffline(!ok)
+    if (ok) { setTelemetry({ am: automatic }); setSentAt(Date.now()) }
   }
 
   function handleSendQuantity() {
     publishCmd(deviceId, { sim: manualGrams })
     setOptimisticFeed({ id: `opt-${Date.now()}`, deviceId, grams: manualGrams, timestamp: Date.now(), source: 'manual' })
     bumpLastFeedAt()
-    setFeedback(`Trato de ${manualGrams}g disparado!`)
-    setTimeout(() => setFeedback(null), 3000)
   }
+
+  // Dado real do dispositivo para mostrar quando confirmado
+  const modeData = am ? 'Modo Automático ativo no dispositivo' : 'Modo Manual ativo no dispositivo'
 
   return (
     <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-3">
       <h2 className="text-gray-500 text-sm font-medium">Modo de operação</h2>
-      {feedback && (
-        <div className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${
-          feedback.includes('offline')
-            ? 'bg-red-50 border border-red-200 text-red-700'
-            : 'bg-green-50 border border-green-200 text-green-700'
-        }`}>
-          <CheckCircle2 size={14} />{feedback}
-        </div>
-      )}
+
+      <CmdStatusBadge
+        cmd={lastCmd}
+        offline={offline}
+        confirmedText={modeData}
+      />
 
       <div className="flex rounded-xl overflow-hidden border border-gray-200">
         <button
@@ -99,7 +94,6 @@ function ModoOperacao() {
 
       {!am && (
         <>
-          {false && null /* feedback já está acima */}
           <div className="flex flex-col gap-1">
             <label className="text-xs text-gray-500">Quantidade por trato manual (g)</label>
             <input
@@ -122,18 +116,26 @@ function ModoOperacao() {
 }
 
 function FishWindowConfig({ fs }: { fs: FishSchedule }) {
-  const { connected, deviceId } = useDeviceStore()
+  const { connected, deviceId, deviceData } = useDeviceStore()
   const [hl,  setHl]  = useState(fs.hl)
   const [hd,  setHd]  = useState(fs.hd)
   const [tc,  setTc]  = useState(fs.tc)
   const [qpc, setQpc] = useState(fs.qpc)
-  const [feedback, setFeedback] = useState<string | null>(null)
+  const [sentAt,  setSentAt]  = useState<number | null>(null)
+  const [offline, setOffline] = useState(false)
+  const lastCmd = useLastCmd('config', sentAt)
+
+  // Dado real do dispositivo após confirmação
+  const confirmed = deviceData[deviceId]?.fishSchedule
+  const confirmedText = confirmed
+    ? `Dispositivo: ${confirmed.qpc}g a cada ${confirmed.tc}min — das ${pad(confirmed.hl)}h às ${pad(confirmed.hd)}h`
+    : 'Confirmado pelo dispositivo!'
 
   function handleSave() {
     const updated: FishSchedule = { qpc, tc, hl, hd }
     const ok = publishCmd(deviceId, { c_ps: updated })
-    setFeedback(ok ? 'Enviado! Aguardando confirmação do dispositivo...' : 'Dispositivo offline.')
-    setTimeout(() => setFeedback(null), 4000)
+    setOffline(!ok)
+    if (ok) setSentAt(Date.now())
   }
 
   return (
@@ -161,11 +163,7 @@ function FishWindowConfig({ fs }: { fs: FishSchedule }) {
       <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-4">
         <h2 className="text-gray-500 text-sm font-medium">Configurar</h2>
 
-        {feedback && (
-          <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-3 py-2 text-green-700 text-sm">
-            <CheckCircle2 size={14} />{feedback}
-          </div>
-        )}
+        <CmdStatusBadge cmd={lastCmd} offline={offline} confirmedText={confirmedText} />
 
         <div className="flex gap-3">
           <div className="flex flex-col gap-1 flex-1 min-w-0">
@@ -224,7 +222,15 @@ function PetScheduleSection() {
   const { deviceData, deviceId } = useDeviceStore()
   const received = deviceData[deviceId]
   const [slots, setSlots] = useState<Slot[]>(() => initSlots(received?.schedules ?? []))
-  const [feedback, setFeedback] = useState<string | null>(null)
+  const [sentAt,  setSentAt]  = useState<number | null>(null)
+  const [offline, setOffline] = useState(false)
+  const lastCmd = useLastCmd('config', sentAt)
+
+  // Dado real do dispositivo após confirmação
+  const confirmedSchedules = received?.schedules ?? []
+  const confirmedText = confirmedSchedules.length > 0
+    ? `Dispositivo: ${confirmedSchedules.length} refeições — ${confirmedSchedules.map(s => `${pad(s.h)}:${pad(s.m)}/${s.q}g`).join(', ')}`
+    : 'Confirmado pelo dispositivo!'
 
   function updateSlot(i: number, partial: Partial<Slot>) {
     setSlots(prev => prev.map((s, idx) => idx === i ? { ...s, ...partial } : s))
@@ -235,19 +241,15 @@ function PetScheduleSection() {
       .map(s => { const [h, m] = s.time.split(':').map(Number); return { h, m, q: s.grams } })
       .sort((a, b) => a.h * 60 + a.m - (b.h * 60 + b.m))
     const ok = publishCmdSequence(deviceId, [{ pf: 1 }, { am: true }, { c_pt: updated }])
-    setFeedback(ok ? 'Enviado! Aguardando confirmação do dispositivo...' : 'Dispositivo offline.')
-    setTimeout(() => setFeedback(null), 4000)
+    setOffline(!ok)
+    if (ok) setSentAt(Date.now())
   }
 
   return (
     <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-4">
       <h2 className="text-gray-500 text-sm font-medium">Horários de Refeição</h2>
 
-      {feedback && (
-        <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-3 py-2 text-green-700 text-sm">
-          <CheckCircle2 size={14} />{feedback}
-        </div>
-      )}
+      <CmdStatusBadge cmd={lastCmd} offline={offline} confirmedText={confirmedText} />
 
       <div className="flex flex-col gap-3">
         {slots.map((slot, i) => (
