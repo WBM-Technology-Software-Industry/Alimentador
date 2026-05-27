@@ -52,7 +52,7 @@ function groupByDay(entries: Entry[]) {
 }
 
 export default function Historico() {
-  const { deviceId, feedHistory, clearFeedHistory, lastFeedAt } = useDeviceStore()
+  const { deviceId, feedHistory, clearFeedHistory, lastFeedAt, optimisticFeed, setOptimisticFeed } = useDeviceStore()
   const [entries, setEntries] = useState<Entry[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -66,13 +66,21 @@ export default function Historico() {
     else setRefreshing(true)
     api.history(deviceId)
       .then((data: ApiFeedEntry[]) => {
-        setEntries(data.map(e => ({
+        const mapped = data.map(e => ({
           id: e.id,
           timestamp: new Date(e.timestamp).getTime(),
           grams: e.grams,
           source: e.source,
           deviceId: e.deviceId,
-        })))
+        }))
+        setEntries(mapped)
+        if (optimisticFeed && mapped.some(e =>
+          e.deviceId === optimisticFeed.deviceId &&
+          e.grams === optimisticFeed.grams &&
+          Math.abs(e.timestamp - optimisticFeed.timestamp) < 120_000
+        )) {
+          setOptimisticFeed(null)
+        }
       })
       .catch(() => {
         setEntries(feedHistory.map(e => ({ ...e, deviceId: deviceId })))
@@ -90,7 +98,16 @@ export default function Historico() {
     if (lastFeedAt > 0) fetchHistory(true)
   }, [lastFeedAt])
 
-  const filtered = useMemo(() => applyFilter(entries, period, customDate), [entries, period, customDate])
+  const allEntries = useMemo(() => {
+    if (!optimisticFeed || optimisticFeed.deviceId !== deviceId) return entries
+    const isDup = entries.some(e =>
+      e.grams === optimisticFeed.grams &&
+      Math.abs(e.timestamp - optimisticFeed.timestamp) < 120_000
+    )
+    return isDup ? entries : [optimisticFeed, ...entries]
+  }, [entries, optimisticFeed, deviceId])
+
+  const filtered = useMemo(() => applyFilter(allEntries, period, customDate), [allEntries, period, customDate])
 
   function selectPeriod(p: Period) {
     setPeriod(p)
