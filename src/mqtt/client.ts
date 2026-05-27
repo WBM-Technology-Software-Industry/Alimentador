@@ -40,7 +40,10 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
 
     try {
       const d = JSON.parse(payload.toString()) as Record<string, unknown>
-      const { setTelemetry, setDeviceData, bumpLastFeedAt, deviceId, al: prevAl } = useDeviceStore.getState()
+      const {
+        setTelemetry, setDeviceData, bumpLastFeedAt, setOptimisticFeed,
+        deviceId, al: prevAl, eg: prevEg,
+      } = useDeviceStore.getState()
 
       // Live telemetry and notifications only for the active device
       if (msgDeviceId === deviceId) {
@@ -77,6 +80,14 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
         }
 
         if (typeof d.al === 'boolean' && !d.al && prevAl) {
+          // Compute grams from stock delta and set optimistic entry on all connected clients
+          const gramsUsed = typeof d.eg === 'number' && prevEg > 0
+            ? Math.max(0, Math.round(prevEg - d.eg))
+            : 0
+          if (gramsUsed > 0) {
+            const source: 'manual' | 'scheduled' = d.am ? 'scheduled' : 'manual'
+            setOptimisticFeed({ id: `opt-${Date.now()}`, deviceId, grams: gramsUsed, timestamp: Date.now(), source })
+          }
           bumpLastFeedAt()
         }
       }

@@ -97,20 +97,23 @@ export default function Historico() {
       .finally(() => { setLoading(false); setRefreshing(false) })
   }
 
-  // Inject optimistic entry immediately whenever it changes
+  // Replace any previous optimistic entries (string ids) with the current one
   useEffect(() => {
     if (!optimisticFeed || optimisticFeed.deviceId !== deviceId) return
-    setEntries(prev => prev.some(e => e.id === optimisticFeed.id) ? prev : [optimisticFeed, ...prev])
+    setEntries(prev => [optimisticFeed, ...prev.filter(e => typeof e.id === 'number')])
   }, [optimisticFeed, deviceId])
 
   useEffect(() => {
     fetchHistory(false)
-    const interval = setInterval(() => fetchHistory(true), 10000)
+    const interval = setInterval(() => fetchHistory(true), 5000)
     return () => clearInterval(interval)
   }, [deviceId])
 
   useEffect(() => {
-    if (lastFeedAt > 0) fetchHistory(true)
+    if (lastFeedAt <= 0) return
+    // Small delay so the backend has time to save before we fetch
+    const t = setTimeout(() => fetchHistory(true), 1500)
+    return () => clearTimeout(t)
   }, [lastFeedAt])
 
   const filtered = useMemo(() => applyFilter(entries, period, customDate), [entries, period, customDate])
