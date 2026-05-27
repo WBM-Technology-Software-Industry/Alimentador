@@ -11,36 +11,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Build Docker image
-        run: |
-          docker build \
-            --build-arg VITE_DEVICE_ID=${{ secrets.VITE_DEVICE_ID }} \
-            -t alimentador-feeder .
-
-      - name: Save image
-        run: docker save alimentador-feeder | gzip > frontend.tar.gz
-
-      - name: Copy image to VPS
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: frontend.tar.gz
-          target: /root/
-
-      - name: Deploy on VPS
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            docker load < /root/frontend.tar.gz
-            docker stop alimentador-feeder feeder 2>/dev/null || true
-            docker rm alimentador-feeder feeder 2>/dev/null || true
-            docker run -d --name alimentador-feeder --restart unless-stopped -p 3000:3000 alimentador-feeder
-            rm /root/frontend.tar.gz
+            cd ~/projetos/feeder/Alimentador
+            git pull
+            docker compose up -d --build
+            docker compose ps
