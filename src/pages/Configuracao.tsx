@@ -325,7 +325,12 @@ export default function Configuracao() {
         <div className="flex flex-col gap-4">
           {/* Perfil do dispositivo */}
           <div className="bg-white rounded-2xl shadow p-5">
-            <h2 className="text-gray-500 text-sm font-medium mb-3">Perfil do dispositivo</h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-gray-500 text-sm font-medium">Perfil do dispositivo</h2>
+              <span className="text-xs font-semibold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full">
+                {DEVICES.find(d => d.id === deviceId)?.label ?? deviceId}
+              </span>
+            </div>
             <div className="flex rounded-xl overflow-hidden border border-gray-200">
               {DEVICE_TYPES.map((t) => (
                 <button
