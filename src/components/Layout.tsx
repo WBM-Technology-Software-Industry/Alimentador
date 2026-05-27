@@ -41,9 +41,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
         <Sidebar>
           <SidebarHeader>
             <div className="flex items-center justify-between min-w-0">
-              <span className="text-sm font-bold text-gray-100 truncate group-data-[collapsed=true]:hidden">
-                ControlFeed
-              </span>
+              <img src={controlFeedLogo} alt="Control Feed" className="h-5 w-auto group-data-[collapsed=true]:hidden" />
               <SidebarTrigger className="shrink-0" />
             </div>
           </SidebarHeader>
