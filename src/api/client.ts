@@ -34,7 +34,8 @@ export type ApiErrorLog = {
 }
 
 async function del(path: string): Promise<void> {
-  await fetch(`${BASE}${path}`, { method: 'DELETE' })
+  const res = await fetch(`${BASE}${path}`, { method: 'DELETE' })
+  if (!res.ok) throw new Error(`API ${res.status}`)
 }
 
 async function post<T>(path: string, body: object): Promise<T> {

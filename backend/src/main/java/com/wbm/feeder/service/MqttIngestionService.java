@@ -111,8 +111,14 @@ public class MqttIngestionService {
                 Double prev = prevEg.getOrDefault(deviceId, 0.0);
                 int grams = (eg != null && prev > 0) ? (int) Math.max(0, Math.round(prev - eg)) : 0;
                 String source = Boolean.TRUE.equals(am) ? "scheduled" : "manual";
-                feedHistoryRepo.save(new FeedHistory(deviceId, now, grams, source));
-                log.info("Feed recorded: device={} grams={} source={}", deviceId, grams, source);
+                boolean duplicate = feedHistoryRepo.existsByDeviceIdAndGramsAndTimestampAfter(
+                        deviceId, grams, now.minusSeconds(10));
+                if (!duplicate) {
+                    feedHistoryRepo.save(new FeedHistory(deviceId, now, grams, source));
+                    log.info("Feed recorded: device={} grams={} source={}", deviceId, grams, source);
+                } else {
+                    log.warn("Duplicate feed ignored: device={} grams={}", deviceId, grams);
+                }
             }
             if (al != null) prevAl.put(deviceId, al);
             if (eg != null) prevEg.put(deviceId, eg);

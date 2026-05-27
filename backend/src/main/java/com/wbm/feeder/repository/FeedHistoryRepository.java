@@ -11,6 +11,8 @@ import java.util.List;
 public interface FeedHistoryRepository extends JpaRepository<FeedHistory, Long> {
     List<FeedHistory> findByDeviceIdOrderByTimestampDesc(String deviceId, Pageable pageable);
 
+    boolean existsByDeviceIdAndGramsAndTimestampAfter(String deviceId, Integer grams, java.time.Instant after);
+
     @Modifying
     @Transactional
     @Query("DELETE FROM FeedHistory f WHERE f.deviceId = :deviceId")
