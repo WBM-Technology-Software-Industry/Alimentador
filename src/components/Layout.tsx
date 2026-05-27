@@ -63,17 +63,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
             </SidebarMenu>
           </SidebarContent>
 
-          <SidebarFooter>
-            <button
-              onClick={toggle}
-              className="flex items-center gap-2 rounded-xl px-3 py-2 text-gray-400 hover:text-gray-100 hover:bg-gray-700 transition-colors w-full"
-            >
-              {dark ? <Sun size={16} className="shrink-0" /> : <Moon size={16} className="shrink-0" />}
-              <span className="text-xs font-medium group-data-[collapsed=true]:hidden">
-                {dark ? 'Modo claro' : 'Modo escuro'}
-              </span>
-            </button>
-          </SidebarFooter>
+          <SidebarFooter />
         </Sidebar>
       </div>
 
