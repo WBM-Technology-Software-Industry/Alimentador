@@ -75,7 +75,7 @@ export default function Historico() {
 
   useEffect(() => {
     fetchHistory()
-    const interval = setInterval(() => fetchHistory(true), 30000)
+    const interval = setInterval(() => fetchHistory(true), 10000)
     return () => clearInterval(interval)
   }, [deviceId])
 
