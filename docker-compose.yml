@@ -30,8 +30,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      VITE_MQTT_BROKER_URL: ${VITE_MQTT_BROKER_URL}
-      VITE_API_URL: http://backend:8080
+      BACKEND_URL: http://backend:8080
 
 volumes:
   postgres_data:
