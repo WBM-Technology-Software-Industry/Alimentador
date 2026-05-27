@@ -60,7 +60,7 @@ export default function Historico() {
   const [customDate, setCustomDate] = useState<string | null>(null)
   const [confirming, setConfirming] = useState(false)
 
-  function fetchHistory(silent = false) {
+  function fetchHistory(silent = true) {
     if (!deviceId) return
     if (!silent) setLoading(true)
     else setRefreshing(true)
@@ -89,7 +89,7 @@ export default function Historico() {
   }
 
   useEffect(() => {
-    fetchHistory()
+    fetchHistory(false)
     const interval = setInterval(() => fetchHistory(true), 10000)
     return () => clearInterval(interval)
   }, [deviceId])
@@ -125,14 +125,6 @@ export default function Historico() {
     setConfirming(false)
   }
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center gap-2 py-24 text-gray-400 px-4">
-        <span className="text-sm">Carregando...</span>
-      </div>
-    )
-  }
-
   return (
     <div className="p-4 lg:p-6 lg:max-w-3xl lg:mx-auto flex flex-col gap-4">
 
@@ -141,11 +133,11 @@ export default function Historico() {
         <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Histórico de tratos</span>
         <button
           onClick={() => fetchHistory(true)}
-          disabled={refreshing}
+          disabled={refreshing || loading}
           className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors disabled:opacity-40"
         >
-          <RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} />
-          Atualizar
+          <RefreshCw size={13} className={(refreshing || loading) ? 'animate-spin' : ''} />
+          {loading ? 'Carregando...' : 'Atualizar'}
         </button>
       </div>
 
