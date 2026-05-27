@@ -65,7 +65,7 @@ function FeederLevelCard({ label, id, active, onClick }: {
 }
 
 export default function Dashboard() {
-  const { deviceId, brokerUrl, setBrokerConfig, deviceData } = useDeviceStore()
+  const { deviceId, brokerUrl, setBrokerConfig, deviceData, al } = useDeviceStore()
   const active = deviceData[deviceId]
   const hasData = !!active
   const eg = active?.eg ?? 0
@@ -119,6 +119,16 @@ export default function Dashboard() {
 
         {/* Telemetry card */}
         <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-4 justify-center">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-500">Status</span>
+            {hasData ? (
+              <span className={`flex items-center gap-1.5 text-sm font-semibold ${al ? 'text-brand-600' : 'text-gray-400'}`}>
+                <span className={`w-2 h-2 rounded-full ${al ? 'bg-brand-500 animate-pulse' : 'bg-gray-300'}`} />
+                {al ? 'Alimentando' : 'Parado'}
+              </span>
+            ) : <Skeleton className="w-20 h-4" />}
+          </div>
+          <hr className="border-gray-100" />
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-500">Temperatura</span>
             {hasData
