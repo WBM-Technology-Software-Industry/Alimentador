@@ -125,10 +125,10 @@ function FishWindowConfig({ fs }: { fs: FishSchedule }) {
   const [offline, setOffline] = useState(false)
   const lastCmd = useLastCmd('config', sentAt)
 
-  // Dado real do dispositivo após confirmação
-  const confirmed = deviceData[deviceId]?.fishSchedule
-  const confirmedText = confirmed
-    ? `Dispositivo: ${confirmed.qpc}g a cada ${confirmed.tc}min — das ${pad(confirmed.hl)}h às ${pad(confirmed.hd)}h`
+  // Dado ao vivo do dispositivo (atualiza com cada status MQTT)
+  const live = deviceData[deviceId]?.fishSchedule
+  const confirmedText = live
+    ? `Dispositivo: ${live.qpc}g a cada ${live.tc}min — das ${pad(live.hl)}h às ${pad(live.hd)}h`
     : 'Confirmado pelo dispositivo!'
 
   function handleSave() {
@@ -140,23 +140,29 @@ function FishWindowConfig({ fs }: { fs: FishSchedule }) {
 
   return (
     <>
-      {/* Resumo */}
+      {/* Valor atual no dispositivo */}
       <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-3">
-        <h2 className="text-gray-500 text-sm font-medium">Janela de Alimentação</h2>
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-500">Janela de Atividade</span>
-          <span className="text-sm font-semibold text-gray-800">Das {pad(fs.hl)}h às {pad(fs.hd)}h</span>
-        </div>
-        <hr className="border-gray-100" />
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-500">Frequência de Tratos</span>
-          <span className="text-sm font-semibold text-gray-800">A cada {fs.tc} minutos</span>
-        </div>
-        <hr className="border-gray-100" />
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-500">Quantidade por trato</span>
-          <span className="text-sm font-semibold text-gray-800">{fs.qpc}g</span>
-        </div>
+        <h2 className="text-gray-500 text-sm font-medium">Valor atual no dispositivo</h2>
+        {live ? (
+          <>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-500">Janela de Atividade</span>
+              <span className="text-sm font-semibold text-gray-800">Das {pad(live.hl)}h às {pad(live.hd)}h</span>
+            </div>
+            <hr className="border-gray-100" />
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-500">Frequência de Tratos</span>
+              <span className="text-sm font-semibold text-gray-800">A cada {live.tc} minutos</span>
+            </div>
+            <hr className="border-gray-100" />
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-500">Quantidade por trato</span>
+              <span className="text-sm font-semibold text-gray-800">{live.qpc}g</span>
+            </div>
+          </>
+        ) : (
+          <p className="text-xs text-gray-400 italic">Aguardando dados do dispositivo...</p>
+        )}
       </div>
 
       {/* Formulário */}
@@ -221,15 +227,14 @@ function initSlots(schedules: DeviceSchedule[]): Slot[] {
 function PetScheduleSection() {
   const { deviceData, deviceId } = useDeviceStore()
   const received = deviceData[deviceId]
-  const [slots, setSlots] = useState<Slot[]>(() => initSlots(received?.schedules ?? []))
+  const deviceSchedules = received?.schedules ?? []
+  const [slots, setSlots] = useState<Slot[]>(() => initSlots(deviceSchedules))
   const [sentAt,  setSentAt]  = useState<number | null>(null)
   const [offline, setOffline] = useState(false)
   const lastCmd = useLastCmd('config', sentAt)
 
-  // Dado real do dispositivo após confirmação
-  const confirmedSchedules = received?.schedules ?? []
-  const confirmedText = confirmedSchedules.length > 0
-    ? `Dispositivo: ${confirmedSchedules.length} refeições — ${confirmedSchedules.map(s => `${pad(s.h)}:${pad(s.m)}/${s.q}g`).join(', ')}`
+  const confirmedText = deviceSchedules.length > 0
+    ? `Dispositivo: ${deviceSchedules.map(s => `${pad(s.h)}:${pad(s.m)} / ${s.q}g`).join(' · ')}`
     : 'Confirmado pelo dispositivo!'
 
   function updateSlot(i: number, partial: Partial<Slot>) {
@@ -248,6 +253,21 @@ function PetScheduleSection() {
   return (
     <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-4">
       <h2 className="text-gray-500 text-sm font-medium">Horários de Refeição</h2>
+
+      {/* Dado atual do dispositivo */}
+      {deviceSchedules.length > 0 ? (
+        <div className="bg-gray-50 rounded-xl p-3 flex flex-col gap-1.5">
+          <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Valor atual no dispositivo</span>
+          {deviceSchedules.map((s, i) => (
+            <div key={i} className="flex justify-between text-sm">
+              <span className="text-gray-500">Refeição {i + 1}</span>
+              <span className="font-semibold text-gray-700">{pad(s.h)}:{pad(s.m)} — {s.q}g</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-gray-400 italic">Aguardando dados do dispositivo...</p>
+      )}
 
       <CmdStatusBadge cmd={lastCmd} offline={offline} confirmedText={confirmedText} />
 

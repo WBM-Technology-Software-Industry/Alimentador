@@ -46,14 +46,24 @@ function AgendaCao() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="font-bold text-gray-800 text-base">Horários de Refeição</h1>
-        <p className="text-xs text-gray-400">
-          {received?.schedules?.length
-            ? `Último dado recebido do dispositivo`
-            : 'Aguardando dados do dispositivo...'}
-        </p>
-      </div>
+      <h1 className="font-bold text-gray-800 text-base">Horários de Refeição</h1>
+
+      {/* Valor atual no dispositivo */}
+      {received?.schedules?.length ? (
+        <div className="bg-gray-50 rounded-xl p-3 flex flex-col gap-1.5">
+          <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Valor atual no dispositivo</span>
+          {[...received.schedules]
+            .sort((a, b) => a.h * 60 + a.m - (b.h * 60 + b.m))
+            .map((s, i) => (
+              <div key={i} className="flex justify-between text-sm">
+                <span className="text-gray-500">Refeição {i + 1}</span>
+                <span className="font-semibold text-gray-700">{pad(s.h)}:{pad(s.m)} — {s.q}g</span>
+              </div>
+            ))}
+        </div>
+      ) : (
+        <p className="text-xs text-gray-400 italic">Aguardando dados do dispositivo...</p>
+      )}
 
       <CmdStatusBadge cmd={lastCmd} offline={offline} confirmedText={confirmedText} />
 
@@ -121,34 +131,36 @@ function AgendaPeixe() {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Resumo visual */}
-      <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-3">
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-500">Janela de Atividade</span>
-          <span className="text-sm font-semibold text-gray-800">Das {pad(hl)}h às {pad(hd)}h</span>
-        </div>
-        <hr className="border-gray-100" />
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-500">Frequência de Tratos</span>
-          <span className="text-sm font-semibold text-gray-800">A cada {tc} minutos</span>
-        </div>
-        <hr className="border-gray-100" />
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-500">Quantidade por trato</span>
-          <span className="text-sm font-semibold text-gray-800">{qpc}g</span>
-        </div>
-        <hr className="border-gray-100" />
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-500">Tratos por dia</span>
-          <span className="text-sm font-semibold text-gray-800">~{tratosPorDia}x</span>
-        </div>
-      </div>
+      <h1 className="font-bold text-gray-800 text-base">Agenda de Piscicultura</h1>
 
-      <div>
-        <h1 className="font-bold text-gray-800 text-base">Agenda de Piscicultura</h1>
-        <p className="text-xs text-gray-400">
-          {received ? 'Último dado recebido do dispositivo' : 'Aguardando dados do dispositivo...'}
-        </p>
+      {/* Valor atual no dispositivo */}
+      <div className="bg-white rounded-2xl shadow p-4 flex flex-col gap-3">
+        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Valor atual no dispositivo</span>
+        {received ? (
+          <>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-500">Janela de Atividade</span>
+              <span className="text-sm font-semibold text-gray-800">Das {pad(received.hl)}h às {pad(received.hd)}h</span>
+            </div>
+            <hr className="border-gray-100" />
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-500">Frequência de Tratos</span>
+              <span className="text-sm font-semibold text-gray-800">A cada {received.tc} minutos</span>
+            </div>
+            <hr className="border-gray-100" />
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-500">Quantidade por trato</span>
+              <span className="text-sm font-semibold text-gray-800">{received.qpc}g</span>
+            </div>
+            <hr className="border-gray-100" />
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-500">Tratos por dia</span>
+              <span className="text-sm font-semibold text-gray-800">~{tratosPorDia}x</span>
+            </div>
+          </>
+        ) : (
+          <p className="text-xs text-gray-400 italic">Aguardando dados do dispositivo...</p>
+        )}
       </div>
 
       <CmdStatusBadge cmd={lastCmd} offline={offline} confirmedText={confirmedText} />
