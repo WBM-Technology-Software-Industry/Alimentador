@@ -23,6 +23,18 @@ export type FishSchedule = {
   hd: number   // hora de fim
 }
 
+export type CmdType   = 'feed' | 'stop' | 'config' | 'profile' | 'mode'
+export type CmdStatus = 'sent' | 'confirmed' | 'timeout'
+
+export type CmdLogEntry = {
+  id: string
+  timestamp: number
+  deviceId: string
+  label: string
+  type: CmdType
+  status: CmdStatus
+}
+
 export type CachedEntry = {
   id: string | number
   timestamp: number
@@ -77,6 +89,9 @@ type DeviceState = {
   // Quantidade para trato manual
   manualGrams: number
 
+  // Log de comandos enviados
+  cmdLog: CmdLogEntry[]
+
   // Actions
   setDeviceType: (t: DeviceType) => void
   setBrokerConfig: (url: string, id: string) => void
@@ -88,6 +103,10 @@ type DeviceState = {
   bumpLastFeedAt: () => void
   setOptimisticFeed: (feed: (FeedEntry & { deviceId: string }) | null) => void
   setManualGrams: (g: number) => void
+  addCmd: (entry: Omit<CmdLogEntry, 'status'>) => void
+  confirmCmdByType: (type: CmdType) => void
+  timeoutCmd: (id: string) => void
+  clearCmdLog: () => void
 }
 
 export const useDeviceStore = create<DeviceState>()(
@@ -115,6 +134,7 @@ export const useDeviceStore = create<DeviceState>()(
       lastFeedAt: 0,
       optimisticFeed: null,
       manualGrams: 100,
+      cmdLog: [],
 
       setDeviceType: (deviceType) => set({ deviceType }),
       setBrokerConfig: (brokerUrl, deviceId) => set({ brokerUrl, deviceId }),
@@ -146,7 +166,28 @@ export const useDeviceStore = create<DeviceState>()(
       bumpLastFeedAt: () => set({ lastFeedAt: Date.now() }),
       setOptimisticFeed: (optimisticFeed) => set({ optimisticFeed }),
       setManualGrams: (manualGrams) => set({ manualGrams }),
+      addCmd: (entry) => set((s) => ({
+        cmdLog: [{ ...entry, status: 'sent' as CmdStatus }, ...s.cmdLog].slice(0, 10),
+      })),
+      confirmCmdByType: (type) => set((s) => {
+        let done = false
+        return {
+          cmdLog: s.cmdLog.map((e) => {
+            if (!done && e.type === type && e.status === 'sent') { done = true; return { ...e, status: 'confirmed' as CmdStatus } }
+            return e
+          }),
+        }
+      }),
+      timeoutCmd: (id) => set((s) => ({
+        cmdLog: s.cmdLog.map((e) => e.id === id && e.status === 'sent' ? { ...e, status: 'timeout' as CmdStatus } : e),
+      })),
+      clearCmdLog: () => set({ cmdLog: [] }),
     }),
-    { name: 'feeder-wbm-storage', version: 4 }
+    {
+      name: 'feeder-wbm-storage',
+      version: 4,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      partialize: (s) => { const { cmdLog, ...rest } = s as DeviceState & { cmdLog: unknown }; return rest as unknown as DeviceState },
+    }
   )
 )

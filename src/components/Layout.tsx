@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom'
 import { LayoutDashboard, Package, History, Settings, Sun, Moon } from 'lucide-react'
 import { useDeviceStore } from '../store/deviceStore'
 import NotificationToast from './NotificationToast'
+import StatusBar from './StatusBar'
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarHeader,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem,
@@ -111,6 +112,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
         </header>
 
         <NotificationToast />
+        <StatusBar />
 
         <main className="flex-1 overflow-y-auto pb-20 lg:pb-8">
           {children}

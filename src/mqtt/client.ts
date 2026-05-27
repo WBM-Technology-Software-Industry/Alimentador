@@ -25,6 +25,7 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
 
   client.on('connect', () => {
     store.setConnected(true)
+    store.clearCmdLog()
     client!.subscribe('devices/+/status', { qos: 1 })
     client!.subscribe('devices/+/cmd',    { qos: 0 })
     notify.success('Dispositivo conectado.')
@@ -40,9 +41,35 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
     if (cmdMatch) {
       try {
         const cmd = JSON.parse(payload.toString()) as Record<string, unknown>
-        const { deviceId, setOptimisticFeed } = useDeviceStore.getState()
-        if (cmdMatch[1] === deviceId && typeof cmd.sim === 'number' && cmd.sim > 0) {
-          setOptimisticFeed({ id: `opt-${Date.now()}`, deviceId, grams: cmd.sim, timestamp: Date.now(), source: 'manual' })
+        const { deviceId, setOptimisticFeed, addCmd, timeoutCmd } = useDeviceStore.getState()
+        if (cmdMatch[1] === deviceId) {
+          const ts = Date.now()
+          if (typeof cmd.sim === 'number' && cmd.sim > 0) {
+            setOptimisticFeed({ id: `opt-${ts}`, deviceId, grams: cmd.sim, timestamp: ts, source: 'manual' })
+            const id = `cmd-${ts}`
+            addCmd({ id, timestamp: ts, deviceId, label: `Trato ${cmd.sim}g`, type: 'feed' })
+            setTimeout(() => timeoutCmd(id), 60_000)
+          } else if (typeof cmd.st === 'number') {
+            const id = `cmd-${ts}`
+            addCmd({ id, timestamp: ts, deviceId, label: 'Parar alimentação', type: 'stop' })
+            setTimeout(() => timeoutCmd(id), 30_000)
+          } else if (cmd.c_ps) {
+            const id = `cmd-${ts}`
+            addCmd({ id, timestamp: ts, deviceId, label: 'Config. piscicultura', type: 'config' })
+            setTimeout(() => timeoutCmd(id), 60_000)
+          } else if (cmd.c_pt) {
+            const id = `cmd-${ts}`
+            addCmd({ id, timestamp: ts, deviceId, label: 'Config. agenda', type: 'config' })
+            setTimeout(() => timeoutCmd(id), 60_000)
+          } else if (typeof cmd.pf === 'number') {
+            const id = `cmd-${ts}`
+            addCmd({ id, timestamp: ts, deviceId, label: cmd.pf === 1 ? 'Perfil: Cão' : 'Perfil: Peixe', type: 'profile' })
+            setTimeout(() => timeoutCmd(id), 60_000)
+          } else if (typeof cmd.am === 'boolean') {
+            const id = `cmd-${ts}`
+            addCmd({ id, timestamp: ts, deviceId, label: cmd.am ? 'Automático ligado' : 'Automático desligado', type: 'mode' })
+            setTimeout(() => timeoutCmd(id), 60_000)
+          }
         }
       } catch { /* ignore */ }
       return
@@ -55,7 +82,7 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
     try {
       const d = JSON.parse(payload.toString()) as Record<string, unknown>
       const {
-        setTelemetry, setDeviceData, bumpLastFeedAt, setOptimisticFeed,
+        setTelemetry, setDeviceData, bumpLastFeedAt, setOptimisticFeed, confirmCmdByType,
         deviceId, al: prevAl, eg: prevEg,
       } = useDeviceStore.getState()
 
@@ -91,9 +118,11 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
 
         if (typeof d.al === 'boolean' && d.al) {
           notify.info('Alimentando...')
+          if (!prevAl) confirmCmdByType('feed')
         }
 
         if (typeof d.al === 'boolean' && !d.al && prevAl) {
+          confirmCmdByType('stop')
           // Compute grams from stock delta and set optimistic entry on all connected clients
           const gramsUsed = typeof d.eg === 'number' && prevEg > 0
             ? Math.max(0, Math.round(prevEg - d.eg))
@@ -104,6 +133,9 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
           }
           bumpLastFeedAt()
         }
+
+        if (typeof d.pf === 'number') confirmCmdByType('profile')
+        if (d.am !== undefined)       confirmCmdByType('mode')
       }
 
       // Always persist data for every device that sends a message
@@ -118,6 +150,7 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
 
       if (Array.isArray(d.c_pt)) {
         setDeviceData(msgDeviceId, { schedules: d.c_pt as DeviceSchedule[] })
+        if (msgDeviceId === deviceId) confirmCmdByType('config')
       }
 
       if (d.c_ps && typeof d.c_ps === 'object') {
@@ -125,6 +158,7 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
         if (typeof ps.qpc === 'number' && typeof ps.tc === 'number' &&
             typeof ps.hl === 'number' && typeof ps.hd === 'number') {
           setDeviceData(msgDeviceId, { fishSchedule: ps as unknown as FishSchedule })
+          if (msgDeviceId === deviceId) confirmCmdByType('config')
         }
       }
     } catch {
