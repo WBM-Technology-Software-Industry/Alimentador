@@ -3,7 +3,7 @@ import { useDeviceStore } from '../store/deviceStore'
 import { api, type ApiFeedEntry } from '../api/client'
 import { format, isToday, isYesterday, subDays, startOfDay, endOfDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { CalendarClock, Hand, Trash2, Calendar } from 'lucide-react'
+import { CalendarClock, Hand, Trash2, Calendar, RefreshCw } from 'lucide-react'
 
 type Entry = {
   id: string | number
@@ -49,13 +49,15 @@ export default function Historico() {
   const { deviceId, feedHistory, clearFeedHistory } = useDeviceStore()
   const [entries, setEntries] = useState<Entry[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [period, setPeriod] = useState<Period>('7d')
   const [customDate, setCustomDate] = useState<string | null>(null)
   const [confirming, setConfirming] = useState(false)
 
-  useEffect(() => {
+  function fetchHistory(silent = false) {
     if (!deviceId) return
-    setLoading(true)
+    if (!silent) setLoading(true)
+    else setRefreshing(true)
     api.history(deviceId)
       .then((data: ApiFeedEntry[]) => {
         setEntries(data.map(e => ({
@@ -68,7 +70,13 @@ export default function Historico() {
       .catch(() => {
         setEntries(feedHistory.map(e => ({ ...e })))
       })
-      .finally(() => setLoading(false))
+      .finally(() => { setLoading(false); setRefreshing(false) })
+  }
+
+  useEffect(() => {
+    fetchHistory()
+    const interval = setInterval(() => fetchHistory(true), 15000)
+    return () => clearInterval(interval)
   }, [deviceId])
 
   const filtered = useMemo(() => applyFilter(entries, period, customDate), [entries, period, customDate])
@@ -99,6 +107,19 @@ export default function Historico() {
 
   return (
     <div className="p-4 lg:p-6 lg:max-w-3xl lg:mx-auto flex flex-col gap-4">
+
+      {/* Cabeçalho */}
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Histórico de tratos</span>
+        <button
+          onClick={() => fetchHistory(true)}
+          disabled={refreshing}
+          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors disabled:opacity-40"
+        >
+          <RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} />
+          Atualizar
+        </button>
+      </div>
 
       {/* Filtros */}
       <div className="flex flex-col gap-2">
