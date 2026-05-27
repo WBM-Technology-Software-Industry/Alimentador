@@ -247,18 +247,18 @@ function PetScheduleSection() {
         {slots.map((slot, i) => (
           <div key={i} className="flex flex-col gap-2 border border-gray-100 rounded-xl p-3">
             <span className="text-sm font-semibold text-gray-700">Refeição {i + 1}</span>
-            <div className="flex gap-2">
-              <div className="flex flex-col gap-1 flex-1">
+            <div className="flex gap-2 min-w-0">
+              <div className="flex flex-col gap-1 flex-1 min-w-0">
                 <label className="text-xs text-gray-500">Horário</label>
                 <input type="time" value={slot.time}
                   onChange={(e) => updateSlot(i, { time: e.target.value })}
-                  className="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500" />
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500" />
               </div>
-              <div className="flex flex-col gap-1 flex-1">
+              <div className="flex flex-col gap-1 flex-1 min-w-0">
                 <label className="text-xs text-gray-500">Gramas</label>
                 <input type="number" min={1} value={slot.grams}
                   onChange={(e) => updateSlot(i, { grams: parseInt(e.target.value) || 0 })}
-                  className="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500" />
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500" />
               </div>
             </div>
           </div>
