@@ -58,10 +58,12 @@ function ModoOperacao() {
 
   function handleSendQuantity() {
     publishCmd(deviceId, { sim: manualGrams })
-    api.postFeedEntry(deviceId, manualGrams, 'manual').catch(() => {
-      addFeedEntry({ id: `${Date.now()}-${deviceId}`, timestamp: Date.now(), grams: manualGrams, source: 'manual' })
-    })
-    bumpLastFeedAt()
+    api.postFeedEntry(deviceId, manualGrams, 'manual')
+      .then(() => bumpLastFeedAt())
+      .catch(() => {
+        addFeedEntry({ id: `${Date.now()}-${deviceId}`, timestamp: Date.now(), grams: manualGrams, source: 'manual' })
+        bumpLastFeedAt()
+      })
     setFeedback(`Trato de ${manualGrams}g disparado!`)
     setTimeout(() => setFeedback(null), 3000)
   }
