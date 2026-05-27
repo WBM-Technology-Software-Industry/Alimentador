@@ -53,6 +53,7 @@ export type PerDeviceData = {
   er: number
   al: boolean
   pf: number | null   // perfil real reportado pelo dispositivo (1=cão, 0=peixe, null=não recebido)
+  am: boolean | null  // modo real reportado pelo dispositivo (true=automático, false=manual, null=não recebido)
   historyCache: CachedEntry[]
 }
 
@@ -157,6 +158,7 @@ export const useDeviceStore = create<DeviceState>()(
             er: s.deviceData[deviceId]?.er ?? 0,
             al:           s.deviceData[deviceId]?.al           ?? false,
             pf:           s.deviceData[deviceId]?.pf           ?? null,
+            am:           s.deviceData[deviceId]?.am           ?? null,
             historyCache: s.deviceData[deviceId]?.historyCache ?? [],
             ...patch,
           },

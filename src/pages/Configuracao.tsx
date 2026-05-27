@@ -41,10 +41,14 @@ function DeviceIdConfig() {
 }
 
 function ModoOperacao() {
-  const { am, deviceId, connected, setTelemetry, manualGrams, setManualGrams, bumpLastFeedAt, setOptimisticFeed } = useDeviceStore()
+  const { am, deviceId, connected, setTelemetry, manualGrams, setManualGrams, bumpLastFeedAt, setOptimisticFeed, deviceData } = useDeviceStore()
   const [sentAt,  setSentAt]  = useState<number | null>(null)
   const [offline, setOffline] = useState(false)
   const lastCmd = useLastCmd('mode', sentAt)
+
+  // am real do dispositivo (null = ainda não recebido)
+  const deviceAm      = deviceData[deviceId]?.am ?? null
+  const modeMismatch  = deviceAm !== null && deviceAm !== am
 
   function toggleMode(automatic: boolean) {
     const ok = publishCmd(deviceId, { am: automatic })
@@ -58,18 +62,15 @@ function ModoOperacao() {
     bumpLastFeedAt()
   }
 
-  // Dado real do dispositivo para mostrar quando confirmado
-  const modeData = am ? 'Modo Automático ativo no dispositivo' : 'Modo Manual ativo no dispositivo'
+  const confirmedText = deviceAm !== null
+    ? `Dispositivo em modo ${deviceAm ? 'Automático' : 'Manual'}`
+    : 'Confirmado pelo dispositivo!'
 
   return (
     <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-3">
       <h2 className="text-gray-500 text-sm font-medium">Modo de operação</h2>
 
-      <CmdStatusBadge
-        cmd={lastCmd}
-        offline={offline}
-        confirmedText={modeData}
-      />
+      <CmdStatusBadge cmd={lastCmd} offline={offline} confirmedText={confirmedText} />
 
       <div className="flex rounded-xl overflow-hidden border border-gray-200">
         <button
@@ -91,6 +92,21 @@ function ModoOperacao() {
           Automático
         </button>
       </div>
+
+      {/* Indicador do modo real do dispositivo */}
+      {deviceAm === null ? (
+        <p className="text-xs text-gray-400 italic">Aguardando dado do dispositivo...</p>
+      ) : modeMismatch ? (
+        <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-amber-700 text-xs font-medium">
+          <span>⚠</span>
+          Dispositivo está em modo <strong>{deviceAm ? 'Automático' : 'Manual'}</strong> — diferente do selecionado aqui.
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-3 py-2 text-green-700 text-xs font-medium">
+          <span>✓</span>
+          Dispositivo confirmado em modo <strong>{am ? 'Automático' : 'Manual'}</strong>.
+        </div>
+      )}
 
       {!am && (
         <>
