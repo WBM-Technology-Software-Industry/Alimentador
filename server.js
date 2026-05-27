@@ -27,25 +27,31 @@ function proxyRequest(req, res) {
   const target  = new URL(req.url, BACKEND_URL)
   const isHttps = target.protocol === 'https:'
   const proto   = isHttps ? https : http
-  const options = {
-    hostname: target.hostname,
-    port:     target.port || (isHttps ? 443 : 80),
-    path:     target.pathname + target.search,
-    method:   req.method,
-    headers:  { ...req.headers, host: target.host },
-  }
 
-  const proxy = proto.request(options, (backRes) => {
-    res.writeHead(backRes.statusCode, backRes.headers)
-    backRes.pipe(res)
+  const chunks = []
+  req.on('data', chunk => chunks.push(chunk))
+  req.on('end', () => {
+    const body = Buffer.concat(chunks)
+    const options = {
+      hostname: target.hostname,
+      port:     target.port || (isHttps ? 443 : 80),
+      path:     target.pathname + target.search,
+      method:   req.method,
+      headers:  { ...req.headers, host: target.host, 'content-length': body.length },
+    }
+
+    const proxy = proto.request(options, (backRes) => {
+      res.writeHead(backRes.statusCode, backRes.headers)
+      backRes.pipe(res)
+    })
+
+    proxy.on('error', () => {
+      res.writeHead(502)
+      res.end('Backend indisponível')
+    })
+
+    proxy.end(body)
   })
-
-  proxy.on('error', () => {
-    res.writeHead(502)
-    res.end('Backend indisponível')
-  })
-
-  req.pipe(proxy)
 }
 
 const server = createServer((req, res) => {
