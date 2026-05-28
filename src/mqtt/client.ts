@@ -11,6 +11,7 @@ const DEVICE_LABELS: Record<string, string> = {
 let client: MqttClient | null = null
 let lastNotifiedError = 0
 const lastSimCmdAt: Record<string, number> = {}
+const prevAlAll:    Record<string, boolean> = {}
 
 export function getMqttClient() {
   return client
@@ -165,6 +166,11 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
       if (typeof d.am === 'boolean')                       devicePatch.am = d.am
       devicePatch.lastSeen = Date.now()
       setDeviceData(msgDeviceId, devicePatch)
+
+      // Detecta fim de trato para QUALQUER dispositivo → dispara refresh do histórico
+      const newAl = typeof d.al === 'boolean' ? d.al : typeof d.al === 'number' ? !!d.al : null
+      if (newAl === false && prevAlAll[msgDeviceId] === true) bumpLastFeedAt()
+      if (newAl !== null) prevAlAll[msgDeviceId] = newAl
 
       if (Array.isArray(d.c_pt)) {
         setDeviceData(msgDeviceId, { schedules: d.c_pt as DeviceSchedule[] })

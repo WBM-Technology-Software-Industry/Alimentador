@@ -119,13 +119,13 @@ export default function Historico() {
 
   useEffect(() => {
     fetchHistory(false)
-    const interval = setInterval(() => fetchHistory(true), 5000)
+    const interval = setInterval(() => fetchHistory(true), 2000)
     return () => clearInterval(interval)
   }, [filterDevice])
 
   useEffect(() => {
     if (lastFeedAt <= 0) return
-    const t = setTimeout(() => fetchHistory(true), 500)
+    const t = setTimeout(() => fetchHistory(true), 100)
     return () => clearTimeout(t)
   }, [lastFeedAt])
 
