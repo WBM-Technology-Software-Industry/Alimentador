@@ -1,5 +1,7 @@
 import { useDeviceStore } from '../store/deviceStore'
 import StockGauge from '../components/StockGauge'
+import { format } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 
 const ERROR_LABELS: Record<number, string> = {
   1:  'Motor desconectado ou fusível queimado.',
@@ -73,7 +75,8 @@ export default function Dashboard() {
   const cp = active?.cp ?? 10000
   const tp = active?.tp ?? 0
   const er = active?.er ?? 0
-  const al = active?.al ?? false
+  const al       = active?.al ?? false
+  const lastSeen = active?.lastSeen ?? 0
 
   function handleSelectDevice(id: string) {
     if (id === deviceId) return
@@ -161,6 +164,16 @@ export default function Dashboard() {
               : er > 0
                 ? <span className="text-sm font-semibold text-red-600">{ERROR_LABELS[er] ?? `Código ${er}`}</span>
                 : <span className="text-sm font-semibold text-gray-400">Nenhum</span>
+            }
+          </div>
+          <hr className="border-gray-100" />
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-500">Última atualização</span>
+            {!hasData || lastSeen === 0
+              ? <Skeleton className="w-24 h-4" />
+              : <span className="text-sm font-semibold text-gray-600">
+                  {format(new Date(lastSeen), "dd/MM HH:mm:ss", { locale: ptBR })}
+                </span>
             }
           </div>
         </div>

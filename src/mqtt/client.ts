@@ -152,7 +152,7 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
       }
 
       // Always persist data for every device that sends a message
-      const devicePatch: Partial<{ eg: number; ep: number; cp: number; tp: number; er: number; al: boolean; pf: number; am: boolean }> = {}
+      const devicePatch: Partial<{ eg: number; ep: number; cp: number; tp: number; er: number; al: boolean; pf: number; am: boolean; lastSeen: number }> = {}
       if (typeof d.eg === 'number')                        devicePatch.eg = d.eg
       if (typeof d.ep === 'number')                        devicePatch.ep = d.ep
       if (typeof d.cp === 'number')                        devicePatch.cp = d.cp
@@ -161,7 +161,8 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
       if (typeof d.al === 'boolean' || typeof d.al === 'number') devicePatch.al = !!d.al
       if (typeof d.pf === 'number')                        devicePatch.pf = d.pf
       if (typeof d.am === 'boolean')                       devicePatch.am = d.am
-      if (Object.keys(devicePatch).length) setDeviceData(msgDeviceId, devicePatch)
+      devicePatch.lastSeen = Date.now()
+      setDeviceData(msgDeviceId, devicePatch)
 
       if (Array.isArray(d.c_pt)) {
         setDeviceData(msgDeviceId, { schedules: d.c_pt as DeviceSchedule[] })
