@@ -13,6 +13,8 @@ public interface FeedHistoryRepository extends JpaRepository<FeedHistory, Long> 
 
     boolean existsByDeviceIdAndGramsAndTimestampAfter(String deviceId, Integer grams, java.time.Instant after);
 
+    boolean existsByDeviceIdAndSourceAndTimestampAfter(String deviceId, String source, java.time.Instant after);
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Transactional
     @Query("DELETE FROM FeedHistory f WHERE f.deviceId = :deviceId")

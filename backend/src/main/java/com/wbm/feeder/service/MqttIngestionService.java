@@ -128,15 +128,21 @@ public class MqttIngestionService {
                 int grams = (eg != null && prev > 0) ? (int) Math.max(0, Math.round(prev - eg)) : 0;
                 // Source: manual if a sim command arrived within the last 60s, otherwise scheduled
                 Instant lastSim = lastSimCmd.get(deviceId);
-                String source = (lastSim != null && lastSim.isAfter(now.minusSeconds(60))) ? "manual" : "scheduled";
+                String  source  = (lastSim != null && lastSim.isAfter(now.minusSeconds(60))) ? "manual" : "scheduled";
                 if (grams <= 0) return;
+                // For manual feeds the frontend already saved instantly — skip to avoid duplicate
+                if ("manual".equals(source) && feedHistoryRepo.existsByDeviceIdAndSourceAndTimestampAfter(
+                        deviceId, "manual", now.minusSeconds(60))) {
+                    log.debug("Manual feed skipped (already saved by frontend): device={}", deviceId);
+                    return;
+                }
                 boolean duplicate = feedHistoryRepo.existsByDeviceIdAndGramsAndTimestampAfter(
                         deviceId, grams, now.minusSeconds(10));
                 if (!duplicate) {
                     feedHistoryRepo.save(new FeedHistory(deviceId, now, grams, source));
                     log.info("Feed recorded: device={} grams={} source={}", deviceId, grams, source);
                 } else {
-                    log.warn("Duplicate feed ignored: device={} grams={}", deviceId, grams);
+                    log.debug("Feed skipped (duplicate): device={} grams={}", deviceId, grams);
                 }
             }
             if (al != null) prevAl.put(deviceId, al);
