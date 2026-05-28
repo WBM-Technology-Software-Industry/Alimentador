@@ -51,9 +51,21 @@ function groupByDay(entries: Entry[]) {
   return map
 }
 
+const ALL_DEVICE_IDS = ['ALIMENTADOR_1', 'ALIMENTADOR_2']
+
 export default function Historico() {
-  const { deviceId, deviceData, setDeviceData, clearFeedHistory, lastFeedAt, optimisticFeed } = useDeviceStore()
-  const cachedEntries = deviceData[deviceId]?.historyCache ?? []
+  const { deviceData, setDeviceData, clearFeedHistory, lastFeedAt, optimisticFeed } = useDeviceStore()
+
+  // Filtro por dispositivo — padrão: todos
+  const [filterDevice, setFilterDevice] = useState<string>('all')
+  const activeDeviceIds = filterDevice === 'all' ? ALL_DEVICE_IDS : [filterDevice]
+
+  // Combina cache de todos os dispositivos selecionados
+  const cachedEntries = useMemo(() => {
+    const all = activeDeviceIds.flatMap(id => deviceData[id]?.historyCache ?? [])
+    return all.sort((a, b) => b.timestamp - a.timestamp)
+  }, [filterDevice, deviceData])
+
   const [entries, setEntries] = useState<Entry[]>(cachedEntries)
   const [loading, setLoading] = useState(cachedEntries.length === 0)
   const [refreshing, setRefreshing] = useState(false)
@@ -61,57 +73,58 @@ export default function Historico() {
   const [customDate, setCustomDate] = useState<string | null>(null)
   const [confirming, setConfirming] = useState(false)
 
+  function fetchForDevice(id: string) {
+    return api.history(id).then((data: ApiFeedEntry[]) => {
+      const mapped = data.map(e => ({
+        id: e.id,
+        timestamp: new Date(e.timestamp).getTime(),
+        grams: e.grams,
+        source: e.source,
+        deviceId: e.deviceId,
+      }))
+      setDeviceData(id, { historyCache: mapped })
+      return mapped
+    })
+  }
+
   function fetchHistory(silent = true) {
-    if (!deviceId) return
-    if (!silent && entries.length === 0) setLoading(true)
+    if (!silent) setLoading(true)
     else setRefreshing(true)
-    api.history(deviceId)
-      .then((data: ApiFeedEntry[]) => {
-        const mapped = data.map(e => ({
-          id: e.id,
-          timestamp: new Date(e.timestamp).getTime(),
-          grams: e.grams,
-          source: e.source,
-          deviceId: e.deviceId,
-        }))
-        // Persist to localStorage so next mount is instant
-        setDeviceData(deviceId, { historyCache: mapped })
-        // Read fresh from store to avoid stale closure
+
+    Promise.all(activeDeviceIds.map(id => fetchForDevice(id)))
+      .then((results) => {
+        let merged: Entry[] = results.flat().sort((a, b) => b.timestamp - a.timestamp)
+        // Handle optimistic feed for active device
         const { optimisticFeed: opt, setOptimisticFeed: clearOpt } = useDeviceStore.getState()
-        if (opt && opt.deviceId === deviceId) {
-          const confirmed = mapped.some(e =>
+        if (opt && activeDeviceIds.includes(opt.deviceId)) {
+          const confirmed = merged.some(e =>
+            e.deviceId === opt.deviceId &&
             e.grams === opt.grams &&
             e.timestamp >= opt.timestamp - 10_000
           )
-          if (confirmed) {
-            clearOpt(null)
-            setEntries(mapped)
-          } else {
-            setEntries([opt, ...mapped])
-          }
-        } else {
-          setEntries(mapped)
+          if (confirmed) clearOpt(null)
+          else merged = [{ ...opt, id: opt.id as string | number }, ...merged]
         }
+        setEntries(merged)
       })
-      .catch(() => {/* mantém os dados em cache */})
+      .catch(() => {/* mantém cache */})
       .finally(() => { setLoading(false); setRefreshing(false) })
   }
 
   // Replace any previous optimistic entries (string ids) with the current one
   useEffect(() => {
-    if (!optimisticFeed || optimisticFeed.deviceId !== deviceId) return
+    if (!optimisticFeed || !activeDeviceIds.includes(optimisticFeed.deviceId)) return
     setEntries(prev => [optimisticFeed, ...prev.filter(e => typeof e.id === 'number')])
-  }, [optimisticFeed, deviceId])
+  }, [optimisticFeed, filterDevice])
 
   useEffect(() => {
     fetchHistory(false)
     const interval = setInterval(() => fetchHistory(true), 5000)
     return () => clearInterval(interval)
-  }, [deviceId])
+  }, [filterDevice])
 
   useEffect(() => {
     if (lastFeedAt <= 0) return
-    // Small delay so the backend has time to save before we fetch
     const t = setTimeout(() => fetchHistory(true), 500)
     return () => clearTimeout(t)
   }, [lastFeedAt])
@@ -128,10 +141,17 @@ export default function Historico() {
   }
 
   async function handleClear() {
-    try { await api.clearHistory(deviceId) } catch { /* API indisponível */ }
-    clearFeedHistory()
-    setDeviceData(deviceId, { historyCache: [] })
-    setEntries([])
+    try {
+      await Promise.all(activeDeviceIds.map(id => api.clearHistory(id)))
+      activeDeviceIds.forEach(id => setDeviceData(id, { historyCache: [] }))
+      clearFeedHistory()
+      setEntries([])
+      // Re-fetch imediatamente para confirmar que o backend limpou
+      setTimeout(() => fetchHistory(true), 300)
+    } catch {
+      // Se falhar, re-busca para mostrar o estado real
+      fetchHistory(true)
+    }
     setConfirming(false)
   }
 
@@ -149,6 +169,21 @@ export default function Historico() {
           <RefreshCw size={13} className={(refreshing || loading) ? 'animate-spin' : ''} />
           {loading ? 'Carregando...' : 'Atualizar'}
         </button>
+      </div>
+
+      {/* Filtro por dispositivo */}
+      <div className="flex rounded-xl overflow-hidden border border-gray-200 bg-white shadow">
+        {[{ id: 'all', label: 'Todos' }, ...ALL_DEVICE_IDS.map(id => ({ id, label: DEVICE_LABELS[id] }))].map(d => (
+          <button
+            key={d.id}
+            onClick={() => setFilterDevice(d.id)}
+            className={`flex-1 py-2 text-xs font-semibold transition-all ${
+              filterDevice === d.id ? 'bg-brand-600 text-[#1A1A1A]' : 'text-gray-500 hover:bg-gray-50'
+            }`}
+          >
+            {d.label}
+          </button>
+        ))}
       </div>
 
       {/* Filtros */}

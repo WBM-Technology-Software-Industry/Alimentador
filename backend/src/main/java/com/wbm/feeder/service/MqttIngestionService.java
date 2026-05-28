@@ -129,6 +129,7 @@ public class MqttIngestionService {
                 // Source: manual if a sim command arrived within the last 60s, otherwise scheduled
                 Instant lastSim = lastSimCmd.get(deviceId);
                 String source = (lastSim != null && lastSim.isAfter(now.minusSeconds(60))) ? "manual" : "scheduled";
+                if (grams <= 0) return;
                 boolean duplicate = feedHistoryRepo.existsByDeviceIdAndGramsAndTimestampAfter(
                         deviceId, grams, now.minusSeconds(10));
                 if (!duplicate) {
