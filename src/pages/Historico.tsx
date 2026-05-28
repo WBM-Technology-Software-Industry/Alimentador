@@ -72,6 +72,7 @@ export default function Historico() {
   const [period, setPeriod] = useState<Period>('7d')
   const [customDate, setCustomDate] = useState<string | null>(null)
   const [confirming, setConfirming] = useState(false)
+  const [clearedAt, setClearedAt] = useState<number>(0)
 
   function fetchForDevice(id: string) {
     return api.history(id).then((data: ApiFeedEntry[]) => {
@@ -93,6 +94,8 @@ export default function Historico() {
 
     Promise.all(activeDeviceIds.map(id => fetchForDevice(id)))
       .then((results) => {
+        // Ignorar dados que voltaram dentro de 3s após uma limpeza
+        if (clearedAt > 0 && Date.now() - clearedAt < 3000) return
         let merged: Entry[] = results.flat().sort((a, b) => b.timestamp - a.timestamp)
         // Handle optimistic feed for active device
         const { optimisticFeed: opt, setOptimisticFeed: clearOpt } = useDeviceStore.getState()
@@ -146,10 +149,8 @@ export default function Historico() {
       activeDeviceIds.forEach(id => setDeviceData(id, { historyCache: [] }))
       clearFeedHistory()
       setEntries([])
-      // Re-fetch imediatamente para confirmar que o backend limpou
-      setTimeout(() => fetchHistory(true), 300)
+      setClearedAt(Date.now())
     } catch {
-      // Se falhar, re-busca para mostrar o estado real
       fetchHistory(true)
     }
     setConfirming(false)

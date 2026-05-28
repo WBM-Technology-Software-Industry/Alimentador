@@ -75,7 +75,9 @@ public class DeviceController {
     }
 
     @DeleteMapping("/history")
-    public void clearHistory(@PathVariable String deviceId) {
+    @org.springframework.transaction.annotation.Transactional
+    public ResponseEntity<Void> clearHistory(@PathVariable String deviceId) {
         feedHistoryRepo.deleteByDeviceId(deviceId);
+        return ResponseEntity.noContent().build();
     }
 }
