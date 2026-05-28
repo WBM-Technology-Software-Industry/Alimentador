@@ -96,7 +96,7 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
       const d = JSON.parse(payload.toString()) as Record<string, unknown>
       const {
         setTelemetry, setDeviceData, bumpLastFeedAt, setOptimisticFeed, confirmCmdByType,
-        deviceId, al: prevAl, eg: prevEg,
+        deviceId, al: prevAl,
       } = useDeviceStore.getState()
 
       // Live telemetry and notifications only for the active device
