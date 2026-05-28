@@ -12,13 +12,16 @@ jobs:
 
     steps:
       - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          password: ${{ secrets.SSH_PASSWORD }}
-          script: |
-            cd ~/projetos/feeder/Alimentador
-            git pull
-            docker compose up -d --build
-            docker compose ps
+        env:
+          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY_B64 }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USERNAME }}
+        run: |
+          echo "$SSH_KEY" | base64 -d > /tmp/deploy_key
+          chmod 600 /tmp/deploy_key
+          ssh -i /tmp/deploy_key \
+            -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=30 \
+            $SSH_USER@$SSH_HOST \
+            "cd ~/projetos/feeder/Alimentador && git pull && docker compose up -d --build && docker compose ps"
+          rm -f /tmp/deploy_key
