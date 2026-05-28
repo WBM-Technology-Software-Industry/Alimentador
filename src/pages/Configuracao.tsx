@@ -46,11 +46,16 @@ function ModoOperacao() {
   const [offline, setOffline] = useState(false)
   const lastCmd = useLastCmd('mode', sentAt)
 
-  // am real do dispositivo (null = ainda não recebido)
-  const deviceAm     = deviceData[deviceId]?.am ?? null
-  const modeMismatch = deviceAm !== null && deviceAm !== am
-  const isSending    = lastCmd?.status === 'sent'
-  const isTimeout    = lastCmd?.status === 'timeout'
+  const deviceAm  = deviceData[deviceId]?.am ?? null
+  const deviceAl  = deviceData[deviceId]?.al ?? false
+
+  // O firmware volta para am:true durante/após o sim — ignorar mismatch enquanto alimentando
+  // ou quando o usuário acabou de disparar um trato manual (am local = false mas device = true por causa do sim)
+  const modeMismatch = deviceAm !== null && deviceAm !== am && !deviceAl
+  const revertedToAuto = !am && deviceAm === true && !deviceAl  // usuário quer manual mas device voltou ao auto após trato
+
+  const isSending = lastCmd?.status === 'sent'
+  const isTimeout = lastCmd?.status === 'timeout'
 
   function toggleMode(automatic: boolean) {
     const ok = publishCmd(deviceId, { am: automatic })
@@ -62,6 +67,12 @@ function ModoOperacao() {
     publishCmd(deviceId, { sim: manualGrams })
     setOptimisticFeed({ id: `opt-${Date.now()}`, deviceId, grams: manualGrams, timestamp: Date.now(), source: 'manual' })
     bumpLastFeedAt()
+  }
+
+  function handleReconfirmManual() {
+    const ok = publishCmd(deviceId, { am: false })
+    setOffline(!ok)
+    if (ok) { setTelemetry({ am: false }); setSentAt(Date.now()) }
   }
 
   return (
@@ -89,7 +100,7 @@ function ModoOperacao() {
         </button>
       </div>
 
-      {/* Indicador unificado — enviando / timeout / dado real do dispositivo */}
+      {/* Indicador unificado */}
       {offline ? (
         <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-red-700 text-xs font-medium">
           <span>✗</span> Dispositivo offline — verifique a conexão.
@@ -101,6 +112,21 @@ function ModoOperacao() {
       ) : isTimeout ? (
         <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-red-700 text-xs font-medium">
           <span>✗</span> Dispositivo não respondeu. Verifique a conexão.
+        </div>
+      ) : deviceAl ? (
+        <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2 text-blue-700 text-xs font-medium">
+          <span className="animate-pulse">●</span> Alimentando...
+        </div>
+      ) : revertedToAuto ? (
+        <div className="flex flex-col gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-amber-700 text-xs font-medium">
+          <span>⚠ O dispositivo voltou para Automático após o trato (comportamento do firmware).</span>
+          <button
+            onClick={handleReconfirmManual}
+            disabled={!connected}
+            className="self-start bg-amber-600 text-white rounded-lg px-3 py-1 text-xs font-semibold disabled:opacity-40"
+          >
+            Confirmar Manual novamente
+          </button>
         </div>
       ) : deviceAm === null ? (
         <p className="text-xs text-gray-400 italic">Aguardando dado do dispositivo...</p>
