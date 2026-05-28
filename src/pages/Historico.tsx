@@ -112,7 +112,7 @@ export default function Historico() {
   useEffect(() => {
     if (lastFeedAt <= 0) return
     // Small delay so the backend has time to save before we fetch
-    const t = setTimeout(() => fetchHistory(true), 1500)
+    const t = setTimeout(() => fetchHistory(true), 500)
     return () => clearTimeout(t)
   }, [lastFeedAt])
 

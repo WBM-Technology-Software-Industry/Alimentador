@@ -10,6 +10,7 @@ const DEVICE_LABELS: Record<string, string> = {
 
 let client: MqttClient | null = null
 let lastNotifiedError = 0
+const lastSimCmdAt: Record<string, number> = {}
 
 export function getMqttClient() {
   return client
@@ -141,7 +142,8 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
             ? Math.max(0, Math.round(prevEg - d.eg))
             : 0
           if (gramsUsed > 0) {
-            const source: 'manual' | 'scheduled' = d.am ? 'scheduled' : 'manual'
+            const lastSim = lastSimCmdAt[deviceId] ?? 0
+            const source: 'manual' | 'scheduled' = (Date.now() - lastSim < 60_000) ? 'manual' : 'scheduled'
             setOptimisticFeed({ id: `opt-${Date.now()}`, deviceId, grams: gramsUsed, timestamp: Date.now(), source })
           }
           bumpLastFeedAt()
@@ -191,6 +193,7 @@ export function disconnectMqtt() {
 
 export function publishCmd(deviceId: string, payload: object) {
   if (!client?.connected) return false
+  if ('sim' in (payload as Record<string, unknown>)) lastSimCmdAt[deviceId] = Date.now()
   client.publish(`devices/${deviceId}/cmd`, JSON.stringify(payload), { qos: 1 })
   return true
 }

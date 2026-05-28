@@ -22,7 +22,8 @@ import java.util.regex.Pattern;
 public class MqttIngestionService {
 
     private static final Logger log = LoggerFactory.getLogger(MqttIngestionService.class);
-    private static final Pattern TOPIC_PATTERN = Pattern.compile("^devices/(.+)/status$");
+    private static final Pattern TOPIC_STATUS = Pattern.compile("^devices/(.+)/status$");
+    private static final Pattern TOPIC_CMD    = Pattern.compile("^devices/(.+)/cmd$");
     private static final Map<Integer, String> ERROR_LABELS = Map.of(
         1,  "Motor desconectado ou fusível queimado.",
         2,  "Motor travado por objeto estranho ou ração úmida.",
@@ -44,9 +45,11 @@ public class MqttIngestionService {
     private MqttClient client;
 
     // Track previous al state per device to detect feeding completion
-    private final Map<String, Boolean> prevAl  = new ConcurrentHashMap<>();
-    private final Map<String, Double>  prevEg  = new ConcurrentHashMap<>();
-    private final Map<String, Integer> prevErr = new ConcurrentHashMap<>();
+    private final Map<String, Boolean> prevAl      = new ConcurrentHashMap<>();
+    private final Map<String, Double>  prevEg      = new ConcurrentHashMap<>();
+    private final Map<String, Integer> prevErr     = new ConcurrentHashMap<>();
+    // Track last sim (manual feed) command per device for correct source detection
+    private final Map<String, Instant> lastSimCmd  = new ConcurrentHashMap<>();
 
     public MqttIngestionService(FeedHistoryRepository feedHistoryRepo,
                                 DeviceTelemetryRepository telemetryRepo,
@@ -79,14 +82,27 @@ public class MqttIngestionService {
 
             client.connect(opts);
             client.subscribe("devices/+/status", 1);
-            log.info("MQTT connected to {} — subscribed to devices/+/status", brokerUrl);
+            client.subscribe("devices/+/cmd", 0);
+            log.info("MQTT connected to {} — subscribed to devices/+/status and devices/+/cmd", brokerUrl);
         } catch (MqttException e) {
             log.error("Failed to connect to MQTT broker: {}", e.getMessage());
         }
     }
 
     private void handleMessage(String topic, byte[] payload) {
-        Matcher m = TOPIC_PATTERN.matcher(topic);
+        // cmd topic: track sim commands for source detection
+        Matcher mc = TOPIC_CMD.matcher(topic);
+        if (mc.matches()) {
+            try {
+                JsonNode cmd = mapper.readTree(payload);
+                if (cmd.has("sim") && cmd.get("sim").isNumber() && cmd.get("sim").intValue() > 0) {
+                    lastSimCmd.put(mc.group(1), Instant.now());
+                }
+            } catch (Exception ignored) {}
+            return;
+        }
+
+        Matcher m = TOPIC_STATUS.matcher(topic);
         if (!m.matches()) return;
         String deviceId = m.group(1);
 
@@ -110,7 +126,9 @@ public class MqttIngestionService {
             if (Boolean.FALSE.equals(al) && Boolean.TRUE.equals(wasFed)) {
                 Double prev = prevEg.getOrDefault(deviceId, 0.0);
                 int grams = (eg != null && prev > 0) ? (int) Math.max(0, Math.round(prev - eg)) : 0;
-                String source = Boolean.TRUE.equals(am) ? "scheduled" : "manual";
+                // Source: manual if a sim command arrived within the last 60s, otherwise scheduled
+                Instant lastSim = lastSimCmd.get(deviceId);
+                String source = (lastSim != null && lastSim.isAfter(now.minusSeconds(60))) ? "manual" : "scheduled";
                 boolean duplicate = feedHistoryRepo.existsByDeviceIdAndGramsAndTimestampAfter(
                         deviceId, grams, now.minusSeconds(10));
                 if (!duplicate) {
