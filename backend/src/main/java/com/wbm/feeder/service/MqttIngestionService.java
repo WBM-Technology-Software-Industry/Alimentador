@@ -47,9 +47,10 @@ public class MqttIngestionService {
 
     private MqttClient client;
 
-    private final Map<String, Boolean> prevAl     = new ConcurrentHashMap<>();
-    private final Map<String, Integer> prevErr    = new ConcurrentHashMap<>();
-    private final Map<String, Instant> lastSimCmd = new ConcurrentHashMap<>();
+    private final Map<String, Boolean> prevAl      = new ConcurrentHashMap<>();
+    private final Map<String, Integer> prevErr     = new ConcurrentHashMap<>();
+    private final Map<String, Instant> lastSimCmd  = new ConcurrentHashMap<>();
+    private final Map<String, Integer> lastSimGrams = new ConcurrentHashMap<>();
     // Store schedule payload from the device status for grams lookup
     private final Map<String, JsonNode> lastCpt   = new ConcurrentHashMap<>();
     private final Map<String, JsonNode> lastCps   = new ConcurrentHashMap<>();
@@ -101,7 +102,9 @@ public class MqttIngestionService {
             try {
                 JsonNode cmd = mapper.readTree(payload);
                 if (cmd.has("sim") && cmd.get("sim").isNumber() && cmd.get("sim").intValue() > 0) {
-                    lastSimCmd.put(mc.group(1), Instant.now());
+                    String devId = mc.group(1);
+                    lastSimCmd.put(devId, Instant.now());
+                    lastSimGrams.put(devId, cmd.get("sim").intValue());
                 }
             } catch (Exception ignored) {}
             return;
@@ -148,10 +151,11 @@ public class MqttIngestionService {
                         deviceId, "manual", now.minusSeconds(60))) {
                     log.debug("Manual feed skipped (already saved by frontend): device={}", deviceId);
                 } else {
-                    // For scheduled feeds use the configured grams from the schedule (sensor unreliable during motor run)
+                    // Scheduled: use configured grams from schedule (sensor unreliable during motor run)
+                    // Manual fallback: use grams from the sim command (for when frontend POST failed)
                     int grams = "scheduled".equals(source)
                             ? resolveScheduledGrams(deviceId)
-                            : 0;
+                            : lastSimGrams.getOrDefault(deviceId, 0);
 
                     if (grams > 0) {
                         boolean duplicate = feedHistoryRepo.existsByDeviceIdAndGramsAndTimestampAfter(

@@ -139,15 +139,8 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
 
         if (typeof d.al === 'boolean' && !d.al && prevAl) {
           confirmCmdByType('stop')
-          // Compute grams from stock delta and set optimistic entry on all connected clients
-          const gramsUsed = typeof d.eg === 'number' && prevEg > 0
-            ? Math.max(0, Math.round(prevEg - d.eg))
-            : 0
-          if (gramsUsed > 0) {
-            const lastSim = lastSimCmdAt[deviceId] ?? 0
-            const source: 'manual' | 'scheduled' = (Date.now() - lastSim < 60_000) ? 'manual' : 'scheduled'
-            setOptimisticFeed({ id: `opt-${Date.now()}`, deviceId, grams: gramsUsed, timestamp: Date.now(), source })
-          }
+          // Feed done — clear optimistic entry and let server data take over
+          setOptimisticFeed(null)
           bumpLastFeedAt()
         }
 
