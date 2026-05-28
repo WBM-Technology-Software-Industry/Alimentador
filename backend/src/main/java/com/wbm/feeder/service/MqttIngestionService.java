@@ -146,7 +146,8 @@ public class MqttIngestionService {
                 }
             }
             if (al != null) prevAl.put(deviceId, al);
-            if (eg != null) prevEg.put(deviceId, eg);
+            // Only update prevEg when motor is off — sensor is unreliable during dispensing due to vibration
+            if (eg != null && !Boolean.TRUE.equals(al)) prevEg.put(deviceId, eg);
 
             // Log new errors only (not repeating same code)
             if (er != null && er > 0) {
