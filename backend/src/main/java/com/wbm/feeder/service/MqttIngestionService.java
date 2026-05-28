@@ -13,6 +13,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
@@ -24,6 +26,7 @@ public class MqttIngestionService {
     private static final Logger log = LoggerFactory.getLogger(MqttIngestionService.class);
     private static final Pattern TOPIC_STATUS = Pattern.compile("^devices/(.+)/status$");
     private static final Pattern TOPIC_CMD    = Pattern.compile("^devices/(.+)/cmd$");
+    private static final DateTimeFormatter DEVICE_TS_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
     private static final Map<Integer, String> ERROR_LABELS = Map.of(
         1,  "Motor desconectado ou fusível queimado.",
         2,  "Motor travado por objeto estranho ou ração úmida.",
@@ -36,7 +39,7 @@ public class MqttIngestionService {
     @Value("${mqtt.broker-url}")
     private String brokerUrl;
 
-    private final FeedHistoryRepository    feedHistoryRepo;
+    private final FeedHistoryRepository     feedHistoryRepo;
     private final DeviceTelemetryRepository telemetryRepo;
     private final DeviceScheduleRepository  scheduleRepo;
     private final ErrorLogRepository        errorLogRepo;
@@ -44,12 +47,15 @@ public class MqttIngestionService {
 
     private MqttClient client;
 
-    // Track previous al state per device to detect feeding completion
-    private final Map<String, Boolean> prevAl      = new ConcurrentHashMap<>();
-    private final Map<String, Double>  prevEg      = new ConcurrentHashMap<>();
-    private final Map<String, Integer> prevErr     = new ConcurrentHashMap<>();
-    // Track last sim (manual feed) command per device for correct source detection
-    private final Map<String, Instant> lastSimCmd  = new ConcurrentHashMap<>();
+    private final Map<String, Boolean> prevAl     = new ConcurrentHashMap<>();
+    private final Map<String, Integer> prevErr    = new ConcurrentHashMap<>();
+    private final Map<String, Instant> lastSimCmd = new ConcurrentHashMap<>();
+    // Store schedule payload from the device status for grams lookup
+    private final Map<String, JsonNode> lastCpt   = new ConcurrentHashMap<>();
+    private final Map<String, JsonNode> lastCps   = new ConcurrentHashMap<>();
+    private final Map<String, Integer>  lastPf    = new ConcurrentHashMap<>();
+    // Device local time at feed start (al: false → true)
+    private final Map<String, String>   feedStartTs = new ConcurrentHashMap<>();
 
     public MqttIngestionService(FeedHistoryRepository feedHistoryRepo,
                                 DeviceTelemetryRepository telemetryRepo,
@@ -90,7 +96,6 @@ public class MqttIngestionService {
     }
 
     private void handleMessage(String topic, byte[] payload) {
-        // cmd topic: track sim commands for source detection
         Matcher mc = TOPIC_CMD.matcher(topic);
         if (mc.matches()) {
             try {
@@ -116,40 +121,56 @@ public class MqttIngestionService {
             Double  tp = nodeDouble(d, "tp");
             Integer er = nodeInt(d, "er");
             Boolean al = nodeBool(d, "al");
-            Boolean am = nodeBool(d, "am");
+            Integer pf = nodeInt(d, "pf");
+            String  ts = d.has("ts") ? d.get("ts").asText() : null;
 
-            // Persist telemetry snapshot
             telemetryRepo.save(new DeviceTelemetry(deviceId, now, eg, ep, cp, tp, er));
 
-            // Detect feeding completion: al true → false
+            // Update cached schedule and profile
+            if (pf != null) lastPf.put(deviceId, pf);
+            if (d.has("c_pt") && d.get("c_pt").isArray())  lastCpt.put(deviceId, d.get("c_pt"));
+            if (d.has("c_ps") && d.get("c_ps").isObject()) lastCps.put(deviceId, d.get("c_ps"));
+
             Boolean wasFed = prevAl.get(deviceId);
+
+            // Track device local time at feed start (for schedule matching)
+            if (Boolean.TRUE.equals(al) && !Boolean.TRUE.equals(wasFed) && ts != null) {
+                feedStartTs.put(deviceId, ts);
+            }
+
+            // Detect feeding completion: al true → false
             if (Boolean.FALSE.equals(al) && Boolean.TRUE.equals(wasFed)) {
-                Double prev = prevEg.getOrDefault(deviceId, 0.0);
-                int grams = (eg != null && prev > 0) ? (int) Math.max(0, Math.round(prev - eg)) : 0;
-                // Source: manual if a sim command arrived within the last 60s, otherwise scheduled
                 Instant lastSim = lastSimCmd.get(deviceId);
                 String  source  = (lastSim != null && lastSim.isAfter(now.minusSeconds(60))) ? "manual" : "scheduled";
-                if (grams <= 0) return;
+
                 // For manual feeds the frontend already saved instantly — skip to avoid duplicate
                 if ("manual".equals(source) && feedHistoryRepo.existsByDeviceIdAndSourceAndTimestampAfter(
                         deviceId, "manual", now.minusSeconds(60))) {
                     log.debug("Manual feed skipped (already saved by frontend): device={}", deviceId);
-                    return;
-                }
-                boolean duplicate = feedHistoryRepo.existsByDeviceIdAndGramsAndTimestampAfter(
-                        deviceId, grams, now.minusSeconds(10));
-                if (!duplicate) {
-                    feedHistoryRepo.save(new FeedHistory(deviceId, now, grams, source));
-                    log.info("Feed recorded: device={} grams={} source={}", deviceId, grams, source);
                 } else {
-                    log.debug("Feed skipped (duplicate): device={} grams={}", deviceId, grams);
+                    // For scheduled feeds use the configured grams from the schedule (sensor unreliable during motor run)
+                    int grams = "scheduled".equals(source)
+                            ? resolveScheduledGrams(deviceId)
+                            : 0;
+
+                    if (grams > 0) {
+                        boolean duplicate = feedHistoryRepo.existsByDeviceIdAndGramsAndTimestampAfter(
+                                deviceId, grams, now.minusSeconds(10));
+                        if (!duplicate) {
+                            feedHistoryRepo.save(new FeedHistory(deviceId, now, grams, source));
+                            log.info("Feed recorded: device={} grams={} source={}", deviceId, grams, source);
+                        } else {
+                            log.debug("Feed skipped (duplicate): device={} grams={}", deviceId, grams);
+                        }
+                    } else {
+                        log.debug("Feed skipped (grams=0): device={} source={}", deviceId, source);
+                    }
                 }
             }
-            if (al != null) prevAl.put(deviceId, al);
-            // Only update prevEg when motor is off — sensor is unreliable during dispensing due to vibration
-            if (eg != null && !Boolean.TRUE.equals(al)) prevEg.put(deviceId, eg);
 
-            // Log new errors only (not repeating same code)
+            if (al != null) prevAl.put(deviceId, al);
+
+            // Log new errors only
             if (er != null && er > 0) {
                 Integer last = prevErr.get(deviceId);
                 if (!er.equals(last)) {
@@ -173,6 +194,56 @@ public class MqttIngestionService {
         } catch (Exception e) {
             log.debug("Failed to process MQTT message: {}", e.getMessage());
         }
+    }
+
+    /**
+     * Resolve grams for a scheduled feed using the device's own schedule config.
+     * Dog profile (pf=1): find the c_pt slot closest to the feed start time.
+     * Fish profile (pf=2): use c_ps.qpc (quantity per cycle).
+     */
+    private int resolveScheduledGrams(String deviceId) {
+        int pf = lastPf.getOrDefault(deviceId, 1);
+
+        if (pf == 2) {
+            JsonNode cps = lastCps.get(deviceId);
+            if (cps != null && cps.has("qpc") && cps.get("qpc").isNumber()) {
+                return cps.get("qpc").intValue();
+            }
+            return 0;
+        }
+
+        // Dog profile: match feed start time against c_pt slots
+        JsonNode cpt = lastCpt.get(deviceId);
+        if (cpt == null || !cpt.isArray() || cpt.isEmpty()) return 0;
+
+        String startTs = feedStartTs.get(deviceId);
+        int feedHour = -1, feedMinute = -1;
+        if (startTs != null) {
+            try {
+                LocalDateTime ldt = LocalDateTime.parse(startTs, DEVICE_TS_FMT);
+                feedHour   = ldt.getHour();
+                feedMinute = ldt.getMinute();
+            } catch (Exception ignored) {}
+        }
+
+        int bestQ    = 0;
+        int bestDiff = Integer.MAX_VALUE;
+        for (JsonNode slot : cpt) {
+            int h = slot.has("h") ? slot.get("h").intValue() : -1;
+            int min = slot.has("m") ? slot.get("m").intValue() : -1;
+            int q = slot.has("q") ? slot.get("q").intValue() : 0;
+            if (h < 0 || min < 0 || q <= 0) continue;
+
+            int diff = (feedHour >= 0)
+                    ? Math.abs((h * 60 + min) - (feedHour * 60 + feedMinute))
+                    : 0;
+            if (diff < bestDiff) {
+                bestDiff = diff;
+                bestQ    = q;
+            }
+        }
+        // Accept match within 5 minutes, or take best available if no timestamp
+        return (feedHour < 0 || bestDiff <= 5) ? bestQ : 0;
     }
 
     private void upsertSchedule(String deviceId, String type, String data, Instant now) {
