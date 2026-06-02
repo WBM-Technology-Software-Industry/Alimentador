@@ -1,7 +1,6 @@
 import mqtt, { type MqttClient } from 'mqtt'
 import { useDeviceStore, type DeviceSchedule, type FishSchedule } from '../store/deviceStore'
 import { notify } from '../store/notificationStore'
-import { api } from '../api/client'
 
 
 const DEVICE_LABELS: Record<string, string> = {
@@ -196,10 +195,6 @@ export function publishCmd(deviceId: string, payload: object) {
   const p = payload as Record<string, unknown>
   if ('sim' in p) {
     lastSimCmdAt[deviceId] = Date.now()
-    const grams = typeof p.sim === 'number' ? p.sim : 0
-    if (grams > 0) {
-      api.postFeedEntry(deviceId, grams, 'manual').catch(() => {})
-    }
   }
   client.publish(`devices/${deviceId}/cmd`, JSON.stringify(payload), { qos: 1 })
   return true

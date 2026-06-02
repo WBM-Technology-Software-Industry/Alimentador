@@ -146,13 +146,9 @@ public class MqttIngestionService {
                 Instant lastSim = lastSimCmd.get(deviceId);
                 String  source  = (lastSim != null && lastSim.isAfter(now.minusSeconds(60))) ? "manual" : "scheduled";
 
-                // For manual feeds the frontend already saved instantly — skip to avoid duplicate
-                if ("manual".equals(source) && feedHistoryRepo.existsByDeviceIdAndSourceAndTimestampAfter(
-                        deviceId, "manual", now.minusSeconds(60))) {
-                    log.debug("Manual feed skipped (already saved by frontend): device={}", deviceId);
-                } else {
+                {
                     // Scheduled: use configured grams from schedule (sensor unreliable during motor run)
-                    // Manual fallback: use grams from the sim command (for when frontend POST failed)
+                    // Manual: use grams from the sim command tracked via cmd topic
                     int grams = "scheduled".equals(source)
                             ? resolveScheduledGrams(deviceId)
                             : lastSimGrams.getOrDefault(deviceId, 0);

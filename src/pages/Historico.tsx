@@ -259,17 +259,25 @@ export default function Historico() {
             <div key={day}>
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{day}</p>
               <div className="flex flex-col gap-2">
-                {dayEntries.map((e) => (
-                  <div key={e.id} className="bg-white rounded-xl shadow px-4 py-3 flex items-center justify-between gap-3">
+                {dayEntries.map((e) => {
+                  const isPending = typeof e.id === 'string'
+                  return (
+                  <div key={e.id} className={`rounded-xl shadow px-4 py-3 flex items-center justify-between gap-3 ${
+                    isPending ? 'bg-blue-50 border border-blue-200' : 'bg-white'
+                  }`}>
                     <div className="flex items-center gap-3 min-w-0">
                       <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
-                        e.source === 'manual' ? 'bg-brand-100' : 'bg-blue-50'}`}>
-                        {e.source === 'manual'
-                          ? <Hand size={15} className="text-brand-700" />
-                          : <CalendarClock size={15} className="text-blue-500" />}
+                        isPending ? 'bg-blue-100' : e.source === 'manual' ? 'bg-brand-100' : 'bg-blue-50'}`}>
+                        {isPending
+                          ? <Hand size={15} className="text-blue-500 animate-pulse" />
+                          : e.source === 'manual'
+                            ? <Hand size={15} className="text-brand-700" />
+                            : <CalendarClock size={15} className="text-blue-500" />}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-gray-800">{e.grams > 0 ? `${e.grams}g dispensados` : '—'}</p>
+                        <p className="text-sm font-semibold text-gray-800">
+                          {isPending ? `${e.grams}g — dispensando...` : e.grams > 0 ? `${e.grams}g dispensados` : '—'}
+                        </p>
                         <p className="text-xs text-gray-400 truncate">
                           {e.source === 'manual' ? 'Manual' : 'Automático'} · {DEVICE_LABELS[e.deviceId] ?? e.deviceId}
                         </p>
@@ -279,7 +287,8 @@ export default function Historico() {
                       {format(new Date(e.timestamp), 'HH:mm')}
                     </p>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           ))}

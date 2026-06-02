@@ -41,13 +41,15 @@ function DeviceIdConfig() {
 }
 
 function ModoOperacao() {
-  const { am, deviceId, connected, setTelemetry, manualGrams, setManualGrams, bumpLastFeedAt, setOptimisticFeed, deviceData } = useDeviceStore()
+  const { am, deviceId, connected, setTelemetry, manualGrams, setManualGrams, setOptimisticFeed, deviceData } = useDeviceStore()
   const [sentAt,  setSentAt]  = useState<number | null>(null)
   const [offline, setOffline] = useState(false)
   const lastCmd = useLastCmd('mode', sentAt)
 
   const deviceAm  = deviceData[deviceId]?.am ?? null
   const deviceAl  = deviceData[deviceId]?.al ?? false
+  const deviceEp  = deviceData[deviceId]?.ep ?? null
+  const isEmpty   = deviceEp !== null && deviceEp === 0
 
   // O firmware volta para am:true durante/após o sim — ignorar mismatch enquanto alimentando
   // ou quando o usuário acabou de disparar um trato manual (am local = false mas device = true por causa do sim)
@@ -66,7 +68,6 @@ function ModoOperacao() {
   function handleSendQuantity() {
     publishCmd(deviceId, { sim: manualGrams })
     setOptimisticFeed({ id: `opt-${Date.now()}`, deviceId, grams: manualGrams, timestamp: Date.now(), source: 'manual' })
-    bumpLastFeedAt()
   }
 
   function handleReconfirmManual() {
@@ -152,12 +153,17 @@ function ModoOperacao() {
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500"
             />
           </div>
+          {isEmpty && (
+            <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-red-600 text-xs font-medium">
+              <span>⚠</span> Estoque vazio — abasteça antes de disparar.
+            </div>
+          )}
           <button
             onClick={handleSendQuantity}
-            disabled={!connected}
+            disabled={!connected || isEmpty || deviceAl}
             className="w-full py-3 rounded-2xl bg-brand-600 disabled:bg-gray-300 text-[#1A1A1A] font-bold text-sm"
           >
-            Disparar trato manual
+            {deviceAl ? 'Dispensando...' : 'Disparar trato manual'}
           </button>
         </>
       )}
