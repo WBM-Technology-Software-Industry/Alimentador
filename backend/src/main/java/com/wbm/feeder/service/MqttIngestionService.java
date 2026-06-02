@@ -144,7 +144,7 @@ public class MqttIngestionService {
             // Detect feeding completion: al true → false
             if (Boolean.FALSE.equals(al) && Boolean.TRUE.equals(wasFed)) {
                 Instant lastSim = lastSimCmd.get(deviceId);
-                String  source  = (lastSim != null && lastSim.isAfter(now.minusSeconds(60))) ? "manual" : "scheduled";
+                String  source  = (lastSim != null && lastSim.isAfter(now.minusSeconds(300))) ? "manual" : "scheduled";
 
                 {
                     // Scheduled: use configured grams from schedule (sensor unreliable during motor run)
