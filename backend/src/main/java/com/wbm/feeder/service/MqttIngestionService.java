@@ -155,10 +155,15 @@ public class MqttIngestionService {
 
                     if (grams > 0) {
                         boolean duplicate = feedHistoryRepo.existsByDeviceIdAndGramsAndTimestampAfter(
-                                deviceId, grams, now.minusSeconds(10));
+                                deviceId, grams, now.minusSeconds(120));
                         if (!duplicate) {
                             feedHistoryRepo.save(new FeedHistory(deviceId, now, grams, source));
                             log.info("Feed recorded: device={} grams={} source={}", deviceId, grams, source);
+                            // Clear manual tracking after save — prevents al glitch from saving twice
+                            if ("manual".equals(source)) {
+                                lastSimCmd.remove(deviceId);
+                                lastSimGrams.remove(deviceId);
+                            }
                         } else {
                             log.debug("Feed skipped (duplicate): device={} grams={}", deviceId, grams);
                         }
