@@ -1,4 +1,4 @@
-import { HashRouter, Routes, Route } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import Layout from './components/Layout'
 import LoadingScreen from './components/LoadingScreen'
@@ -6,7 +6,9 @@ import Dashboard from './pages/Dashboard'
 import Estoque from './pages/Estoque'
 import Historico from './pages/Historico'
 import Configuracao from './pages/Configuracao'
+import Login from './pages/Login'
 import { useDeviceStore } from './store/deviceStore'
+import { useAuthStore } from './store/authStore'
 import { connectMqtt } from './mqtt/client'
 import { api } from './api/client'
 
@@ -15,7 +17,9 @@ const BROKER_URL = import.meta.env.VITE_MQTT_BROKER_URL ||
 const DEVICE_ID  = import.meta.env.VITE_DEVICE_ID as string
 const ALL_DEVICES = ['ALIMENTADOR_1', 'ALIMENTADOR_2']
 
-function AppInner() {
+function PrivateRoutes() {
+  const token = useAuthStore((s) => s.token)
+  if (!token) return <Navigate to="/login" replace />
   return (
     <Layout>
       <Routes>
@@ -33,37 +37,29 @@ export default function App() {
   const setDeviceData   = useDeviceStore((s) => s.setDeviceData)
   const connected       = useDeviceStore((s) => s.connected)
   const deviceData      = useDeviceStore((s) => s.deviceData)
+  const token           = useAuthStore((s) => s.token)
 
-  // Se já tem cache local, não bloqueia com loading screen
   const hasCachedData   = Object.keys(deviceData).length > 0
-  const [loading, setLoading] = useState(!hasCachedData)
+  const [loading, setLoading] = useState(!hasCachedData && !!token)
 
   useEffect(() => {
+    if (!token) return
     setBrokerConfig(BROKER_URL, DEVICE_ID)
     connectMqtt(BROKER_URL, DEVICE_ID)
 
-    // Pré-carrega o último dado de cada dispositivo direto da API —
-    // chega antes do MQTT e torna a tela inicial imediata
     ALL_DEVICES.forEach((id) => {
       api.latestTelemetry(id)
         .then((t) => {
           if (!t) return
-          setDeviceData(id, {
-            eg: t.eg ?? 0,
-            ep: t.ep ?? 0,
-            cp: t.cp ?? 10000,
-            tp: t.tp ?? 0,
-            er: t.er ?? 0,
-          })
+          setDeviceData(id, { eg: t.eg ?? 0, ep: t.ep ?? 0, cp: t.cp ?? 10000, tp: t.tp ?? 0, er: t.er ?? 0 })
           setLoading(false)
         })
-        .catch(() => {/* mantém o cache local */})
+        .catch(() => {})
     })
 
-    // Fallback: esconde loading após 2 s mesmo sem resposta
     const timeout = setTimeout(() => setLoading(false), 2000)
     return () => clearTimeout(timeout)
-  }, [setBrokerConfig, setDeviceData])
+  }, [token, setBrokerConfig, setDeviceData])
 
   useEffect(() => {
     if (connected) setLoading(false)
@@ -72,7 +68,10 @@ export default function App() {
   return (
     <HashRouter>
       {loading && <LoadingScreen />}
-      <AppInner />
+      <Routes>
+        <Route path="/login" element={token ? <Navigate to="/" replace /> : <Login />} />
+        <Route path="/*"     element={<PrivateRoutes />} />
+      </Routes>
     </HashRouter>
   )
 }

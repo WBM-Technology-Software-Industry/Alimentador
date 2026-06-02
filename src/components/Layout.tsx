@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
-import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, Package, History, Settings, Sun, Moon } from 'lucide-react'
+import { NavLink, useNavigate } from 'react-router-dom'
+import { LayoutDashboard, Package, History, Settings, Sun, Moon, LogOut } from 'lucide-react'
 import { useDeviceStore } from '../store/deviceStore'
+import { useAuthStore } from '../store/authStore'
+import { api } from '../api/client'
 import NotificationToast from './NotificationToast'
 import StatusBar from './StatusBar'
 import {
@@ -33,6 +35,14 @@ function AppShell({ children }: { children: React.ReactNode }) {
   const { collapsed } = useSidebar()
   const connected = useDeviceStore((s) => s.connected)
   const { dark, toggle } = useDarkMode()
+  const { email, clearAuth } = useAuthStore()
+  const navigate = useNavigate()
+
+  async function handleLogout() {
+    await api.logout().catch(() => {})
+    clearAuth()
+    navigate('/login', { replace: true })
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
@@ -65,7 +75,16 @@ function AppShell({ children }: { children: React.ReactNode }) {
           </SidebarContent>
 
           <SidebarFooter>
-            <span className="text-xs text-gray-500 group-data-[collapsed=true]:hidden">v1.0.0</span>
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-gray-400 truncate group-data-[collapsed=true]:hidden">{email}</span>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 text-xs text-gray-400 hover:text-red-500 transition-colors"
+              >
+                <LogOut size={13} />
+                <span className="group-data-[collapsed=true]:hidden">Sair</span>
+              </button>
+            </div>
           </SidebarFooter>
         </Sidebar>
       </div>
