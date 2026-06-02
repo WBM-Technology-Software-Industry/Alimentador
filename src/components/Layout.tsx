@@ -160,6 +160,13 @@ function AppShell({ children }: { children: React.ReactNode }) {
             <span>{label}</span>
           </NavLink>
         ))}
+        <button
+          onClick={handleLogout}
+          className="flex-1 flex flex-col items-center py-2 gap-0.5 text-xs text-gray-500 hover:text-red-500 transition-colors"
+        >
+          <LogOut size={20} />
+          <span>Sair</span>
+        </button>
       </nav>
 
     </div>
