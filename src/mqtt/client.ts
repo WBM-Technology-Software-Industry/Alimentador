@@ -162,7 +162,12 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
 
       // Detecta fim de trato para QUALQUER dispositivo → dispara refresh do histórico
       const newAl = typeof d.al === 'boolean' ? d.al : typeof d.al === 'number' ? !!d.al : null
-      if (newAl === false && prevAlAll[msgDeviceId] === true) bumpLastFeedAt()
+      if (newAl === false && prevAlAll[msgDeviceId] === true) {
+        // Clear optimistic feed for this device regardless of which device is active
+        const { optimisticFeed: opt, setOptimisticFeed: clearOpt } = useDeviceStore.getState()
+        if (opt?.deviceId === msgDeviceId) clearOpt(null)
+        bumpLastFeedAt()
+      }
       if (newAl !== null) prevAlAll[msgDeviceId] = newAl
 
       if (Array.isArray(d.c_pt)) {

@@ -100,10 +100,10 @@ export default function Historico() {
         // Handle optimistic feed for active device
         const { optimisticFeed: opt, setOptimisticFeed: clearOpt } = useDeviceStore.getState()
         if (opt && activeDeviceIds.includes(opt.deviceId)) {
-          // Clear optimistic entry if any real entry arrived for this device after the optimistic timestamp
+          // Clear optimistic only when a real entry appears AFTER it was created (±3s clock skew)
           const confirmed = merged.some(e =>
             e.deviceId === opt.deviceId &&
-            e.timestamp >= opt.timestamp - 30_000
+            e.timestamp >= opt.timestamp - 3_000
           )
           if (confirmed) clearOpt(null)
           else merged = [{ ...opt, id: opt.id as string | number }, ...merged]
