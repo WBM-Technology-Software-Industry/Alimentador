@@ -167,7 +167,7 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
         // Save manual feed via API if there was a recent sim command for this device
         const lastSim = lastSimCmdAt[msgDeviceId] ?? 0
         const grams   = lastSimGrams[msgDeviceId] ?? 0
-        if (Date.now() - lastSim < 300_000 && grams > 0) {
+        if (Date.now() - lastSim < 1_800_000 && grams > 0) {
           api.postFeedEntry(msgDeviceId, grams, 'manual').catch(() => {})
           delete lastSimCmdAt[msgDeviceId]
           delete lastSimGrams[msgDeviceId]
