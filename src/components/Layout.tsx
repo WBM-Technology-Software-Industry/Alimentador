@@ -48,7 +48,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
 
       {/* ── Sidebar (desktop) ──────────────────────── */}
-      <div className="hidden lg:flex fixed top-0 left-0 h-full z-40">
+      <div className="hidden lg:flex fixed top-0 left-0 h-full z-40 bg-gray-100 border-r border-gray-200">
         <Sidebar>
           <SidebarHeader>
             <div className="flex items-center justify-between min-w-0">
