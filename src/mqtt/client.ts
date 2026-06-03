@@ -14,6 +14,7 @@ const lastSimCmdAt:   Record<string, number> = {}
 const lastSimGrams:   Record<string, number> = {}
 const prevAlAll:      Record<string, boolean> = {}
 const feedStartTime:  Record<string, number>  = {}
+const lastAlTrueAt:   Record<string, number>  = {}
 
 export function getMqttClient() {
   return client
@@ -167,18 +168,23 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
 
       if (newAl === true && !prevAlAll[msgDeviceId]) {
         feedStartTime[msgDeviceId] = Date.now()
+        lastAlTrueAt[msgDeviceId]  = Date.now()
       }
 
       if (newAl === false && prevAlAll[msgDeviceId] === true) {
-        const lastSim = lastSimCmdAt[msgDeviceId] ?? 0
-        const grams   = lastSimGrams[msgDeviceId] ?? 0
+        const lastSim  = lastSimCmdAt[msgDeviceId] ?? 0
+        const grams    = lastSimGrams[msgDeviceId]  ?? 0
+        const lastTrue = lastAlTrueAt[msgDeviceId]  ?? 0
 
-        if (lastSim > 0 && Date.now() - lastSim < 1_800_000 && grams > 0) {
-          // Manual feed already saved in publishCmd — just clear tracking
+        // Our manual feed: al went True AFTER we sent the sim command
+        const isManualFeed = lastSim > 0 && grams > 0 && lastTrue > lastSim
+
+        if (isManualFeed) {
+          // Already saved in publishCmd — just clear tracking
           delete lastSimCmdAt[msgDeviceId]
           delete lastSimGrams[msgDeviceId]
         } else {
-          // Scheduled feed — resolve grams from device schedule
+          // Scheduled feed (or al went True before our command) — save as scheduled
           const schedGrams = resolveScheduledGramsFromStore(msgDeviceId, feedStartTime[msgDeviceId])
           if (schedGrams > 0) {
             api.postFeedEntry(msgDeviceId, schedGrams, 'scheduled').catch(() => {})
