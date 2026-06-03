@@ -141,7 +141,7 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
         if (typeof d.al === 'boolean' && !d.al && prevAl) {
           confirmCmdByType('stop')
           // Feed done — clear optimistic entry and let server data take over
-          setOptimisticFeed(null)
+          setOptimisticFeed(null, deviceId)
           bumpLastFeedAt()
         }
 
@@ -187,8 +187,8 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
         }
 
         delete feedStartTime[msgDeviceId]
-        const { optimisticFeed: opt, setOptimisticFeed: clearOpt } = useDeviceStore.getState()
-        if (opt?.deviceId === msgDeviceId) clearOpt(null)
+        const { setOptimisticFeed: clearOpt } = useDeviceStore.getState()
+        clearOpt(null, msgDeviceId)
         bumpLastFeedAt()
       }
 

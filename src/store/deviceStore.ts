@@ -87,7 +87,7 @@ type DeviceState = {
   // Histórico local
   feedHistory: FeedEntry[]
   lastFeedAt: number
-  optimisticFeed: (FeedEntry & { deviceId: string }) | null
+  optimisticFeed: Record<string, FeedEntry & { deviceId: string }>
 
   // Quantidade para trato manual
   manualGrams: number
@@ -104,7 +104,7 @@ type DeviceState = {
   addFeedEntry: (entry: FeedEntry) => void
   clearFeedHistory: () => void
   bumpLastFeedAt: () => void
-  setOptimisticFeed: (feed: (FeedEntry & { deviceId: string }) | null) => void
+  setOptimisticFeed: (feed: (FeedEntry & { deviceId: string }) | null, deviceId?: string) => void
   setManualGrams: (g: number) => void
   addCmd: (entry: Omit<CmdLogEntry, 'status'>) => void
   confirmCmdByType: (type: CmdType) => void
@@ -135,7 +135,7 @@ export const useDeviceStore = create<DeviceState>()(
       deviceData: {},
       feedHistory: [],
       lastFeedAt: 0,
-      optimisticFeed: null,
+      optimisticFeed: {},
       manualGrams: 100,
       cmdLog: [],
 
@@ -170,7 +170,18 @@ export const useDeviceStore = create<DeviceState>()(
         set((s) => ({ feedHistory: [entry, ...s.feedHistory].slice(0, 200) })),
       clearFeedHistory: () => set({ feedHistory: [] }),
       bumpLastFeedAt: () => set({ lastFeedAt: Date.now() }),
-      setOptimisticFeed: (optimisticFeed) => set({ optimisticFeed }),
+      setOptimisticFeed: (feed, devId) => set((s) => {
+        if (feed === null) {
+          // Clear specific device or all
+          if (devId) {
+            const next = { ...s.optimisticFeed }
+            delete next[devId]
+            return { optimisticFeed: next }
+          }
+          return { optimisticFeed: {} }
+        }
+        return { optimisticFeed: { ...s.optimisticFeed, [feed.deviceId]: feed } }
+      }),
       setManualGrams: (manualGrams) => set({ manualGrams }),
       addCmd: (entry) => set((s) => ({
         cmdLog: [{ ...entry, status: 'sent' as CmdStatus }, ...s.cmdLog].slice(0, 10),

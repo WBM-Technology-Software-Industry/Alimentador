@@ -97,15 +97,15 @@ export default function Historico() {
         // Ignorar dados que voltaram dentro de 3s após uma limpeza
         if (clearedAt > 0 && Date.now() - clearedAt < 3000) return
         let merged: Entry[] = results.flat().sort((a, b) => b.timestamp - a.timestamp)
-        // Handle optimistic feed for active device
-        const { optimisticFeed: opt, setOptimisticFeed: clearOpt } = useDeviceStore.getState()
-        if (opt && activeDeviceIds.includes(opt.deviceId)) {
-          // Clear optimistic only when a real entry appears AFTER it was created (500ms clock skew tolerance)
+        // Handle optimistic feeds (one per device)
+        const { optimisticFeed: opts, setOptimisticFeed: clearOpt } = useDeviceStore.getState()
+        for (const opt of Object.values(opts)) {
+          if (!activeDeviceIds.includes(opt.deviceId)) continue
           const confirmed = merged.some(e =>
             e.deviceId === opt.deviceId &&
             e.timestamp >= opt.timestamp - 500
           )
-          if (confirmed) clearOpt(null)
+          if (confirmed) clearOpt(null, opt.deviceId)
           else merged = [{ ...opt, id: opt.id as string | number }, ...merged]
         }
         setEntries(merged)
@@ -114,10 +114,14 @@ export default function Historico() {
       .finally(() => { setLoading(false); setRefreshing(false) })
   }
 
-  // Replace any previous optimistic entries (string ids) with the current one
+  // Sync optimistic entries into the list whenever they change
   useEffect(() => {
-    if (!optimisticFeed || !activeDeviceIds.includes(optimisticFeed.deviceId)) return
-    setEntries(prev => [optimisticFeed, ...prev.filter(e => typeof e.id === 'number')])
+    const active = Object.values(optimisticFeed).filter(o => activeDeviceIds.includes(o.deviceId))
+    if (active.length === 0) return
+    setEntries(prev => [
+      ...active,
+      ...prev.filter(e => typeof e.id === 'number'),
+    ])
   }, [optimisticFeed, filterDevice])
 
   useEffect(() => {
