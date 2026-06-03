@@ -177,19 +177,21 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
         const lastTrue = lastAlTrueAt[msgDeviceId]  ?? 0
 
         // Our manual feed: al went True AFTER we sent the sim command
-        const isManualFeed = lastSim > 0 && grams > 0 && lastTrue > lastSim
+        const isManualFeed  = lastSim > 0 && grams > 0 && lastTrue > lastSim
+        const manualPending = lastSim > 0 && grams > 0
 
         if (isManualFeed) {
           // Already saved in publishCmd — just clear tracking
           delete lastSimCmdAt[msgDeviceId]
           delete lastSimGrams[msgDeviceId]
-        } else {
-          // Scheduled feed (or al went True before our command) — save as scheduled
+        } else if (!manualPending) {
+          // No manual pending — pure scheduled feed
           const schedGrams = resolveScheduledGramsFromStore(msgDeviceId, feedStartTime[msgDeviceId])
           if (schedGrams > 0) {
             api.postFeedEntry(msgDeviceId, schedGrams, 'scheduled').catch(() => {})
           }
         }
+        // manualPending && !isManualFeed: scheduled fired while manual is pending — skip
 
         delete feedStartTime[msgDeviceId]
         const { setOptimisticFeed: clearOpt } = useDeviceStore.getState()
