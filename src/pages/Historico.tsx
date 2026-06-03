@@ -99,7 +99,7 @@ export default function Historico() {
         let merged: Entry[] = results.flat().sort((a, b) => b.timestamp - a.timestamp)
         // Handle optimistic feeds (one per device)
         const { optimisticFeed: opts, setOptimisticFeed: clearOpt } = useDeviceStore.getState()
-        for (const opt of Object.values(opts)) {
+        for (const opt of Object.values(opts ?? {})) {
           if (!activeDeviceIds.includes(opt.deviceId)) continue
           const confirmed = merged.some(e =>
             e.deviceId === opt.deviceId &&
@@ -116,7 +116,7 @@ export default function Historico() {
 
   // Sync optimistic entries into the list whenever they change
   useEffect(() => {
-    const active = Object.values(optimisticFeed).filter(o => activeDeviceIds.includes(o.deviceId))
+    const active = Object.values(optimisticFeed ?? {}).filter(o => activeDeviceIds.includes(o.deviceId))
     if (active.length === 0) return
     setEntries(prev => [
       ...active,
