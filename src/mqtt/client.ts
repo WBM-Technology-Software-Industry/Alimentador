@@ -174,12 +174,11 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
         const grams   = lastSimGrams[msgDeviceId] ?? 0
 
         if (lastSim > 0 && Date.now() - lastSim < 1_800_000 && grams > 0) {
-          // Feed manual
-          api.postFeedEntry(msgDeviceId, grams, 'manual').catch(() => {})
+          // Manual feed already saved in publishCmd — just clear tracking
           delete lastSimCmdAt[msgDeviceId]
           delete lastSimGrams[msgDeviceId]
         } else {
-          // Feed automático — resolve gramas da agenda do dispositivo
+          // Scheduled feed — resolve grams from device schedule
           const schedGrams = resolveScheduledGramsFromStore(msgDeviceId, feedStartTime[msgDeviceId])
           if (schedGrams > 0) {
             api.postFeedEntry(msgDeviceId, schedGrams, 'scheduled').catch(() => {})
@@ -248,9 +247,13 @@ export function publishCmd(deviceId: string, payload: object) {
   if (!client?.connected) return false
   const p = payload as Record<string, unknown>
   if ('sim' in p) {
-    lastSimCmdAt[deviceId] = Date.now()
     const g = typeof p.sim === 'number' ? p.sim : 0
-    if (g > 0) lastSimGrams[deviceId] = g
+    if (g > 0) {
+      lastSimCmdAt[deviceId] = Date.now()
+      lastSimGrams[deviceId] = g
+      // Save manual feed immediately — don't wait for al:false (unreliable with concurrent scheduled feeds)
+      api.postFeedEntry(deviceId, g, 'manual').catch(() => {})
+    }
   }
   client.publish(`devices/${deviceId}/cmd`, JSON.stringify(payload), { qos: 1 })
   return true

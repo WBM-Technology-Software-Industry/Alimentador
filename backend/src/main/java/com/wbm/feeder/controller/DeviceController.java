@@ -63,6 +63,12 @@ public class DeviceController {
                                                   @RequestBody Map<String, Object> body) {
         int grams  = body.containsKey("grams")  ? ((Number) body.get("grams")).intValue()  : 0;
         String src = body.containsKey("source") ? (String) body.get("source") : "manual";
+        if (grams <= 0) return ResponseEntity.badRequest().build();
+        // Prevent duplicate entries within 10 seconds (same device, same grams, same source)
+        if (feedHistoryRepo.existsByDeviceIdAndGramsAndTimestampAfter(deviceId, grams, Instant.now().minusSeconds(10))) {
+            return feedHistoryRepo.findByDeviceIdOrderByTimestampDesc(deviceId, org.springframework.data.domain.PageRequest.of(0, 1))
+                    .stream().findFirst().map(ResponseEntity::ok).orElse(ResponseEntity.ok().build());
+        }
         FeedHistory entry = feedHistoryRepo.save(new FeedHistory(deviceId, Instant.now(), grams, src));
         return ResponseEntity.ok(entry);
     }
