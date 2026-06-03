@@ -103,8 +103,10 @@ public class MqttIngestionService {
                 JsonNode cmd = mapper.readTree(payload);
                 if (cmd.has("sim") && cmd.get("sim").isNumber() && cmd.get("sim").intValue() > 0) {
                     String devId = mc.group(1);
+                    int simG = cmd.get("sim").intValue();
                     lastSimCmd.put(devId, Instant.now());
-                    lastSimGrams.put(devId, cmd.get("sim").intValue());
+                    lastSimGrams.put(devId, simG);
+                    log.info("Sim cmd received: device={} grams={}", devId, simG);
                 }
             } catch (Exception ignored) {}
             return;
