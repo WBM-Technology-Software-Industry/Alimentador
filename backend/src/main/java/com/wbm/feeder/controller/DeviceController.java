@@ -69,6 +69,11 @@ public class DeviceController {
             return feedHistoryRepo.findByDeviceIdOrderByTimestampDesc(deviceId, org.springframework.data.domain.PageRequest.of(0, 1))
                     .stream().findFirst().map(ResponseEntity::ok).orElse(ResponseEntity.ok().build());
         }
+        // Don't save scheduled if a manual was sent within the last 30 minutes
+        if ("scheduled".equals(src) && feedHistoryRepo.existsByDeviceIdAndSourceAndTimestampAfter(
+                deviceId, "manual", Instant.now().minusSeconds(1800))) {
+            return ResponseEntity.noContent().build();
+        }
         FeedHistory entry = feedHistoryRepo.save(new FeedHistory(deviceId, Instant.now(), grams, src));
         return ResponseEntity.ok(entry);
     }
