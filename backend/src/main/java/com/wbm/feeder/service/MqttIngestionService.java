@@ -218,7 +218,7 @@ public class MqttIngestionService {
                         : 0;
                 if (diff < bestDiff) { bestDiff = diff; bestQ = q; }
             }
-            if (bestQ > 0 && (feedHour < 0 || bestDiff <= 30)) return bestQ;
+            if (bestQ > 0 && (feedHour < 0 || bestDiff <= 5)) return bestQ;
         }
 
         // Fallback: periodic schedule (c_ps.qpc)
