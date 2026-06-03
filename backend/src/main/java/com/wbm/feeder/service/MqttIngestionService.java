@@ -89,7 +89,7 @@ public class MqttIngestionService {
 
             client.connect(opts);
             client.subscribe("devices/+/status", 1);
-            client.subscribe("devices/+/cmd", 0);
+            client.subscribe("devices/+/cmd", 1);
             log.info("MQTT connected to {} — subscribed to devices/+/status and devices/+/cmd", brokerUrl);
         } catch (MqttException e) {
             log.error("Failed to connect to MQTT broker: {}", e.getMessage());
