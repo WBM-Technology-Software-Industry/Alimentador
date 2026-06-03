@@ -10,9 +10,10 @@ const DEVICE_LABELS: Record<string, string> = {
 
 let client: MqttClient | null = null
 let lastNotifiedError = 0
-const lastSimCmdAt:  Record<string, number> = {}
-const lastSimGrams:  Record<string, number> = {}
-const prevAlAll:     Record<string, boolean> = {}
+const lastSimCmdAt:   Record<string, number> = {}
+const lastSimGrams:   Record<string, number> = {}
+const prevAlAll:      Record<string, boolean> = {}
+const feedStartTime:  Record<string, number>  = {}
 
 export function getMqttClient() {
   return client
@@ -161,22 +162,36 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
       devicePatch.lastSeen = Date.now()
       setDeviceData(msgDeviceId, devicePatch)
 
-      // Detecta fim de trato para QUALQUER dispositivo → dispara refresh do histórico
+      // Detecta início e fim de trato para QUALQUER dispositivo
       const newAl = typeof d.al === 'boolean' ? d.al : typeof d.al === 'number' ? !!d.al : null
+
+      if (newAl === true && !prevAlAll[msgDeviceId]) {
+        feedStartTime[msgDeviceId] = Date.now()
+      }
+
       if (newAl === false && prevAlAll[msgDeviceId] === true) {
-        // Save manual feed via API if there was a recent sim command for this device
         const lastSim = lastSimCmdAt[msgDeviceId] ?? 0
         const grams   = lastSimGrams[msgDeviceId] ?? 0
+
         if (Date.now() - lastSim < 1_800_000 && grams > 0) {
+          // Feed manual
           api.postFeedEntry(msgDeviceId, grams, 'manual').catch(() => {})
           delete lastSimCmdAt[msgDeviceId]
           delete lastSimGrams[msgDeviceId]
+        } else {
+          // Feed automático — resolve gramas da agenda do dispositivo
+          const schedGrams = resolveScheduledGramsFromStore(msgDeviceId, feedStartTime[msgDeviceId])
+          if (schedGrams > 0) {
+            api.postFeedEntry(msgDeviceId, schedGrams, 'scheduled').catch(() => {})
+          }
         }
-        // Clear optimistic feed for this device
+
+        delete feedStartTime[msgDeviceId]
         const { optimisticFeed: opt, setOptimisticFeed: clearOpt } = useDeviceStore.getState()
         if (opt?.deviceId === msgDeviceId) clearOpt(null)
         bumpLastFeedAt()
       }
+
       if (newAl !== null) prevAlAll[msgDeviceId] = newAl
 
       if (Array.isArray(d.c_pt)) {
@@ -196,6 +211,31 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
       // malformed payload — ignore
     }
   })
+}
+
+function resolveScheduledGramsFromStore(deviceId: string, startTime?: number): number {
+  const { deviceData } = useDeviceStore.getState()
+  const d = deviceData[deviceId]
+  if (!d) return 0
+
+  // Tenta c_pt (agenda pet) — slot mais próximo dentro de 5 minutos
+  if (d.schedules && Array.isArray(d.schedules) && startTime) {
+    const dt = new Date(startTime)
+    const feedHour = dt.getHours()
+    const feedMin  = dt.getMinutes()
+    let bestQ = 0, bestDiff = Infinity
+    for (const slot of d.schedules) {
+      if (!slot.q || slot.q <= 0) continue
+      const diff = Math.abs((slot.h * 60 + slot.m) - (feedHour * 60 + feedMin))
+      if (diff < bestDiff) { bestDiff = diff; bestQ = slot.q }
+    }
+    if (bestQ > 0 && bestDiff <= 5) return bestQ
+  }
+
+  // Fallback: ciclo piscicultura (c_ps.qpc)
+  if (d.fishSchedule?.qpc && d.fishSchedule.qpc > 0) return d.fishSchedule.qpc
+
+  return 0
 }
 
 export function disconnectMqtt() {

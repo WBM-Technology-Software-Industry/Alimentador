@@ -136,29 +136,7 @@ public class MqttIngestionService {
                 feedStartTs.put(deviceId, ts);
             }
 
-            // Detect feeding completion: al true → false
-            // Manual feeds are saved by the frontend via POST — backend only saves scheduled feeds
-            if (Boolean.FALSE.equals(al) && Boolean.TRUE.equals(wasFed)) {
-                // Skip if frontend already saved something for this device in the last 30s
-                if (feedHistoryRepo.existsByDeviceIdAndTimestampAfter(deviceId, now.minusSeconds(30))) {
-                    log.debug("Feed skipped (frontend already saved): device={}", deviceId);
-                } else {
-                    int grams = resolveScheduledGrams(deviceId);
-                    if (grams > 0) {
-                        boolean duplicate = feedHistoryRepo.existsByDeviceIdAndGramsAndTimestampAfter(
-                                deviceId, grams, now.minusSeconds(120));
-                        if (!duplicate) {
-                            feedHistoryRepo.save(new FeedHistory(deviceId, now, grams, "scheduled"));
-                            log.info("Feed recorded: device={} grams={} source=scheduled", deviceId, grams);
-                        } else {
-                            log.debug("Feed skipped (duplicate): device={} grams={}", deviceId, grams);
-                        }
-                    } else {
-                        log.debug("Feed skipped (grams=0): device={}", deviceId);
-                    }
-                }
-            }
-
+            // Feed history is saved entirely by the frontend to avoid race conditions
             if (al != null) prevAl.put(deviceId, al);
 
             // Log new errors only
