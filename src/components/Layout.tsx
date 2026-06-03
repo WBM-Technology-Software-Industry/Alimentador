@@ -37,6 +37,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
   const { dark, toggle } = useDarkMode()
   const { email, clearAuth } = useAuthStore()
   const navigate = useNavigate()
+  const [confirmLogout, setConfirmLogout] = useState(false)
 
   async function handleLogout() {
     await api.logout().catch(() => {})
@@ -78,7 +79,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
             <div className="flex flex-col gap-1">
               <span className="text-xs text-gray-400 truncate group-data-[collapsed=true]:hidden">{email}</span>
               <button
-                onClick={handleLogout}
+                onClick={() => setConfirmLogout(true)}
                 className="flex items-center gap-2 text-xs text-gray-400 hover:text-red-500 transition-colors"
               >
                 <LogOut size={13} />
@@ -161,13 +162,39 @@ function AppShell({ children }: { children: React.ReactNode }) {
           </NavLink>
         ))}
         <button
-          onClick={handleLogout}
+          onClick={() => setConfirmLogout(true)}
           className="flex-1 flex flex-col items-center py-2 gap-0.5 text-xs text-gray-500 hover:text-red-500 transition-colors"
         >
           <LogOut size={20} />
           <span>Sair</span>
         </button>
       </nav>
+
+      {/* Modal de confirmação de logout */}
+      {confirmLogout && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 w-full max-w-xs flex flex-col gap-4">
+            <div className="flex flex-col gap-1">
+              <p className="text-sm font-bold text-gray-800 dark:text-gray-100">Sair da conta?</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Você precisará fazer login novamente para acessar o sistema.</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleLogout}
+                className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-semibold hover:bg-red-600 transition-colors"
+              >
+                Sair
+              </button>
+              <button
+                onClick={() => setConfirmLogout(false)}
+                className="flex-1 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )
