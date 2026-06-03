@@ -203,21 +203,22 @@ public class MqttIngestionService {
 
     /**
      * Resolve grams for a scheduled feed using the device's own schedule config.
-     * Dog profile (pf=1): find the c_pt slot closest to the feed start time.
-     * Fish profile (pf=2): use c_ps.qpc (quantity per cycle).
+     * 1. Try c_pt: find the closest slot to the feed start time (no time limit).
+     * 2. Fallback to c_ps.qpc if c_pt yields nothing (e.g. fish schedule on pet profile).
      */
     private int resolveScheduledGrams(String deviceId) {
-        int pf = lastPf.getOrDefault(deviceId, 1);
+        int ptGrams = resolveFromCpt(deviceId);
+        if (ptGrams > 0) return ptGrams;
 
-        if (pf == 2) {
-            JsonNode cps = lastCps.get(deviceId);
-            if (cps != null && cps.has("qpc") && cps.get("qpc").isNumber()) {
-                return cps.get("qpc").intValue();
-            }
-            return 0;
+        // Fallback: use fish schedule qpc (covers periodic auto-feeds not in c_pt)
+        JsonNode cps = lastCps.get(deviceId);
+        if (cps != null && cps.has("qpc") && cps.get("qpc").isNumber()) {
+            return cps.get("qpc").intValue();
         }
+        return 0;
+    }
 
-        // Dog profile: match feed start time against c_pt slots
+    private int resolveFromCpt(String deviceId) {
         JsonNode cpt = lastCpt.get(deviceId);
         if (cpt == null || !cpt.isArray() || cpt.isEmpty()) return 0;
 
@@ -234,9 +235,9 @@ public class MqttIngestionService {
         int bestQ    = 0;
         int bestDiff = Integer.MAX_VALUE;
         for (JsonNode slot : cpt) {
-            int h = slot.has("h") ? slot.get("h").intValue() : -1;
+            int h   = slot.has("h") ? slot.get("h").intValue() : -1;
             int min = slot.has("m") ? slot.get("m").intValue() : -1;
-            int q = slot.has("q") ? slot.get("q").intValue() : 0;
+            int q   = slot.has("q") ? slot.get("q").intValue() : 0;
             if (h < 0 || min < 0 || q <= 0) continue;
 
             int diff = (feedHour >= 0)
@@ -247,8 +248,7 @@ public class MqttIngestionService {
                 bestQ    = q;
             }
         }
-        // Accept match within 5 minutes, or take best available if no timestamp
-        return (feedHour < 0 || bestDiff <= 5) ? bestQ : 0;
+        return bestQ;
     }
 
     private void upsertSchedule(String deviceId, String type, String data, Instant now) {
