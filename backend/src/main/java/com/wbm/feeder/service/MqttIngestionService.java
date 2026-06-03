@@ -202,26 +202,11 @@ public class MqttIngestionService {
     }
 
     /**
-     * Resolve grams for a scheduled feed using the device's own schedule config.
-     * 1. Try c_pt: find the closest slot to the feed start time (no time limit).
-     * 2. Fallback to c_ps.qpc if c_pt yields nothing (e.g. fish schedule on pet profile).
+     * Resolve grams for a scheduled feed.
+     * Uses c_pt if the nearest slot is within 30 min of the feed start time,
+     * otherwise falls back to c_ps.qpc (periodic fish/auto schedule).
      */
     private int resolveScheduledGrams(String deviceId) {
-        int ptGrams = resolveFromCpt(deviceId);
-        if (ptGrams > 0) return ptGrams;
-
-        // Fallback: use fish schedule qpc (covers periodic auto-feeds not in c_pt)
-        JsonNode cps = lastCps.get(deviceId);
-        if (cps != null && cps.has("qpc") && cps.get("qpc").isNumber()) {
-            return cps.get("qpc").intValue();
-        }
-        return 0;
-    }
-
-    private int resolveFromCpt(String deviceId) {
-        JsonNode cpt = lastCpt.get(deviceId);
-        if (cpt == null || !cpt.isArray() || cpt.isEmpty()) return 0;
-
         String startTs = feedStartTs.get(deviceId);
         int feedHour = -1, feedMinute = -1;
         if (startTs != null) {
@@ -232,23 +217,30 @@ public class MqttIngestionService {
             } catch (Exception ignored) {}
         }
 
-        int bestQ    = 0;
-        int bestDiff = Integer.MAX_VALUE;
-        for (JsonNode slot : cpt) {
-            int h   = slot.has("h") ? slot.get("h").intValue() : -1;
-            int min = slot.has("m") ? slot.get("m").intValue() : -1;
-            int q   = slot.has("q") ? slot.get("q").intValue() : 0;
-            if (h < 0 || min < 0 || q <= 0) continue;
-
-            int diff = (feedHour >= 0)
-                    ? Math.abs((h * 60 + min) - (feedHour * 60 + feedMinute))
-                    : 0;
-            if (diff < bestDiff) {
-                bestDiff = diff;
-                bestQ    = q;
+        // Try c_pt with 30-minute threshold
+        JsonNode cpt = lastCpt.get(deviceId);
+        if (cpt != null && cpt.isArray()) {
+            int bestQ    = 0;
+            int bestDiff = Integer.MAX_VALUE;
+            for (JsonNode slot : cpt) {
+                int h   = slot.has("h") ? slot.get("h").intValue() : -1;
+                int min = slot.has("m") ? slot.get("m").intValue() : -1;
+                int q   = slot.has("q") ? slot.get("q").intValue() : 0;
+                if (h < 0 || min < 0 || q <= 0) continue;
+                int diff = (feedHour >= 0)
+                        ? Math.abs((h * 60 + min) - (feedHour * 60 + feedMinute))
+                        : 0;
+                if (diff < bestDiff) { bestDiff = diff; bestQ = q; }
             }
+            if (bestQ > 0 && (feedHour < 0 || bestDiff <= 30)) return bestQ;
         }
-        return bestQ;
+
+        // Fallback: periodic schedule (c_ps.qpc)
+        JsonNode cps = lastCps.get(deviceId);
+        if (cps != null && cps.has("qpc") && cps.get("qpc").isNumber()) {
+            return cps.get("qpc").intValue();
+        }
+        return 0;
     }
 
     private void upsertSchedule(String deviceId, String type, String data, Instant now) {
