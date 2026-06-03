@@ -1,7 +1,7 @@
 import mqtt, { type MqttClient } from 'mqtt'
 import { useDeviceStore, type DeviceSchedule, type FishSchedule } from '../store/deviceStore'
 import { notify } from '../store/notificationStore'
-
+import { api } from '../api/client'
 
 const DEVICE_LABELS: Record<string, string> = {
   ALIMENTADOR_1: 'Alimentador 1',
@@ -10,8 +10,9 @@ const DEVICE_LABELS: Record<string, string> = {
 
 let client: MqttClient | null = null
 let lastNotifiedError = 0
-const lastSimCmdAt: Record<string, number> = {}
-const prevAlAll:    Record<string, boolean> = {}
+const lastSimCmdAt:  Record<string, number> = {}
+const lastSimGrams:  Record<string, number> = {}
+const prevAlAll:     Record<string, boolean> = {}
 
 export function getMqttClient() {
   return client
@@ -163,7 +164,15 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
       // Detecta fim de trato para QUALQUER dispositivo → dispara refresh do histórico
       const newAl = typeof d.al === 'boolean' ? d.al : typeof d.al === 'number' ? !!d.al : null
       if (newAl === false && prevAlAll[msgDeviceId] === true) {
-        // Clear optimistic feed for this device regardless of which device is active
+        // Save manual feed via API if there was a recent sim command for this device
+        const lastSim = lastSimCmdAt[msgDeviceId] ?? 0
+        const grams   = lastSimGrams[msgDeviceId] ?? 0
+        if (Date.now() - lastSim < 300_000 && grams > 0) {
+          api.postFeedEntry(msgDeviceId, grams, 'manual').catch(() => {})
+          delete lastSimCmdAt[msgDeviceId]
+          delete lastSimGrams[msgDeviceId]
+        }
+        // Clear optimistic feed for this device
         const { optimisticFeed: opt, setOptimisticFeed: clearOpt } = useDeviceStore.getState()
         if (opt?.deviceId === msgDeviceId) clearOpt(null)
         bumpLastFeedAt()
@@ -200,6 +209,8 @@ export function publishCmd(deviceId: string, payload: object) {
   const p = payload as Record<string, unknown>
   if ('sim' in p) {
     lastSimCmdAt[deviceId] = Date.now()
+    const g = typeof p.sim === 'number' ? p.sim : 0
+    if (g > 0) lastSimGrams[deviceId] = g
   }
   client.publish(`devices/${deviceId}/cmd`, JSON.stringify(payload), { qos: 1 })
   return true

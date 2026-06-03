@@ -47,10 +47,8 @@ public class MqttIngestionService {
 
     private MqttClient client;
 
-    private final Map<String, Boolean> prevAl      = new ConcurrentHashMap<>();
-    private final Map<String, Integer> prevErr     = new ConcurrentHashMap<>();
-    private final Map<String, Instant> lastSimCmd  = new ConcurrentHashMap<>();
-    private final Map<String, Integer> lastSimGrams = new ConcurrentHashMap<>();
+    private final Map<String, Boolean> prevAl  = new ConcurrentHashMap<>();
+    private final Map<String, Integer> prevErr = new ConcurrentHashMap<>();
     // Store schedule payload from the device status for grams lookup
     private final Map<String, JsonNode> lastCpt   = new ConcurrentHashMap<>();
     private final Map<String, JsonNode> lastCps   = new ConcurrentHashMap<>();
@@ -101,13 +99,8 @@ public class MqttIngestionService {
         if (mc.matches()) {
             try {
                 JsonNode cmd = mapper.readTree(payload);
-                if (cmd.has("sim") && cmd.get("sim").isNumber() && cmd.get("sim").intValue() > 0) {
-                    String devId = mc.group(1);
-                    int simG = cmd.get("sim").intValue();
-                    lastSimCmd.put(devId, Instant.now());
-                    lastSimGrams.put(devId, simG);
-                    log.info("Sim cmd received: device={} grams={}", devId, simG);
-                }
+                // cmd topic monitoring only — manual feeds are saved by the frontend
+                log.debug("Cmd received on topic {}: {}", topic, new String(payload));
             } catch (Exception ignored) {}
             return;
         }
@@ -144,33 +137,24 @@ public class MqttIngestionService {
             }
 
             // Detect feeding completion: al true → false
+            // Manual feeds are saved by the frontend via POST — backend only saves scheduled feeds
             if (Boolean.FALSE.equals(al) && Boolean.TRUE.equals(wasFed)) {
-                Instant lastSim = lastSimCmd.get(deviceId);
-                String  source  = (lastSim != null && lastSim.isAfter(now.minusSeconds(300))) ? "manual" : "scheduled";
-
-                {
-                    // Scheduled: use configured grams from schedule (sensor unreliable during motor run)
-                    // Manual: use grams from the sim command tracked via cmd topic
-                    int grams = "scheduled".equals(source)
-                            ? resolveScheduledGrams(deviceId)
-                            : lastSimGrams.getOrDefault(deviceId, 0);
-
+                // Skip if frontend already saved something for this device in the last 30s
+                if (feedHistoryRepo.existsByDeviceIdAndTimestampAfter(deviceId, now.minusSeconds(30))) {
+                    log.debug("Feed skipped (frontend already saved): device={}", deviceId);
+                } else {
+                    int grams = resolveScheduledGrams(deviceId);
                     if (grams > 0) {
                         boolean duplicate = feedHistoryRepo.existsByDeviceIdAndGramsAndTimestampAfter(
                                 deviceId, grams, now.minusSeconds(120));
                         if (!duplicate) {
-                            feedHistoryRepo.save(new FeedHistory(deviceId, now, grams, source));
-                            log.info("Feed recorded: device={} grams={} source={}", deviceId, grams, source);
-                            // Clear manual tracking after save — prevents al glitch from saving twice
-                            if ("manual".equals(source)) {
-                                lastSimCmd.remove(deviceId);
-                                lastSimGrams.remove(deviceId);
-                            }
+                            feedHistoryRepo.save(new FeedHistory(deviceId, now, grams, "scheduled"));
+                            log.info("Feed recorded: device={} grams={} source=scheduled", deviceId, grams);
                         } else {
                             log.debug("Feed skipped (duplicate): device={} grams={}", deviceId, grams);
                         }
                     } else {
-                        log.debug("Feed skipped (grams=0): device={} source={}", deviceId, source);
+                        log.debug("Feed skipped (grams=0): device={}", deviceId);
                     }
                 }
             }
