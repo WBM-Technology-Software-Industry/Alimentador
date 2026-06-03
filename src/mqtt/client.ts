@@ -10,11 +10,12 @@ const DEVICE_LABELS: Record<string, string> = {
 
 let client: MqttClient | null = null
 let lastNotifiedError = 0
-const lastSimCmdAt:   Record<string, number> = {}
-const lastSimGrams:   Record<string, number> = {}
-const prevAlAll:      Record<string, boolean> = {}
-const feedStartTime:  Record<string, number>  = {}
-const lastAlTrueAt:   Record<string, number>  = {}
+const lastSimCmdAt:       Record<string, number> = {}
+const lastSimGrams:       Record<string, number> = {}
+const prevAlAll:          Record<string, boolean> = {}
+const feedStartTime:      Record<string, number>  = {}
+const lastAlTrueAt:       Record<string, number>  = {}
+const manualCooldownUntil: Record<string, number> = {}
 
 export function getMqttClient() {
   return client
@@ -184,14 +185,14 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
           // Already saved in publishCmd — just clear tracking
           delete lastSimCmdAt[msgDeviceId]
           delete lastSimGrams[msgDeviceId]
-        } else if (!manualPending) {
-          // No manual pending — pure scheduled feed
+        } else if (!manualPending && (manualCooldownUntil[msgDeviceId] ?? 0) < Date.now()) {
+          // No manual pending and cooldown expired — pure scheduled feed
           const schedGrams = resolveScheduledGramsFromStore(msgDeviceId, feedStartTime[msgDeviceId])
           if (schedGrams > 0) {
             api.postFeedEntry(msgDeviceId, schedGrams, 'scheduled').catch(() => {})
           }
         }
-        // manualPending && !isManualFeed: scheduled fired while manual is pending — skip
+        // Otherwise: manual pending OR in cooldown — skip scheduled recording
 
         delete feedStartTime[msgDeviceId]
         const { setOptimisticFeed: clearOpt } = useDeviceStore.getState()
@@ -259,6 +260,7 @@ export function publishCmd(deviceId: string, payload: object) {
     if (g > 0) {
       lastSimCmdAt[deviceId] = Date.now()
       lastSimGrams[deviceId] = g
+      manualCooldownUntil[deviceId] = Date.now() + 30 * 60 * 1000  // 30 min cooldown
       // Save manual feed immediately — don't wait for al:false (unreliable with concurrent scheduled feeds)
       api.postFeedEntry(deviceId, g, 'manual').catch(() => {})
     }
