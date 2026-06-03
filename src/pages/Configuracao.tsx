@@ -47,7 +47,8 @@ function ModoOperacao() {
   const lastCmd = useLastCmd('mode', sentAt)
 
   const deviceAm  = deviceData[deviceId]?.am ?? null
-  const deviceAl  = deviceData[deviceId]?.al ?? false
+  const lastSeen  = deviceData[deviceId]?.lastSeen ?? 0
+  const deviceAl  = (deviceData[deviceId]?.al && Date.now() - lastSeen < 90_000) ?? false
   const deviceEp  = deviceData[deviceId]?.ep ?? null
   const isEmpty   = deviceEp !== null && deviceEp === 0
 

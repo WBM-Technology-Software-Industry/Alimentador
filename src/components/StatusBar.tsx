@@ -71,9 +71,9 @@ export default function StatusBar() {
   const deviceLabel = DEVICE_LABELS[deviceId] ?? (deviceId || '—')
   const profile     = deviceType === 'peixe' ? '🐟 Peixe' : '🐾 Cão'
 
-  // Todos os dispositivos que estão alimentando agora
+  // Todos os dispositivos que estão alimentando agora (só se recebeu status nos últimos 90s)
   const feedingDevices = Object.entries(deviceData)
-    .filter(([, d]) => d.al)
+    .filter(([, d]) => d.al && d.lastSeen > 0 && Date.now() - d.lastSeen < 90_000)
     .map(([id]) => DEVICE_LABELS[id] ?? id)
 
   const recent = cmdLog.slice(0, 3)
