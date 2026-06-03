@@ -173,7 +173,7 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
         const lastSim = lastSimCmdAt[msgDeviceId] ?? 0
         const grams   = lastSimGrams[msgDeviceId] ?? 0
 
-        if (Date.now() - lastSim < 1_800_000 && grams > 0) {
+        if (lastSim > 0 && Date.now() - lastSim < 1_800_000 && grams > 0) {
           // Feed manual
           api.postFeedEntry(msgDeviceId, grams, 'manual').catch(() => {})
           delete lastSimCmdAt[msgDeviceId]
