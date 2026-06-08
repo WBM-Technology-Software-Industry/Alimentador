@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { RotateCcw, Plus, SlidersHorizontal, Database, CheckCircle2 } from 'lucide-react'
+import { RotateCcw, Plus, SlidersHorizontal, CheckCircle2 } from 'lucide-react'
 import { publishCmd } from '../mqtt/client'
 import { useDeviceStore } from '../store/deviceStore'
 import { useDeviceContext } from '../store/deviceContext'
