@@ -122,7 +122,7 @@ public class MqttIngestionService {
             Integer pf = nodeInt(d, "pf");
             String  ts = d.has("ts") ? d.get("ts").asText() : null;
 
-            telemetryRepo.save(new DeviceTelemetry(deviceId, now, eg, ep, cp, tp, er));
+            telemetryRepo.save(new DeviceTelemetry(deviceId, now, eg, ep, cp, tp, er, al, nodeBoolean(d, "am"), pf));
 
             // Update cached schedule and profile
             if (pf != null) lastPf.put(deviceId, pf);
@@ -214,9 +214,15 @@ public class MqttIngestionService {
         );
     }
 
-    private Double  nodeDouble(JsonNode n, String k) { return n.has(k) && n.get(k).isNumber() ? n.get(k).doubleValue() : null; }
-    private Integer nodeInt(JsonNode n, String k)    { return n.has(k) && n.get(k).isNumber() ? n.get(k).intValue()    : null; }
-    private Boolean nodeBool(JsonNode n, String k)   { return n.has(k) && n.get(k).isBoolean() ? n.get(k).booleanValue() : null; }
+    private Double  nodeDouble(JsonNode n, String k)  { return n.has(k) && n.get(k).isNumber()  ? n.get(k).doubleValue()  : null; }
+    private Integer nodeInt(JsonNode n, String k)     { return n.has(k) && n.get(k).isNumber()  ? n.get(k).intValue()     : null; }
+    private Boolean nodeBool(JsonNode n, String k)    { return n.has(k) && n.get(k).isBoolean() ? n.get(k).booleanValue() : null; }
+    private Boolean nodeBoolean(JsonNode n, String k) {
+        if (!n.has(k)) return null;
+        if (n.get(k).isBoolean()) return n.get(k).booleanValue();
+        if (n.get(k).isNumber())  return n.get(k).intValue() != 0;
+        return null;
+    }
 
     @PreDestroy
     public void disconnect() {

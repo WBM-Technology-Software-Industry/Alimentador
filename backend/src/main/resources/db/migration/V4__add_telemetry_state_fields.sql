@@ -1,0 +1,4 @@
+ALTER TABLE device_telemetry
+    ADD COLUMN al BOOLEAN,
+    ADD COLUMN am BOOLEAN,
+    ADD COLUMN pf INTEGER;

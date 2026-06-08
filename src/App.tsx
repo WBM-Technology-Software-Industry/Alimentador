@@ -51,7 +51,17 @@ export default function App() {
       api.latestTelemetry(id)
         .then((t) => {
           if (!t) return
-          setDeviceData(id, { eg: t.eg ?? 0, ep: t.ep ?? 0, cp: t.cp ?? 10000, tp: t.tp ?? 0, er: t.er ?? 0 })
+          setDeviceData(id, {
+            eg:       t.eg ?? 0,
+            ep:       t.ep ?? 0,
+            cp:       t.cp ?? 10000,
+            tp:       t.tp ?? 0,
+            er:       t.er ?? 0,
+            al:       t.al ?? false,
+            am:       t.am ?? null,
+            pf:       t.pf ?? null,
+            lastSeen: new Date(t.timestamp).getTime(),
+          })
           setLoading(false)
         })
         .catch(() => {})

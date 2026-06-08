@@ -48,6 +48,9 @@ export type ApiTelemetry = {
   cp: number | null
   tp: number | null
   er: number | null
+  al: boolean | null
+  am: boolean | null
+  pf: number | null
 }
 
 export type ApiErrorLog = {
