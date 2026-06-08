@@ -182,7 +182,7 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
         const manualPending = lastSim > 0 && grams > 0
 
         if (isManualFeed) {
-          // Already saved in publishCmd — just clear tracking
+          api.postFeedEntry(msgDeviceId, grams, 'manual').catch(() => {})
           delete lastSimCmdAt[msgDeviceId]
           delete lastSimGrams[msgDeviceId]
         } else if (!manualPending && (manualCooldownUntil[msgDeviceId] ?? 0) < Date.now()) {
@@ -261,8 +261,6 @@ export function publishCmd(deviceId: string, payload: object) {
       lastSimCmdAt[deviceId] = Date.now()
       lastSimGrams[deviceId] = g
       manualCooldownUntil[deviceId] = Date.now() + 30 * 60 * 1000  // 30 min cooldown
-      // Save manual feed immediately — don't wait for al:false (unreliable with concurrent scheduled feeds)
-      api.postFeedEntry(deviceId, g, 'manual').catch(() => {})
     }
   }
   client.publish(`devices/${deviceId}/cmd`, JSON.stringify(payload), { qos: 1 })

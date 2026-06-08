@@ -144,6 +144,12 @@ function ModoOperacao() {
         </div>
       )}
 
+      {am && isEmpty && (
+        <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-red-600 text-xs font-medium">
+          <span>⚠</span> Estoque vazio — abasteça antes que o disparo automático ocorra.
+        </div>
+      )}
+
       {!am && (
         <>
           <div className="flex flex-col gap-1">
