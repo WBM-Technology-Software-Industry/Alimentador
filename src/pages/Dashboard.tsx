@@ -6,7 +6,7 @@ import { ptBR } from 'date-fns/locale'
 const ERROR_LABELS: Record<number, string> = {
   1:  'Motor desconectado ou fusível queimado.',
   2:  'Motor travado por objeto estranho ou ração úmida.',
-  3:  'Sensor capacitivo detectou falta de ração.',
+  3:  'Alimentador vazio.',
   4:  'Tensão baixa — verifique a alimentação elétrica.',
   6:  'Alerta de nível baixo.',
   11: 'Motor ligado por tempo excessivo sem atingir o peso.',
@@ -27,7 +27,6 @@ function FeederLevelCard({ label, id, active, onClick }: {
   const data = useDeviceStore((s) => s.deviceData[id])
   const ep = data?.ep ?? 0
   const eg = data?.eg ?? 0
-  const cp = data?.cp ?? 10000
   const hasData = !!data
   const color = ep > 50 ? '#28CC08' : ep > 20 ? '#f59e0b' : '#ef4444'
 
@@ -53,8 +52,8 @@ function FeederLevelCard({ label, id, active, onClick }: {
       </div>
       {hasData ? (
         <div className="flex justify-between text-xs text-gray-400">
-          <span>{(eg / 1000).toFixed(2)} kg</span>
-          <span>de {(cp / 1000).toFixed(1)} kg</span>
+          <span>{(eg / 1000).toFixed(3)} kg</span>
+          <span>{Math.round(ep)}%</span>
         </div>
       ) : (
         <div className="flex justify-between">
@@ -66,17 +65,19 @@ function FeederLevelCard({ label, id, active, onClick }: {
   )
 }
 
+const OFFLINE_THRESHOLD_MS = 5 * 60 * 1000  // 5 minutos
+
 export default function Dashboard() {
   const { deviceId, brokerUrl, setBrokerConfig, deviceData } = useDeviceStore()
   const active = deviceData[deviceId]
   const hasData = !!active
   const eg = active?.eg ?? 0
   const ep = active?.ep ?? 0
-  const cp = active?.cp ?? 10000
   const tp = active?.tp ?? 0
   const er = active?.er ?? 0
   const al       = active?.al ?? false
   const lastSeen = active?.lastSeen ?? 0
+  const isOffline = lastSeen > 0 && Date.now() - lastSeen > OFFLINE_THRESHOLD_MS
 
   function handleSelectDevice(id: string) {
     if (id === deviceId) return
@@ -105,7 +106,7 @@ export default function Dashboard() {
         {/* Gauge card */}
         <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-4">
           {hasData ? (
-            <StockGauge ep={ep} eg={eg} cp={cp} />
+            <StockGauge ep={ep} eg={eg} />
           ) : (
             <div className="flex flex-col items-center gap-3 py-4">
               <Skeleton className="w-36 h-36 rounded-full" />
@@ -144,15 +145,7 @@ export default function Dashboard() {
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-500">Estoque atual</span>
             {hasData
-              ? <span className="text-sm font-semibold text-gray-800">{(eg / 1000).toFixed(2)} kg</span>
-              : <Skeleton className="w-16 h-4" />
-            }
-          </div>
-          <hr className="border-gray-100" />
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-500">Capacidade</span>
-            {hasData
-              ? <span className="text-sm font-semibold text-gray-800">{(cp / 1000).toFixed(1)} kg</span>
+              ? <span className="text-sm font-semibold text-gray-800">{(eg / 1000).toFixed(3)} kg</span>
               : <Skeleton className="w-16 h-4" />
             }
           </div>
@@ -167,11 +160,26 @@ export default function Dashboard() {
             }
           </div>
           <hr className="border-gray-100" />
+          {isOffline && (
+            <>
+              <hr className="border-gray-100" />
+              <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+                <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
+                <div className="flex flex-col">
+                  <span className="text-xs font-semibold text-red-600">Sem comunicação</span>
+                  <span className="text-xs text-red-400">
+                    Última atualização: {format(new Date(lastSeen), "dd/MM HH:mm:ss", { locale: ptBR })}
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
+          <hr className="border-gray-100" />
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-500">Última atualização</span>
             {!hasData || lastSeen === 0
               ? <Skeleton className="w-24 h-4" />
-              : <span className="text-sm font-semibold text-gray-600">
+              : <span className={`text-sm font-semibold ${isOffline ? 'text-red-500' : 'text-gray-600'}`}>
                   {format(new Date(lastSeen), "dd/MM HH:mm:ss", { locale: ptBR })}
                 </span>
             }

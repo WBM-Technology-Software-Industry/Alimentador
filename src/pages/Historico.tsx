@@ -98,15 +98,16 @@ export default function Historico() {
         if (clearedAt > 0 && Date.now() - clearedAt < 3000) return
         let merged: Entry[] = results.flat().sort((a, b) => b.timestamp - a.timestamp)
         // Handle optimistic feeds (one per device)
-        const { optimisticFeed: opts, setOptimisticFeed: clearOpt } = useDeviceStore.getState()
+        const { optimisticFeed: opts, setOptimisticFeed: clearOpt, deviceData } = useDeviceStore.getState()
         for (const opt of Object.values(opts ?? {})) {
           if (!activeDeviceIds.includes(opt.deviceId)) continue
-          const confirmed = merged.some(e =>
+          const stillFeeding = deviceData[opt.deviceId]?.al === true
+          const confirmed = !stillFeeding && merged.some(e =>
             e.deviceId === opt.deviceId &&
             e.timestamp >= opt.timestamp - 500
           )
           if (confirmed) clearOpt(null, opt.deviceId)
-          else merged = [{ ...opt, id: opt.id as string | number }, ...merged]
+          else merged = [{ ...opt, id: opt.id as string | number }, ...merged.filter(e => !(typeof e.id === 'number' && e.deviceId === opt.deviceId && e.timestamp >= opt.timestamp - 500))]
         }
         setEntries(merged)
       })

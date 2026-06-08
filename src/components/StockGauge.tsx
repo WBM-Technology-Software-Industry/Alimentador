@@ -1,10 +1,9 @@
 type Props = {
   ep: number   // ep: porcentagem 0-100 (tópico status)
   eg: number   // eg: gramas atual   (tópico status)
-  cp: number   // capacidade total em gramas
 }
 
-export default function StockGauge({ ep, eg, cp }: Props) {
+export default function StockGauge({ ep, eg }: Props) {
   const radius = 100
   const stroke = 14
   const normalizedR = radius - stroke / 2
@@ -19,8 +18,7 @@ export default function StockGauge({ ep, eg, cp }: Props) {
     : ep > 20 ? '#f59e0b'
     : '#ef4444'
 
-  const kgCurrent = (eg / 1000).toFixed(2)
-  const kgTotal   = (cp / 1000).toFixed(1)
+  const kgCurrent = (eg / 1000).toFixed(3)
 
   return (
     <div className="flex flex-col items-center">
@@ -52,7 +50,6 @@ export default function StockGauge({ ep, eg, cp }: Props) {
       <div className="absolute flex flex-col items-center justify-center" style={{ marginTop: radius - 16 }}>
         <span className="text-4xl font-bold text-gray-800">{Math.round(ep)}%</span>
         <span className="text-sm text-gray-500">{kgCurrent} kg</span>
-        <span className="text-xs text-gray-400">de {kgTotal} kg</span>
       </div>
     </div>
   )

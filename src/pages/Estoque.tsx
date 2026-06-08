@@ -85,9 +85,6 @@ export default function Estoque() {
           <GramsInput placeholder="Valor exato em gramas" onConfirm={(v) => send({ eg: v }, `Estoque ajustado para ${v}g!`)} confirmLabel="Ajustar" />
         </ActionCard>
 
-        <ActionCard icon={Database} title="Alterar capacidade total" description="Mudei o reservatório para outro tamanho">
-          <GramsInput placeholder="Nova capacidade em gramas" onConfirm={(v) => send({ cp: v }, `Capacidade definida para ${v}g!`)} confirmLabel="Salvar" />
-        </ActionCard>
       </div>
     </div>
   )
