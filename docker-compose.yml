@@ -4,33 +4,52 @@ services:
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U feeder -d feeder"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     environment:
       POSTGRES_DB: feeder
       POSTGRES_USER: feeder
       POSTGRES_PASSWORD: ${DB_PASSWORD:-feeder123}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - alimentador
 
   backend:
     build: ./backend
     restart: unless-stopped
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     environment:
       DATABASE_URL: jdbc:postgresql://postgres:5432/feeder
       DATABASE_USER: feeder
       DATABASE_PASSWORD: ${DB_PASSWORD:-feeder123}
       MQTT_BROKER_URL: ${MQTT_BROKER_URL:-tcp://152.67.43.175:1883}
-    ports:
-      - "8080:8080"
+    networks:
+      - alimentador
+      - proxy
 
   frontend:
-    build: .
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-http://localhost:8080/api}
+        NEXT_PUBLIC_API_KEY: ${NEXT_PUBLIC_API_KEY:-}
+        NEXT_PUBLIC_DISCORD_WEBHOOK_URL: ${NEXT_PUBLIC_DISCORD_WEBHOOK_URL:-}
     restart: unless-stopped
-    ports:
-      - "3000:3000"
-    environment:
-      BACKEND_URL: http://backend:8080
+    networks:
+      - alimentador
+      - proxy
+
+networks:
+  alimentador:
+    driver: bridge
+  proxy:
+    external: true
 
 volumes:
   postgres_data:
