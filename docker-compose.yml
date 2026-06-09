@@ -31,16 +31,12 @@ services:
       MQTT_BROKER_URL: ${MQTT_BROKER_URL:-tcp://152.67.43.175:1883}
     networks:
       - alimentador
-      - proxy
 
   frontend:
-    build:
-      context: ./frontend
-      args:
-        NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-http://localhost:8080/api}
-        NEXT_PUBLIC_API_KEY: ${NEXT_PUBLIC_API_KEY:-}
-        NEXT_PUBLIC_DISCORD_WEBHOOK_URL: ${NEXT_PUBLIC_DISCORD_WEBHOOK_URL:-}
+    build: .
     restart: unless-stopped
+    environment:
+      BACKEND_URL: http://backend:8080
     networks:
       - alimentador
       - proxy
