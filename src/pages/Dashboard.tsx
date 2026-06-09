@@ -78,7 +78,7 @@ function FeederLevelCard({ label, id, active, onClick }: {
   )
 }
 
-const OFFLINE_THRESHOLD_MS = 90_000  // 90 segundos (~3 mensagens perdidas)
+const OFFLINE_THRESHOLD_MS = 30_000  // 30 segundos
 
 export default function Dashboard() {
   const [, setTick] = useState(0)
