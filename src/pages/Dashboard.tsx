@@ -78,7 +78,7 @@ function FeederLevelCard({ label, id, active, onClick }: {
   )
 }
 
-const OFFLINE_THRESHOLD_MS = 30_000  // 30 segundos
+const OFFLINE_THRESHOLD_MS = 90_000  // 90 segundos (1 ciclo de 60s + 30s de margem)
 
 export default function Dashboard() {
   const [, setTick] = useState(0)
