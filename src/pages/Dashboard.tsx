@@ -2,6 +2,7 @@ import { useDeviceStore } from '../store/deviceStore'
 import StockGauge from '../components/StockGauge'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { useEffect, useState } from 'react'
 
 const ERROR_LABELS: Record<number, string> = {
   1:  'Motor desconectado ou fusível queimado.',
@@ -24,6 +25,12 @@ function Skeleton({ className }: { className: string }) {
 function FeederLevelCard({ label, id, active, onClick }: {
   label: string; id: string; active: boolean; onClick: () => void
 }) {
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => setTick(n => n + 1), 10_000)
+    return () => clearInterval(t)
+  }, [])
+
   const data     = useDeviceStore((s) => s.deviceData[id])
   const ep       = data?.ep ?? 0
   const eg       = data?.eg ?? 0
@@ -71,9 +78,15 @@ function FeederLevelCard({ label, id, active, onClick }: {
   )
 }
 
-const OFFLINE_THRESHOLD_MS = 5 * 60 * 1000  // 5 minutos
+const OFFLINE_THRESHOLD_MS = 90_000  // 90 segundos (~3 mensagens perdidas)
 
 export default function Dashboard() {
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => setTick(n => n + 1), 10_000)
+    return () => clearInterval(t)
+  }, [])
+
   const { deviceId, brokerUrl, setBrokerConfig, deviceData } = useDeviceStore()
   const active = deviceData[deviceId]
   const hasData = !!active
