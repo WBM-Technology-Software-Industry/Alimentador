@@ -23,5 +23,5 @@ jobs:
             -o StrictHostKeyChecking=no \
             -o ConnectTimeout=30 \
             $SSH_USER@$SSH_HOST \
-            "cd ~/projetos/feeder/Alimentador && git pull && docker compose up -d --build && docker compose ps"
+            "cd ~/projetos/feeder && git pull && docker compose up -d --build && docker compose ps"
           rm -f /tmp/deploy_key
