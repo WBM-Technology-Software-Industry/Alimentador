@@ -56,6 +56,10 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
         if (cmdMatch[1] === deviceId) {
           const ts = Date.now()
           if (typeof cmd.sim === 'number' && cmd.sim > 0) {
+            // Todos os browsers precisam registrar o cooldown ao ver um sim no tópico cmd
+            lastSimCmdAt[deviceId] = ts
+            lastSimGrams[deviceId] = cmd.sim
+            manualCooldownUntil[deviceId] = ts + 30 * 60 * 1000
             setOptimisticFeed({ id: `opt-${ts}`, deviceId, grams: cmd.sim, timestamp: ts, source: 'manual' })
             const id = `cmd-${ts}`
             addCmd({ id, timestamp: ts, deviceId, label: `Trato ${cmd.sim}g`, type: 'feed' })
