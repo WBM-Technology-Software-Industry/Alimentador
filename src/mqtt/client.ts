@@ -8,6 +8,8 @@ const DEVICE_LABELS: Record<string, string> = {
   ALIMENTADOR_2: 'Alimentador 2',
 }
 
+const OFFLINE_THRESHOLD_MS = 90_000
+
 let client: MqttClient | null = null
 let lastNotifiedError = 0
 const lastSimCmdAt:       Record<string, number> = {}
@@ -103,8 +105,11 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
       const d = JSON.parse(payload.toString()) as Record<string, unknown>
       const {
         setTelemetry, setDeviceData, bumpLastFeedAt, setOptimisticFeed, confirmCmdByType,
-        deviceId, al: prevAl,
+        deviceId, al: prevAl, deviceData,
       } = useDeviceStore.getState()
+
+      const prevLastSeen = deviceData[msgDeviceId]?.lastSeen ?? 0
+      const wasOffline = prevLastSeen > 0 && (Date.now() - prevLastSeen) > OFFLINE_THRESHOLD_MS
 
       // Live telemetry and notifications only for the active device
       if (msgDeviceId === deviceId) {
@@ -167,6 +172,17 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
       if (typeof d.am === 'boolean')                       devicePatch.am = d.am
       devicePatch.lastSeen = Date.now()
       setDeviceData(msgDeviceId, devicePatch)
+
+      // Ao voltar do offline, descarta estado anterior para evitar falso registro de trato
+      if (wasOffline) {
+        delete prevAlAll[msgDeviceId]
+        delete feedStartTime[msgDeviceId]
+        delete lastAlTrueAt[msgDeviceId]
+        delete lastSimCmdAt[msgDeviceId]
+        delete lastSimGrams[msgDeviceId]
+        delete manualCooldownUntil[msgDeviceId]
+        setOptimisticFeed(null, msgDeviceId)
+      }
 
       // Detecta início e fim de trato para QUALQUER dispositivo
       const newAl = typeof d.al === 'boolean' ? d.al : typeof d.al === 'number' ? !!d.al : null
