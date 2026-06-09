@@ -24,11 +24,13 @@ function Skeleton({ className }: { className: string }) {
 function FeederLevelCard({ label, id, active, onClick }: {
   label: string; id: string; active: boolean; onClick: () => void
 }) {
-  const data = useDeviceStore((s) => s.deviceData[id])
-  const ep = data?.ep ?? 0
-  const eg = data?.eg ?? 0
-  const hasData = !!data
-  const color = ep > 50 ? '#28CC08' : ep > 20 ? '#f59e0b' : '#ef4444'
+  const data     = useDeviceStore((s) => s.deviceData[id])
+  const ep       = data?.ep ?? 0
+  const eg       = data?.eg ?? 0
+  const hasData  = !!data
+  const lastSeen = data?.lastSeen ?? 0
+  const isOffline = lastSeen > 0 && Date.now() - lastSeen > OFFLINE_THRESHOLD_MS
+  const color    = isOffline ? '#9ca3af' : ep > 50 ? '#28CC08' : ep > 20 ? '#f59e0b' : '#ef4444'
 
   return (
     <button
@@ -39,21 +41,25 @@ function FeederLevelCard({ label, id, active, onClick }: {
     >
       <div className="flex items-center justify-between">
         <span className={`text-xs font-semibold ${active ? 'text-brand-600' : 'text-gray-600'}`}>{label}</span>
-        {hasData
-          ? <span className="text-xs font-bold" style={{ color }}>{Math.round(ep)}%</span>
-          : <Skeleton className="w-8 h-3" />
+        {!hasData
+          ? <Skeleton className="w-8 h-3" />
+          : isOffline
+            ? <span className="text-xs font-bold text-gray-400">Offline</span>
+            : <span className="text-xs font-bold" style={{ color }}>{Math.round(ep)}%</span>
         }
       </div>
       <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
         {hasData
-          ? <div className="h-full rounded-full transition-all duration-500" style={{ width: `${ep}%`, backgroundColor: color }} />
+          ? <div className="h-full rounded-full transition-all duration-500" style={{ width: isOffline ? '100%' : `${ep}%`, backgroundColor: color }} />
           : <div className="h-full w-full animate-pulse bg-gray-200 rounded-full" />
         }
       </div>
       {hasData ? (
         <div className="flex justify-between text-xs text-gray-400">
-          <span>{(eg / 1000).toFixed(3)} kg</span>
-          <span>{Math.round(ep)}%</span>
+          {isOffline
+            ? <span className="text-gray-400">Sem comunicação</span>
+            : <><span>{(eg / 1000).toFixed(3)} kg</span><span>{Math.round(ep)}%</span></>
+          }
         </div>
       ) : (
         <div className="flex justify-between">
