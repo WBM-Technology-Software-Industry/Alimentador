@@ -160,6 +160,14 @@ function ModoOperacao() {
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500"
             />
           </div>
+          {deviceAl && (
+            <button
+              onClick={() => publishCmd(deviceId, { sm: 0 })}
+              className="w-full py-3 rounded-2xl bg-red-500 hover:bg-red-600 active:bg-red-700 text-white font-bold text-sm transition-colors"
+            >
+              Parar alimentação
+            </button>
+          )}
           {isEmpty && (
             <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-red-600 text-xs font-medium">
               <span>⚠</span> Estoque vazio — abasteça antes de disparar.

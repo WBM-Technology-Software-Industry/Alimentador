@@ -1,6 +1,5 @@
 import { useDeviceStore } from '../store/deviceStore'
 import StockGauge from '../components/StockGauge'
-import { publishCmd } from '../mqtt/client'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { useEffect, useState } from 'react'
@@ -147,20 +146,10 @@ export default function Dashboard() {
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-500">Status</span>
             {hasData ? (
-              <div className="flex items-center gap-2">
-                <span className={`flex items-center gap-1.5 text-sm font-semibold ${al ? 'text-brand-600' : 'text-gray-400'}`}>
-                  <span className={`w-2 h-2 rounded-full ${al ? 'bg-brand-500 animate-pulse' : 'bg-gray-300'}`} />
-                  {al ? 'Alimentando' : 'Parado'}
-                </span>
-                {al && (
-                  <button
-                    onClick={() => publishCmd(deviceId, { sm: 0 })}
-                    className="text-xs font-semibold text-white bg-red-500 hover:bg-red-600 active:bg-red-700 rounded-lg px-2.5 py-1 transition-colors"
-                  >
-                    Parar
-                  </button>
-                )}
-              </div>
+              <span className={`flex items-center gap-1.5 text-sm font-semibold ${al ? 'text-brand-600' : 'text-gray-400'}`}>
+                <span className={`w-2 h-2 rounded-full ${al ? 'bg-brand-500 animate-pulse' : 'bg-gray-300'}`} />
+                {al ? 'Alimentando' : 'Parado'}
+              </span>
             ) : <Skeleton className="w-20 h-4" />}
           </div>
           <hr className="border-gray-100" />
