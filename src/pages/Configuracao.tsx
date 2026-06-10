@@ -162,7 +162,7 @@ function ModoOperacao() {
           </div>
           {deviceAl && (
             <button
-              onClick={() => publishCmd(deviceId, { sm: 0 })}
+              onClick={() => publishCmd(deviceId, { sim: 0 })}
               className="w-full py-3 rounded-2xl bg-red-500 hover:bg-red-600 active:bg-red-700 text-white font-bold text-sm transition-colors"
             >
               Parar alimentação
