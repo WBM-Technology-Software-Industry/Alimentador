@@ -1,0 +1,89 @@
+name: Move Issues to Ready Column
+
+on:
+  issues:
+    types: [opened]
+  workflow_dispatch:
+    inputs:
+      issue_numbers:
+        description: 'Issue numbers separated by comma (ex: 21,22)'
+        required: false
+        default: '21,22'
+
+jobs:
+  move-to-ready:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+
+    steps:
+      - name: Move issue(s) to Ready column via gh CLI
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN || secrets.GITHUB_TOKEN }}
+          ORG: wbm-technology-software-industry
+          REPO: Alimentador
+        run: |
+          set -e
+
+          # Find the project number (looks for project containing "Alimentador" or "PoC")
+          PROJECT_NUMBER=$(gh project list --owner "$ORG" --format json \
+            | jq '.projects[] | select(.title | test("Alimentador|alimentador|PoC"; "i")) | .number' \
+            | head -1)
+
+          if [ -z "$PROJECT_NUMBER" ]; then
+            echo "::error::Project not found for org $ORG. Available projects:"
+            gh project list --owner "$ORG"
+            exit 1
+          fi
+          echo "Project number: $PROJECT_NUMBER"
+
+          # Fetch the Status field ID and Ready option ID via GraphQL
+          FIELDS_JSON=$(gh project field-list "$PROJECT_NUMBER" \
+            --owner "$ORG" \
+            --format json)
+
+          STATUS_FIELD_ID=$(echo "$FIELDS_JSON" | jq -r \
+            '.fields[] | select(.name == "Status") | .id')
+
+          READY_OPTION_ID=$(echo "$FIELDS_JSON" | jq -r \
+            '.fields[] | select(.name == "Status") | .options[] | select(.name == "Ready") | .id')
+
+          if [ -z "$STATUS_FIELD_ID" ] || [ -z "$READY_OPTION_ID" ]; then
+            echo "::error::Could not find Status field or Ready option. Fields available:"
+            echo "$FIELDS_JSON" | jq '.fields[] | {name, id}'
+            exit 1
+          fi
+          echo "Status field ID: $STATUS_FIELD_ID"
+          echo "Ready option ID: $READY_OPTION_ID"
+
+          # Determine which issues to process
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            ISSUES="${{ github.event.inputs.issue_numbers }}"
+          else
+            ISSUES="${{ github.event.issue.number }}"
+          fi
+
+          IFS=',' read -ra ISSUE_ARRAY <<< "$ISSUES"
+          for ISSUE_NUM in "${ISSUE_ARRAY[@]}"; do
+            ISSUE_NUM=$(echo "$ISSUE_NUM" | tr -d ' ')
+            ISSUE_URL="https://github.com/$ORG/$REPO/issues/$ISSUE_NUM"
+
+            echo "--- Processing issue #$ISSUE_NUM ---"
+
+            # Add issue to project and capture item ID
+            ITEM_ID=$(gh project item-add "$PROJECT_NUMBER" \
+              --owner "$ORG" \
+              --url "$ISSUE_URL" \
+              --format json | jq -r '.id')
+
+            echo "Project item ID: $ITEM_ID"
+
+            # Set Status = Ready
+            gh project item-edit "$ITEM_ID" \
+              --project-id "$PROJECT_NUMBER" \
+              --owner "$ORG" \
+              --field-id "$STATUS_FIELD_ID" \
+              --single-select-option-id "$READY_OPTION_ID"
+
+            echo "Issue #$ISSUE_NUM → Ready ✓"
+          done
