@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useDeviceStore, type FishSchedule, type DeviceSchedule } from '../store/deviceStore'
 import { publishCmd, publishCmdSequence } from '../mqtt/client'
 import { CmdStatusBadge, useLastCmd } from '../components/StatusBar'
@@ -286,6 +286,15 @@ function PetScheduleSection() {
   const [sentAt,  setSentAt]  = useState<number | null>(null)
   const [offline, setOffline] = useState(false)
   const lastCmd = useLastCmd('config', sentAt)
+  const syncedRef = useRef(deviceSchedules.length > 0)
+
+  useEffect(() => {
+    const schedules = received?.schedules
+    if (!syncedRef.current && schedules && schedules.length > 0) {
+      syncedRef.current = true
+      setSlots(initSlots(schedules))
+    }
+  }, [received?.schedules])
 
   const confirmedText = deviceSchedules.length > 0
     ? `Dispositivo: ${deviceSchedules.map(s => `${pad(s.h)}:${pad(s.m)} / ${s.q}g`).join(' · ')}`

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useDeviceStore, type DeviceSchedule, type FishSchedule } from '../store/deviceStore'
 import { publishCmd, publishCmdSequence } from '../mqtt/client'
 import { CmdStatusBadge, useLastCmd } from '../components/StatusBar'
@@ -24,6 +24,15 @@ function AgendaCao() {
   const [sentAt,  setSentAt]  = useState<number | null>(null)
   const [offline, setOffline] = useState(false)
   const lastCmd = useLastCmd('config', sentAt)
+  const syncedRef = useRef(!!received?.schedules?.length)
+
+  useEffect(() => {
+    const schedules = received?.schedules
+    if (!syncedRef.current && schedules && schedules.length > 0) {
+      syncedRef.current = true
+      setSlots(initSlots(schedules))
+    }
+  }, [received?.schedules])
 
   // Dado real do dispositivo após confirmação
   const confirmedSchedules = received?.schedules ?? []
