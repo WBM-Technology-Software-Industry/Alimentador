@@ -11,11 +11,13 @@ const DEVICES = [
 ]
 
 function DeviceIdConfig() {
-  const { deviceId, brokerUrl, setBrokerConfig } = useDeviceStore()
+  const { deviceId, brokerUrl, setBrokerConfig, setDeviceType, deviceData } = useDeviceStore()
 
   function handleSelect(id: string) {
     if (id === deviceId) return
+    const pf = deviceData[id]?.pf
     setBrokerConfig(brokerUrl, id)
+    setDeviceType(pf === 0 ? 'peixe' : 'cao')
   }
 
   return (
@@ -373,15 +375,17 @@ const DEVICE_TYPES = [
 ]
 
 export default function Configuracao() {
-  const { deviceType, setDeviceType, deviceData, deviceId, connected } = useDeviceStore()
+  const { deviceType, setDeviceType, setDeviceData, deviceData, deviceId, connected } = useDeviceStore()
   const fishSchedule    = deviceData[deviceId]?.fishSchedule
   const devicePf        = deviceData[deviceId]?.pf   // pf real do dispositivo (null = não recebido ainda)
   const deviceProfile   = devicePf === null || devicePf === undefined ? null : devicePf === 1 ? 'cao' : 'peixe'
   const profileMismatch = deviceProfile !== null && deviceProfile !== deviceType
 
   function handleSetProfile(value: 'cao' | 'peixe') {
+    const pfNum = value === 'cao' ? 1 : 0
     setDeviceType(value)
-    publishCmd(deviceId, { pf: value === 'cao' ? 1 : 0 })
+    setDeviceData(deviceId, { pf: pfNum })
+    publishCmd(deviceId, { pf: pfNum })
   }
 
   return (
