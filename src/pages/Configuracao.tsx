@@ -41,7 +41,7 @@ function DeviceIdConfig() {
 }
 
 function ModoOperacao() {
-  const { am, deviceId, connected, setTelemetry, manualGrams, setManualGrams, setOptimisticFeed, deviceData } = useDeviceStore()
+  const { deviceId, connected, setDeviceData, manualGrams, setManualGrams, setOptimisticFeed, deviceData } = useDeviceStore()
   const [sentAt,  setSentAt]  = useState<number | null>(null)
   const [offline, setOffline] = useState(false)
   const lastCmd = useLastCmd('mode', sentAt)
@@ -52,29 +52,18 @@ function ModoOperacao() {
   const deviceEp  = deviceData[deviceId]?.ep ?? null
   const isEmpty   = deviceEp !== null && deviceEp === 0
 
-  // O firmware volta para am:true durante/após o sim — ignorar mismatch enquanto alimentando
-  // ou quando o usuário acabou de disparar um trato manual (am local = false mas device = true por causa do sim)
-  const modeMismatch = deviceAm !== null && deviceAm !== am && !deviceAl
-  const revertedToAuto = !am && deviceAm === true && !deviceAl  // usuário quer manual mas device voltou ao auto após trato
-
   const isSending = lastCmd?.status === 'sent'
   const isTimeout = lastCmd?.status === 'timeout'
 
   function toggleMode(automatic: boolean) {
     const ok = publishCmd(deviceId, { am: automatic })
     setOffline(!ok)
-    if (ok) { setTelemetry({ am: automatic }); setSentAt(Date.now()) }
+    if (ok) { setDeviceData(deviceId, { am: automatic }); setSentAt(Date.now()) }
   }
 
   function handleSendQuantity() {
     publishCmd(deviceId, { sim: manualGrams })
     setOptimisticFeed({ id: `opt-${Date.now()}`, deviceId, grams: manualGrams, timestamp: Date.now(), source: 'manual' })
-  }
-
-  function handleReconfirmManual() {
-    const ok = publishCmd(deviceId, { am: false })
-    setOffline(!ok)
-    if (ok) { setTelemetry({ am: false }); setSentAt(Date.now()) }
   }
 
   return (
@@ -86,7 +75,7 @@ function ModoOperacao() {
           onClick={() => toggleMode(false)}
           disabled={!connected}
           className={`flex-1 py-3 text-sm font-semibold transition-all disabled:opacity-40 ${
-            !am ? 'bg-brand-600 text-[#1A1A1A]' : 'bg-white text-gray-500 hover:bg-gray-50'
+            deviceAm !== true ? 'bg-brand-600 text-[#1A1A1A]' : 'bg-white text-gray-500 hover:bg-gray-50'
           }`}
         >
           Manual
@@ -95,7 +84,7 @@ function ModoOperacao() {
           onClick={() => toggleMode(true)}
           disabled={!connected}
           className={`flex-1 py-3 text-sm font-semibold transition-all disabled:opacity-40 ${
-            am ? 'bg-brand-600 text-[#1A1A1A]' : 'bg-white text-gray-500 hover:bg-gray-50'
+            deviceAm === true ? 'bg-brand-600 text-[#1A1A1A]' : 'bg-white text-gray-500 hover:bg-gray-50'
           }`}
         >
           Automático
@@ -119,24 +108,8 @@ function ModoOperacao() {
         <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2 text-blue-700 text-xs font-medium">
           <span className="animate-pulse">●</span> Alimentando...
         </div>
-      ) : revertedToAuto ? (
-        <div className="flex flex-col gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-amber-700 text-xs font-medium">
-          <span>⚠ O dispositivo voltou para Automático após o trato (comportamento do firmware).</span>
-          <button
-            onClick={handleReconfirmManual}
-            disabled={!connected}
-            className="self-start bg-amber-600 text-white rounded-lg px-3 py-1 text-xs font-semibold disabled:opacity-40"
-          >
-            Confirmar Manual novamente
-          </button>
-        </div>
       ) : deviceAm === null ? (
         <p className="text-xs text-gray-400 italic">Aguardando dado do dispositivo...</p>
-      ) : modeMismatch ? (
-        <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-amber-700 text-xs font-medium">
-          <span>⚠</span>
-          Dispositivo está em modo <strong>{deviceAm ? 'Automático' : 'Manual'}</strong> — diferente do selecionado aqui.
-        </div>
       ) : (
         <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-3 py-2 text-green-700 text-xs font-medium">
           <span>✓</span>
@@ -144,13 +117,13 @@ function ModoOperacao() {
         </div>
       )}
 
-      {am && isEmpty && (
+      {deviceAm === true && isEmpty && (
         <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-red-600 text-xs font-medium">
           <span>⚠</span> Estoque vazio — abasteça antes que o disparo automático ocorra.
         </div>
       )}
 
-      {!am && (
+      {deviceAm !== true && (
         <>
           <div className="flex flex-col gap-1">
             <label className="text-xs text-gray-500">Quantidade por trato manual (g)</label>
