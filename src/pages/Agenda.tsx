@@ -13,7 +13,7 @@ function initSlots(schedules: DeviceSchedule[]): Slot[] {
   const sorted = [...schedules].sort((a, b) => a.h * 60 + a.m - (b.h * 60 + b.m))
   return Array.from({ length: 4 }, (_, i) => {
     const sc = sorted[i]
-    return sc ? { time: `${pad(sc.h)}:${pad(sc.m)}`, grams: sc.q } : { time: '08:00', grams: 100 }
+    return sc ? { time: `${pad(sc.h)}:${pad(sc.m)}`, grams: sc.q } : { time: '08:00', grams: 0 }
   })
 }
 
@@ -54,6 +54,7 @@ function AgendaCao() {
 
   function handleSave() {
     const updated: DeviceSchedule[] = slots
+      .filter(s => s.grams > 0)
       .map(s => { const [h, m] = s.time.split(':').map(Number); return { h, m, q: s.grams } })
       .sort((a, b) => a.h * 60 + a.m - (b.h * 60 + b.m))
     const ok = publishCmdSequence(deviceId, [{ pf: 1 }, { am: true }, { c_pt: updated }])
@@ -103,7 +104,7 @@ function AgendaCao() {
               </div>
               <div className="flex flex-col gap-1 flex-1">
                 <label className="text-xs text-gray-500">Quantidade (g)</label>
-                <input type="number" min={1} value={slot.grams || ''}
+                <input type="number" min={0} value={slot.grams || ''}
                   onFocus={(e) => e.target.select()}
                   onChange={(e) => updateSlot(i, { grams: parseInt(e.target.value) || 0 })}
                   className="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500" />
