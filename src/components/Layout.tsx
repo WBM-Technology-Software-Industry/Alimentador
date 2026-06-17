@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { LayoutDashboard, Package, History, Settings, Sun, Moon, LogOut } from 'lucide-react'
-import { useDeviceStore } from '../store/deviceStore'
 import { useAuthStore } from '../store/authStore'
 import { api } from '../api/client'
 import NotificationToast from './NotificationToast'
