@@ -188,6 +188,13 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
       if (newAl === true && !prevAlAll[msgDeviceId]) {
         feedStartTime[msgDeviceId] = Date.now()
         lastAlTrueAt[msgDeviceId]  = Date.now()
+        // Cria entrada otimista para browsers que não viram a mensagem cmd
+        const { pendingManual, optimisticFeed, setOptimisticFeed } = useDeviceStore.getState()
+        const pending = pendingManual[msgDeviceId]
+        if (pending && !optimisticFeed[msgDeviceId]) {
+          const ts = Date.now()
+          setOptimisticFeed({ id: `opt-${ts}`, deviceId: msgDeviceId, grams: pending.grams, timestamp: ts, source: 'manual', user: pending.user ?? useAuthStore.getState().name })
+        }
       }
 
       if (newAl === false && prevAlAll[msgDeviceId] === true) {
