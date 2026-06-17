@@ -77,7 +77,6 @@ export default function Historico() {
 
   function fetchForDevice(id: string) {
     return api.history(id).then((data: ApiFeedEntry[]) => {
-      console.log(`[historico] raw API ${id}:`, data.slice(0, 3).map(e => ({ id: e.id, source: e.source, userEmail: e.userEmail })))
       const mapped = data.map(e => ({
         id: e.id,
         timestamp: new Date(e.timestamp).getTime(),
@@ -86,7 +85,6 @@ export default function Historico() {
         deviceId: e.deviceId,
         user: e.userEmail ?? null,
       }))
-      console.log(`[historico] mapped ${id}:`, mapped.slice(0, 3).map(e => ({ id: e.id, source: e.source, user: e.user })))
       setDeviceData(id, { historyCache: mapped })
       return mapped
     })

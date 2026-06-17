@@ -63,15 +63,10 @@ export type ApiErrorLog = {
 }
 
 export const api = {
-  history: (deviceId: string, limit = 100) =>
-    get<ApiFeedEntry[]>(`/api/devices/${deviceId}/history?limit=${limit}`)
-      .then(data => { console.log(`[api] GET history ${deviceId} (${data.length} entradas):`, data.slice(0, 3)); return data }),
-  postFeedEntry: (deviceId: string, grams: number, source: 'manual' | 'scheduled', user?: string | null) => {
-    const body = { grams, source, ...(user ? { user } : {}) }
-    console.log('[api] POST history body:', body)
-    return post<ApiFeedEntry>(`/api/devices/${deviceId}/history`, body)
-      .then(r => { console.log('[api] POST history resposta:', r); return r })
-  },
+  history:       (deviceId: string, limit = 100) =>
+    get<ApiFeedEntry[]>(`/api/devices/${deviceId}/history?limit=${limit}`),
+  postFeedEntry: (deviceId: string, grams: number, source: 'manual' | 'scheduled', user?: string | null) =>
+    post<ApiFeedEntry>(`/api/devices/${deviceId}/history`, { grams, source, ...(user ? { user } : {}) }),
   clearHistory:  (deviceId: string) =>
     del(`/api/devices/${deviceId}/history`),
   telemetry:     (deviceId: string, limit = 200) =>

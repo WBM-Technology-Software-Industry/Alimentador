@@ -2,8 +2,6 @@ package com.wbm.feeder.controller;
 
 import com.wbm.feeder.model.*;
 import com.wbm.feeder.repository.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,8 +14,6 @@ import java.util.Map;
 @RequestMapping("/api/devices/{deviceId}")
 @CrossOrigin(origins = "*")
 public class DeviceController {
-
-    private static final Logger log = LoggerFactory.getLogger(DeviceController.class);
 
     private final FeedHistoryRepository     feedHistoryRepo;
     private final DeviceTelemetryRepository telemetryRepo;
@@ -68,7 +64,6 @@ public class DeviceController {
         int grams     = body.containsKey("grams")  ? ((Number) body.get("grams")).intValue()  : 0;
         String src    = body.containsKey("source") ? (String) body.get("source") : "manual";
         String userEmail = body.containsKey("user") ? (String) body.get("user") : null;
-        log.info("[history POST] device={} grams={} source={} user={} body={}", deviceId, grams, src, userEmail, body);
         if (grams <= 0) return ResponseEntity.badRequest().build();
         // Prevent duplicate entries within 10 seconds (same device, same grams, same source)
         if (feedHistoryRepo.existsByDeviceIdAndGramsAndTimestampAfter(deviceId, grams, Instant.now().minusSeconds(10))) {
@@ -81,7 +76,6 @@ public class DeviceController {
             return ResponseEntity.noContent().build();
         }
         FeedHistory entry = feedHistoryRepo.save(new FeedHistory(deviceId, Instant.now(), grams, src, userEmail));
-        log.info("[history POST] salvo id={} userEmail={}", entry.getId(), entry.getUserEmail());
         return ResponseEntity.ok(entry);
     }
 
