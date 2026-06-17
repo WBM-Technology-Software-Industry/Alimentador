@@ -1,6 +1,6 @@
 import { useDeviceStore } from '../store/deviceStore'
 import StockGauge from '../components/StockGauge'
-import { format } from 'date-fns'
+import { format, formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { useEffect, useState } from 'react'
 
@@ -185,7 +185,8 @@ export default function Dashboard() {
               <div className="flex flex-col">
                 <span className="text-xs font-semibold text-red-600">Sem comunicação</span>
                 <span className="text-xs text-red-400">
-                  Última atualização: {format(new Date(lastSeen), "dd/MM HH:mm:ss", { locale: ptBR })}
+                  Último contato: {format(new Date(lastSeen), "dd/MM HH:mm:ss", { locale: ptBR })}
+                  {' '}({formatDistanceToNow(new Date(lastSeen), { locale: ptBR, addSuffix: true })})
                 </span>
               </div>
             </div>
