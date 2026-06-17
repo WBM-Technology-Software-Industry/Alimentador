@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useDeviceStore, type FishSchedule, type DeviceSchedule } from '../store/deviceStore'
 import { publishCmd, publishCmdSequence } from '../mqtt/client'
+import { useAuthStore } from '../store/authStore'
 import { CmdStatusBadge, useLastCmd } from '../components/StatusBar'
 
 function pad(n: number) { return String(n).padStart(2, '0') }
@@ -65,7 +66,7 @@ function ModoOperacao() {
 
   function handleSendQuantity() {
     publishCmd(deviceId, { sim: manualGrams })
-    setOptimisticFeed({ id: `opt-${Date.now()}`, deviceId, grams: manualGrams, timestamp: Date.now(), source: 'manual' })
+    setOptimisticFeed({ id: `opt-${Date.now()}`, deviceId, grams: manualGrams, timestamp: Date.now(), source: 'manual', user: useAuthStore.getState().name })
   }
 
   return (

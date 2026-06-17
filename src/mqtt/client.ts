@@ -60,7 +60,7 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
             useDeviceStore.getState().setPendingManual(deviceId, {
               cmdAt: ts, grams: cmd.sim, cooldownUntil: ts + 30 * 60 * 1000,
             })
-            setOptimisticFeed({ id: `opt-${ts}`, deviceId, grams: cmd.sim, timestamp: ts, source: 'manual' })
+            setOptimisticFeed({ id: `opt-${ts}`, deviceId, grams: cmd.sim, timestamp: ts, source: 'manual', user: useAuthStore.getState().name })
             const id = `cmd-${ts}`
             addCmd({ id, timestamp: ts, deviceId, label: `Trato ${cmd.sim}g`, type: 'feed' })
             setTimeout(() => timeoutCmd(id), 60_000)
