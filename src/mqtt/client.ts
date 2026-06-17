@@ -57,8 +57,10 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
           const ts = Date.now()
           if (typeof cmd.sim === 'number' && cmd.sim > 0) {
             // Todos os browsers registram o comando pendente ao ver um sim no tópico cmd
+            const existingPending = useDeviceStore.getState().pendingManual[deviceId]
             useDeviceStore.getState().setPendingManual(deviceId, {
               cmdAt: ts, grams: cmd.sim, cooldownUntil: ts + 30 * 60 * 1000,
+              user: existingPending?.user ?? useAuthStore.getState().name,
             })
             setOptimisticFeed({ id: `opt-${ts}`, deviceId, grams: cmd.sim, timestamp: ts, source: 'manual', user: useAuthStore.getState().name })
             const id = `cmd-${ts}`
@@ -201,7 +203,7 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
         const manualPending = lastSim > 0 && grams > 0 && withinCooldown
 
         if (isManualFeed) {
-          api.postFeedEntry(msgDeviceId, grams, 'manual', useAuthStore.getState().name).catch(() => {})
+          api.postFeedEntry(msgDeviceId, grams, 'manual', pending?.user ?? useAuthStore.getState().name).catch(() => {})
           setPendingManual(msgDeviceId, null)
         } else if (!manualPending) {
           const schedGrams = resolveScheduledGramsFromStore(msgDeviceId, feedStartTime[msgDeviceId])
@@ -287,6 +289,7 @@ export function publishCmd(deviceId: string, payload: object) {
       const now = Date.now()
       useDeviceStore.getState().setPendingManual(deviceId, {
         cmdAt: now, grams: g, cooldownUntil: now + 30 * 60 * 1000,
+        user: useAuthStore.getState().name,
       })
     }
   }

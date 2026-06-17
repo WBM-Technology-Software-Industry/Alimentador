@@ -40,6 +40,7 @@ export type PendingManual = {
   cmdAt: number
   grams: number
   cooldownUntil: number
+  user?: string | null
 }
 
 export type CachedEntry = {
@@ -223,7 +224,7 @@ export const useDeviceStore = create<DeviceState>()(
     }),
     {
       name: 'feeder-wbm-storage',
-      version: 5,
+      version: 6,
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       partialize: (s) => { const { cmdLog, ...rest } = s as DeviceState & { cmdLog: unknown }; return rest as unknown as DeviceState },
     }
