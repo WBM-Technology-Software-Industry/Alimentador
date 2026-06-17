@@ -88,7 +88,7 @@ export default function Dashboard() {
     return () => clearInterval(t)
   }, [])
 
-  const { deviceId, brokerUrl, setBrokerConfig, deviceData } = useDeviceStore()
+  const { deviceId, brokerUrl, setBrokerConfig, deviceData, connected } = useDeviceStore()
   const active = deviceData[deviceId]
   const hasData = !!active
   const eg = active?.eg ?? 0
