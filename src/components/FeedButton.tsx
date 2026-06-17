@@ -5,9 +5,13 @@ import { useDeviceStore } from '../store/deviceStore'
 import { useDeviceContext } from '../store/deviceContext'
 import { notify } from '../store/notificationStore'
 
+const OFFLINE_THRESHOLD_MS = 90_000
+
 export default function FeedButton() {
-  const { connected, deviceId, al, addFeedEntry, manualGrams } = useDeviceStore()
+  const { connected, deviceId, al, addFeedEntry, manualGrams, deviceData } = useDeviceStore()
   const ctx = useDeviceContext()
+  const lastSeen = deviceData[deviceId]?.lastSeen ?? 0
+  const isOffline = lastSeen > 0 && Date.now() - lastSeen > OFFLINE_THRESHOLD_MS
 
   const [continuous, setContinuous] = useState(false)
   const continuousRef = useRef(false)
@@ -73,13 +77,17 @@ export default function FeedButton() {
 
       <button
         onClick={triggerFeed}
-        disabled={!connected}
+        disabled={!connected || isOffline}
         className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 disabled:bg-gray-300 disabled:text-gray-500 text-[#1A1A1A] font-bold py-4 px-10 rounded-2xl text-lg shadow-lg active:scale-95 transition-all"
       >
         <Utensils size={22} />
         {ctx.feedLabel}
       </button>
-      {!connected && <p className="text-xs text-gray-400">Dispositivo offline</p>}
+      {(!connected || isOffline) && (
+        <p className="text-xs text-red-400 font-medium">
+          {!connected ? 'Dispositivo offline' : 'Sem comunicação — comandos bloqueados'}
+        </p>
+      )}
     </div>
   )
 }

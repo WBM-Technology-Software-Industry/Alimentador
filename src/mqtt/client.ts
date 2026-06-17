@@ -268,8 +268,18 @@ export function disconnectMqtt() {
   useDeviceStore.getState().setConnected(false)
 }
 
+function isDeviceOffline(deviceId: string): boolean {
+  const { deviceData } = useDeviceStore.getState()
+  const lastSeen = deviceData[deviceId]?.lastSeen ?? 0
+  return lastSeen > 0 && (Date.now() - lastSeen) > OFFLINE_THRESHOLD_MS
+}
+
 export function publishCmd(deviceId: string, payload: object) {
   if (!client?.connected) return false
+  if (isDeviceOffline(deviceId)) {
+    notify.warning('Dispositivo sem comunicação. Verifique a conexão antes de enviar comandos.')
+    return false
+  }
   const p = payload as Record<string, unknown>
   if ('sim' in p) {
     const g = typeof p.sim === 'number' ? p.sim : 0
@@ -286,6 +296,10 @@ export function publishCmd(deviceId: string, payload: object) {
 
 export function publishCmdSequence(deviceId: string, payloads: object[], delayMs = 300) {
   if (!client?.connected) return false
+  if (isDeviceOffline(deviceId)) {
+    notify.warning('Dispositivo sem comunicação. Verifique a conexão antes de enviar comandos.')
+    return false
+  }
   payloads.forEach((payload, i) => {
     setTimeout(() => {
       client?.publish(`devices/${deviceId}/cmd`, JSON.stringify(payload), { qos: 1 })
