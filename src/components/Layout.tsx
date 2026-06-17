@@ -104,7 +104,6 @@ function AppShell({ children }: { children: React.ReactNode }) {
             <button onClick={toggle} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
               {dark ? <Sun size={16} /> : <Moon size={16} />}
             </button>
-            <span className={`w-2 h-2 rounded-full ${connected ? 'bg-brand-500' : 'bg-red-400'}`} />
           </div>
         </header>
 
@@ -119,7 +118,6 @@ function AppShell({ children }: { children: React.ReactNode }) {
               {dark ? <Sun size={16} /> : <Moon size={16} />}
               <span className="text-xs">{dark ? 'Claro' : 'Escuro'}</span>
             </button>
-            <span className={`w-2 h-2 rounded-full ${connected ? 'bg-brand-500' : 'bg-red-400'}`} />
           </div>
         </header>
 
