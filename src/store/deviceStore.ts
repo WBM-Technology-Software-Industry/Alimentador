@@ -36,6 +36,12 @@ export type CmdLogEntry = {
   status: CmdStatus
 }
 
+export type PendingManual = {
+  cmdAt: number
+  grams: number
+  cooldownUntil: number
+}
+
 export type CachedEntry = {
   id: string | number
   timestamp: number
@@ -97,6 +103,9 @@ type DeviceState = {
   // Log de comandos enviados
   cmdLog: CmdLogEntry[]
 
+  // Comando manual pendente por dispositivo (persistido — sobrevive a refresh/reconexão)
+  pendingManual: Record<string, PendingManual>
+
   // Actions
   setDeviceType: (t: DeviceType) => void
   setBrokerConfig: (url: string, id: string) => void
@@ -112,6 +121,7 @@ type DeviceState = {
   confirmCmdByType: (type: CmdType) => void
   timeoutCmd: (id: string) => void
   clearCmdLog: () => void
+  setPendingManual: (deviceId: string, v: PendingManual | null) => void
 }
 
 export const useDeviceStore = create<DeviceState>()(
@@ -140,6 +150,7 @@ export const useDeviceStore = create<DeviceState>()(
       optimisticFeed: {},
       manualGrams: 100,
       cmdLog: [],
+      pendingManual: {},
 
       setDeviceType: (deviceType) => set({ deviceType }),
       setBrokerConfig: (brokerUrl, deviceId) => set({ brokerUrl, deviceId }),
@@ -201,10 +212,18 @@ export const useDeviceStore = create<DeviceState>()(
         cmdLog: s.cmdLog.map((e) => e.id === id && e.status === 'sent' ? { ...e, status: 'timeout' as CmdStatus } : e),
       })),
       clearCmdLog: () => set({ cmdLog: [] }),
+      setPendingManual: (deviceId, v) => set((s) => {
+        if (v === null) {
+          const next = { ...s.pendingManual }
+          delete next[deviceId]
+          return { pendingManual: next }
+        }
+        return { pendingManual: { ...s.pendingManual, [deviceId]: v } }
+      }),
     }),
     {
       name: 'feeder-wbm-storage',
-      version: 4,
+      version: 5,
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       partialize: (s) => { const { cmdLog, ...rest } = s as DeviceState & { cmdLog: unknown }; return rest as unknown as DeviceState },
     }

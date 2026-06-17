@@ -13,12 +13,9 @@ const OFFLINE_THRESHOLD_MS = 90_000
 
 let client: MqttClient | null = null
 let lastNotifiedError = 0
-const lastSimCmdAt:       Record<string, number> = {}
-const lastSimGrams:       Record<string, number> = {}
-const prevAlAll:          Record<string, boolean> = {}
-const feedStartTime:      Record<string, number>  = {}
-const lastAlTrueAt:       Record<string, number>  = {}
-const manualCooldownUntil: Record<string, number> = {}
+const prevAlAll:     Record<string, boolean> = {}
+const feedStartTime: Record<string, number>  = {}
+const lastAlTrueAt:  Record<string, number>  = {}
 
 export function getMqttClient() {
   return client
@@ -59,10 +56,10 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
         if (cmdMatch[1] === deviceId) {
           const ts = Date.now()
           if (typeof cmd.sim === 'number' && cmd.sim > 0) {
-            // Todos os browsers precisam registrar o cooldown ao ver um sim no tópico cmd
-            lastSimCmdAt[deviceId] = ts
-            lastSimGrams[deviceId] = cmd.sim
-            manualCooldownUntil[deviceId] = ts + 30 * 60 * 1000
+            // Todos os browsers registram o comando pendente ao ver um sim no tópico cmd
+            useDeviceStore.getState().setPendingManual(deviceId, {
+              cmdAt: ts, grams: cmd.sim, cooldownUntil: ts + 30 * 60 * 1000,
+            })
             setOptimisticFeed({ id: `opt-${ts}`, deviceId, grams: cmd.sim, timestamp: ts, source: 'manual' })
             const id = `cmd-${ts}`
             addCmd({ id, timestamp: ts, deviceId, label: `Trato ${cmd.sim}g`, type: 'feed' })
@@ -174,14 +171,12 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
       devicePatch.lastSeen = Date.now()
       setDeviceData(msgDeviceId, devicePatch)
 
-      // Ao voltar do offline, descarta estado anterior para evitar falso registro de trato
+      // Ao voltar do offline, descarta estado de detecção em memória (prevAlAll, feedStartTime, lastAlTrueAt)
+      // mas preserva pendingManual no store — pode haver um comando manual pendente legítimo
       if (wasOffline) {
         delete prevAlAll[msgDeviceId]
         delete feedStartTime[msgDeviceId]
         delete lastAlTrueAt[msgDeviceId]
-        delete lastSimCmdAt[msgDeviceId]
-        delete lastSimGrams[msgDeviceId]
-        delete manualCooldownUntil[msgDeviceId]
         setOptimisticFeed(null, msgDeviceId)
       }
 
@@ -194,26 +189,29 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
       }
 
       if (newAl === false && prevAlAll[msgDeviceId] === true) {
-        const lastSim  = lastSimCmdAt[msgDeviceId] ?? 0
-        const grams    = lastSimGrams[msgDeviceId]  ?? 0
-        const lastTrue = lastAlTrueAt[msgDeviceId]  ?? 0
+        const { pendingManual, setPendingManual } = useDeviceStore.getState()
+        const pending      = pendingManual[msgDeviceId]
+        const lastSim      = pending?.cmdAt        ?? 0
+        const grams        = pending?.grams         ?? 0
+        const cooldownUntil = pending?.cooldownUntil ?? 0
+        const lastTrue     = lastAlTrueAt[msgDeviceId] ?? 0
 
-        // Our manual feed: al went True AFTER we sent the sim command
-        const isManualFeed  = lastSim > 0 && grams > 0 && lastTrue > lastSim
-        const manualPending = lastSim > 0 && grams > 0
+        const withinCooldown = cooldownUntil > Date.now()
+        // Manual: sim foi enviado, o trato começou depois, e ainda está dentro da janela de 30 min
+        const isManualFeed  = lastSim > 0 && grams > 0 && lastTrue > lastSim && withinCooldown
+        const manualPending = lastSim > 0 && grams > 0 && withinCooldown
 
         if (isManualFeed) {
           api.postFeedEntry(msgDeviceId, grams, 'manual', useAuthStore.getState().name).catch(() => {})
-          delete lastSimCmdAt[msgDeviceId]
-          delete lastSimGrams[msgDeviceId]
-        } else if (!manualPending && (manualCooldownUntil[msgDeviceId] ?? 0) < Date.now()) {
-          // No manual pending and cooldown expired — pure scheduled feed
+          setPendingManual(msgDeviceId, null)
+        } else if (!manualPending) {
+          // Nenhum manual pendente na janela — trato automático
           const schedGrams = resolveScheduledGramsFromStore(msgDeviceId, feedStartTime[msgDeviceId])
           if (schedGrams > 0) {
             api.postFeedEntry(msgDeviceId, schedGrams, 'scheduled').catch(() => {})
           }
         }
-        // Otherwise: manual pending OR in cooldown — skip scheduled recording
+        // Se manualPending mas não isManualFeed: janela ativa mas trato não veio do sim — aguarda
 
         delete feedStartTime[msgDeviceId]
         const { setOptimisticFeed: clearOpt } = useDeviceStore.getState()
@@ -279,9 +277,10 @@ export function publishCmd(deviceId: string, payload: object) {
   if ('sim' in p) {
     const g = typeof p.sim === 'number' ? p.sim : 0
     if (g > 0) {
-      lastSimCmdAt[deviceId] = Date.now()
-      lastSimGrams[deviceId] = g
-      manualCooldownUntil[deviceId] = Date.now() + 30 * 60 * 1000  // 30 min cooldown
+      const now = Date.now()
+      useDeviceStore.getState().setPendingManual(deviceId, {
+        cmdAt: now, grams: g, cooldownUntil: now + 30 * 60 * 1000,
+      })
     }
   }
   client.publish(`devices/${deviceId}/cmd`, JSON.stringify(payload), { qos: 1 })
