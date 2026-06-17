@@ -276,14 +276,18 @@ export default function Historico() {
                       <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
                         isPending ? 'bg-blue-100' : e.source === 'manual' ? 'bg-brand-100' : 'bg-blue-50'}`}>
                         {isPending
-                          ? <Hand size={15} className="text-blue-500 animate-pulse" />
+                          ? e.source === 'manual'
+                            ? <Hand size={15} className="text-blue-500 animate-pulse" />
+                            : <CalendarClock size={15} className="text-blue-500 animate-pulse" />
                           : e.source === 'manual'
                             ? <Hand size={15} className="text-brand-700" />
                             : <CalendarClock size={15} className="text-blue-500" />}
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-gray-800">
-                          {isPending ? `${e.grams}g — dispensando...` : e.grams > 0 ? `${e.grams}g dispensados` : '—'}
+                          {isPending
+                            ? e.grams > 0 ? `${e.grams}g — dispensando...` : 'Dispensando...'
+                            : e.grams > 0 ? `${e.grams}g dispensados` : '—'}
                         </p>
                         <p className="text-xs text-gray-400 truncate">
                           {e.source === 'manual' ? 'Manual' : 'Automático'}

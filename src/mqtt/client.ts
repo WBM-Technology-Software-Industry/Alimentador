@@ -267,7 +267,7 @@ function resolveScheduledGramsFromStore(deviceId: string, startTime?: number): n
       const diff = Math.abs((slot.h * 60 + slot.m) - (feedHour * 60 + feedMin))
       if (diff < bestDiff) { bestDiff = diff; bestQ = slot.q }
     }
-    if (bestQ > 0 && bestDiff <= 5) return bestQ
+    if (bestQ > 0 && bestDiff <= 30) return bestQ
   }
 
   // Fallback: ciclo piscicultura (c_ps.qpc)
