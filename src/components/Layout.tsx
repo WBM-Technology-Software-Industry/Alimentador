@@ -33,7 +33,6 @@ function useDarkMode() {
 
 function AppShell({ children }: { children: React.ReactNode }) {
   const { collapsed } = useSidebar()
-  const connected = useDeviceStore((s) => s.connected)
   const { dark, toggle } = useDarkMode()
   const { name, email, clearAuth } = useAuthStore()
   const navigate = useNavigate()
