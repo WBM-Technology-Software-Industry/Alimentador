@@ -105,9 +105,6 @@ function AppShell({ children }: { children: React.ReactNode }) {
               {dark ? <Sun size={16} /> : <Moon size={16} />}
             </button>
             <span className={`w-2 h-2 rounded-full ${connected ? 'bg-brand-500' : 'bg-red-400'}`} />
-            <span className={`text-xs font-medium ${connected ? 'text-brand-600' : 'text-red-500'}`}>
-              {connected ? 'Online' : 'Offline'}
-            </span>
           </div>
         </header>
 
@@ -122,12 +119,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
               {dark ? <Sun size={16} /> : <Moon size={16} />}
               <span className="text-xs">{dark ? 'Claro' : 'Escuro'}</span>
             </button>
-            <div className="flex items-center gap-1.5">
-              <span className={`w-2 h-2 rounded-full ${connected ? 'bg-brand-500' : 'bg-red-400'}`} />
-              <span className={`text-xs font-semibold ${connected ? 'text-brand-600' : 'text-red-500'}`}>
-                {connected ? 'Online' : 'Offline'}
-              </span>
-            </div>
+            <span className={`w-2 h-2 rounded-full ${connected ? 'bg-brand-500' : 'bg-red-400'}`} />
           </div>
         </header>
 
