@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { PawPrint, Weight, Save } from 'lucide-react'
+import { PawPrint, Weight, Save, User } from 'lucide-react'
 import { useDeviceStore, type DeviceType } from '../store/deviceStore'
+import { useAuthStore } from '../store/authStore'
 
 const deviceTypes: { value: DeviceType; label: string; icon: string; desc: string }[] = [
   { value: 'cao',   label: 'Cão',   icon: '🐾', desc: 'Alimentador para cães' },
@@ -9,11 +10,22 @@ const deviceTypes: { value: DeviceType; label: string; icon: string; desc: strin
 
 export default function Configuracoes() {
   const { connected, deviceType, setDeviceType } = useDeviceStore()
+  const { name: storedName, setAuth, token, email } = useAuthStore()
+
+  const [displayName, setDisplayName] = useState(storedName ?? '')
+  const [nameSaved,   setNameSaved]   = useState(false)
 
   const [petName,   setPetName]   = useState(() => localStorage.getItem('pet_name')   ?? '')
   const [petBreed,  setPetBreed]  = useState(() => localStorage.getItem('pet_breed')  ?? '')
   const [petWeight, setPetWeight] = useState(() => localStorage.getItem('pet_weight') ?? '')
   const [saved, setSaved] = useState(false)
+
+  function handleSaveName() {
+    if (!displayName.trim()) return
+    setAuth(token ?? '', email ?? '', displayName.trim())
+    setNameSaved(true)
+    setTimeout(() => setNameSaved(false), 2000)
+  }
 
   function handleSave() {
     localStorage.setItem('pet_name',   petName)
@@ -55,6 +67,30 @@ export default function Configuracoes() {
               <span className="text-xs text-gray-400 text-center leading-tight">{t.desc}</span>
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* Nome do usuário */}
+      <div className={`bg-white rounded-2xl shadow p-4 flex flex-col gap-3 ${!storedName ? 'ring-2 ring-orange-400' : ''}`}>
+        <h2 className="font-bold text-gray-800 text-sm flex items-center gap-2">
+          <User size={16} className="text-brand-600" />
+          Seu nome
+          {!storedName && <span className="text-xs text-orange-500 font-medium">— necessário para o histórico</span>}
+        </h2>
+        <div className="flex gap-2">
+          <input
+            value={displayName}
+            onChange={e => setDisplayName(e.target.value)}
+            placeholder="Ex: Hitalo"
+            className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500"
+          />
+          <button
+            onClick={handleSaveName}
+            disabled={!displayName.trim()}
+            className="px-4 py-2 rounded-xl bg-brand-600 text-[#1A1A1A] font-bold text-sm disabled:opacity-40"
+          >
+            {nameSaved ? 'Salvo!' : 'Salvar'}
+          </button>
         </div>
       </div>
 
