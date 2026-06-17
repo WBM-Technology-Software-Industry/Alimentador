@@ -179,30 +179,27 @@ export default function Dashboard() {
             }
           </div>
           <hr className="border-gray-100" />
-          {isOffline && (
-            <>
-              <hr className="border-gray-100" />
-              <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
-                <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
-                <div className="flex flex-col">
-                  <span className="text-xs font-semibold text-red-600">Sem comunicação</span>
-                  <span className="text-xs text-red-400">
-                    Última atualização: {format(new Date(lastSeen), "dd/MM HH:mm:ss", { locale: ptBR })}
-                  </span>
-                </div>
-              </div>
-            </>
-          )}
-          <hr className="border-gray-100" />
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-500">Última atualização</span>
-            {!hasData || lastSeen === 0
-              ? <Skeleton className="w-24 h-4" />
-              : <span className={`text-sm font-semibold ${isOffline ? 'text-red-500' : 'text-gray-600'}`}>
-                  {format(new Date(lastSeen), "dd/MM HH:mm:ss", { locale: ptBR })}
+          {isOffline ? (
+            <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+              <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
+              <div className="flex flex-col">
+                <span className="text-xs font-semibold text-red-600">Sem comunicação</span>
+                <span className="text-xs text-red-400">
+                  Última atualização: {format(new Date(lastSeen), "dd/MM HH:mm:ss", { locale: ptBR })}
                 </span>
-            }
-          </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-500">Última atualização</span>
+              {!hasData || lastSeen === 0
+                ? <Skeleton className="w-24 h-4" />
+                : <span className="text-sm font-semibold text-gray-600">
+                    {format(new Date(lastSeen), "dd/MM HH:mm:ss", { locale: ptBR })}
+                  </span>
+              }
+            </div>
+          )}
         </div>
 
       </div>
