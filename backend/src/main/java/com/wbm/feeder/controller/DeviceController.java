@@ -65,8 +65,9 @@ public class DeviceController {
         String src    = body.containsKey("source") ? (String) body.get("source") : "manual";
         String userEmail = body.containsKey("user") ? (String) body.get("user") : null;
         if (grams <= 0) return ResponseEntity.badRequest().build();
-        // Prevent duplicate entries within 10 seconds (same device, same grams, same source)
-        if (feedHistoryRepo.existsByDeviceIdAndGramsAndTimestampAfter(deviceId, grams, Instant.now().minusSeconds(10))) {
+        // Prevent duplicate entries within 2 minutes (same device, same grams)
+        // Cobre o caso de múltiplos browsers detectarem o mesmo trato e enviarem simultaneamente
+        if (feedHistoryRepo.existsByDeviceIdAndGramsAndTimestampAfter(deviceId, grams, Instant.now().minusSeconds(120))) {
             return feedHistoryRepo.findByDeviceIdOrderByTimestampDesc(deviceId, org.springframework.data.domain.PageRequest.of(0, 1))
                     .stream().findFirst().map(ResponseEntity::ok).orElse(ResponseEntity.ok().build());
         }
