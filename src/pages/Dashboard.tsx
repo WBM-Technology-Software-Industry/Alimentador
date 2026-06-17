@@ -3,6 +3,7 @@ import StockGauge from '../components/StockGauge'
 import { format, formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { useEffect, useState } from 'react'
+import { getMqttConnectedAt } from '../mqtt/client'
 
 const ERROR_LABELS: Record<number, string> = {
   1:  'Motor desconectado ou fusível queimado.',
@@ -96,7 +97,10 @@ export default function Dashboard() {
   const er = active?.er ?? 0
   const al       = active?.al ?? false
   const lastSeen = active?.lastSeen ?? 0
-  const isOffline = lastSeen > 0 && Date.now() - lastSeen > OFFLINE_THRESHOLD_MS
+  const connectedAt = getMqttConnectedAt()
+  // Aguardando primeira mensagem desta sessão — não mostrar timestamp antigo ainda
+  const waitingFirstMsg = connected && connectedAt > 0 && lastSeen < connectedAt
+  const isOffline = !waitingFirstMsg && lastSeen > 0 && Date.now() - lastSeen > OFFLINE_THRESHOLD_MS
 
   function handleSelectDevice(id: string) {
     if (id === deviceId) return
@@ -193,7 +197,7 @@ export default function Dashboard() {
           ) : (
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-500">Última atualização</span>
-              {!hasData || lastSeen === 0
+              {waitingFirstMsg || !hasData || lastSeen === 0
                 ? <Skeleton className="w-24 h-4" />
                 : <span className="text-sm font-semibold text-gray-600">
                     {format(new Date(lastSeen), "dd/MM HH:mm:ss", { locale: ptBR })}

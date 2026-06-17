@@ -13,13 +13,13 @@ const OFFLINE_THRESHOLD_MS = 90_000
 
 let client: MqttClient | null = null
 let lastNotifiedError = 0
+let mqttConnectedAt = 0
 const prevAlAll:     Record<string, boolean> = {}
 const feedStartTime: Record<string, number>  = {}
 const lastAlTrueAt:  Record<string, number>  = {}
 
-export function getMqttClient() {
-  return client
-}
+export function getMqttClient() { return client }
+export function getMqttConnectedAt() { return mqttConnectedAt }
 
 export function connectMqtt(brokerUrl: string, _deviceId?: string) {
   if (client) {
@@ -35,6 +35,7 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
   })
 
   client.on('connect', () => {
+    mqttConnectedAt = Date.now()
     store.setConnected(true)
     store.clearCmdLog()
     client!.subscribe('devices/+/status', { qos: 1 })
