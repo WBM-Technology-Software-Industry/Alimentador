@@ -307,7 +307,13 @@ export function disconnectMqtt() {
 function isDeviceOffline(deviceId: string): boolean {
   const { deviceData } = useDeviceStore.getState()
   const lastSeen = deviceData[deviceId]?.lastSeen ?? 0
-  return lastSeen > 0 && (Date.now() - lastSeen) > OFFLINE_THRESHOLD_MS
+  const clearlyOffline = lastSeen > 0 && (Date.now() - lastSeen) > OFFLINE_THRESHOLD_MS
+  if (!clearlyOffline) return false
+  // Após reconexão, aguarda OFFLINE_THRESHOLD_MS pela 1ª mensagem antes de bloquear comandos
+  const waitingFirstMsg = client?.connected && mqttConnectedAt > 0
+    && Date.now() - mqttConnectedAt < OFFLINE_THRESHOLD_MS
+    && lastSeen < mqttConnectedAt
+  return !waitingFirstMsg
 }
 
 export function publishCmd(deviceId: string, payload: object) {
