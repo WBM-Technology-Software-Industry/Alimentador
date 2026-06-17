@@ -197,21 +197,35 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
         const lastTrue     = lastAlTrueAt[msgDeviceId] ?? 0
 
         const withinCooldown = cooldownUntil > Date.now()
-        // Manual: sim foi enviado, o trato começou depois, e ainda está dentro da janela de 30 min
         const isManualFeed  = lastSim > 0 && grams > 0 && lastTrue > lastSim && withinCooldown
         const manualPending = lastSim > 0 && grams > 0 && withinCooldown
 
+        console.log('[feed-detect]', {
+          device: msgDeviceId,
+          isManualFeed, manualPending, withinCooldown,
+          lastSim: lastSim ? new Date(lastSim).toISOString() : null,
+          lastTrue: lastTrue ? new Date(lastTrue).toISOString() : null,
+          cooldownUntil: cooldownUntil ? new Date(cooldownUntil).toISOString() : null,
+          grams,
+          userName: useAuthStore.getState().name,
+        })
+
         if (isManualFeed) {
-          api.postFeedEntry(msgDeviceId, grams, 'manual', useAuthStore.getState().name).catch(() => {})
+          const userName = useAuthStore.getState().name
+          console.log('[feed-post] manual', { device: msgDeviceId, grams, user: userName })
+          api.postFeedEntry(msgDeviceId, grams, 'manual', userName)
+            .then(r => console.log('[feed-post] resposta manual', r))
+            .catch(e => console.error('[feed-post] erro manual', e))
           setPendingManual(msgDeviceId, null)
         } else if (!manualPending) {
-          // Nenhum manual pendente na janela — trato automático
           const schedGrams = resolveScheduledGramsFromStore(msgDeviceId, feedStartTime[msgDeviceId])
+          console.log('[feed-post] scheduled', { device: msgDeviceId, schedGrams })
           if (schedGrams > 0) {
-            api.postFeedEntry(msgDeviceId, schedGrams, 'scheduled').catch(() => {})
+            api.postFeedEntry(msgDeviceId, schedGrams, 'scheduled')
+              .then(r => console.log('[feed-post] resposta scheduled', r))
+              .catch(e => console.error('[feed-post] erro scheduled', e))
           }
         }
-        // Se manualPending mas não isManualFeed: janela ativa mas trato não veio do sim — aguarda
 
         delete feedStartTime[msgDeviceId]
         const { setOptimisticFeed: clearOpt } = useDeviceStore.getState()
