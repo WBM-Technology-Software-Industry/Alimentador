@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/devices/{deviceId}")
@@ -19,15 +20,29 @@ public class DeviceController {
     private final DeviceTelemetryRepository telemetryRepo;
     private final DeviceScheduleRepository  scheduleRepo;
     private final ErrorLogRepository        errorLogRepo;
+    private final DeviceLastSeenRepository  lastSeenRepo;
 
     public DeviceController(FeedHistoryRepository feedHistoryRepo,
                             DeviceTelemetryRepository telemetryRepo,
                             DeviceScheduleRepository scheduleRepo,
-                            ErrorLogRepository errorLogRepo) {
+                            ErrorLogRepository errorLogRepo,
+                            DeviceLastSeenRepository lastSeenRepo) {
         this.feedHistoryRepo = feedHistoryRepo;
         this.telemetryRepo   = telemetryRepo;
         this.scheduleRepo    = scheduleRepo;
         this.errorLogRepo    = errorLogRepo;
+        this.lastSeenRepo    = lastSeenRepo;
+    }
+
+    @GetMapping("/last-seen")
+    public ResponseEntity<Map<String, String>> lastSeen(@PathVariable String deviceId) {
+        return lastSeenRepo.findById(deviceId)
+            .map(ls -> {
+                Map<String, String> body = new HashMap<>();
+                body.put("lastSeen", ls.getLastSeen().toString());
+                return ResponseEntity.ok(body);
+            })
+            .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/history")

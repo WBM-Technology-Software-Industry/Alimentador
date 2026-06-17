@@ -48,6 +48,11 @@ export default function App() {
     connectMqtt(BROKER_URL, DEVICE_ID)
 
     ALL_DEVICES.forEach((id) => {
+      // Semente de lastSeen a partir do banco — evita exibir timestamp desatualizado após F5
+      api.lastSeen(id)
+        .then((r) => setDeviceData(id, { lastSeen: new Date(r.lastSeen).getTime() }))
+        .catch(() => {})
+
       api.latestTelemetry(id)
         .then((t) => {
           if (!t) return

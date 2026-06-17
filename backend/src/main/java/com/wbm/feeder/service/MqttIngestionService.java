@@ -43,6 +43,7 @@ public class MqttIngestionService {
     private final DeviceTelemetryRepository telemetryRepo;
     private final DeviceScheduleRepository  scheduleRepo;
     private final ErrorLogRepository        errorLogRepo;
+    private final DeviceLastSeenRepository  lastSeenRepo;
     private final ObjectMapper              mapper = new ObjectMapper();
 
     private MqttClient client;
@@ -59,11 +60,13 @@ public class MqttIngestionService {
     public MqttIngestionService(FeedHistoryRepository feedHistoryRepo,
                                 DeviceTelemetryRepository telemetryRepo,
                                 DeviceScheduleRepository scheduleRepo,
-                                ErrorLogRepository errorLogRepo) {
+                                ErrorLogRepository errorLogRepo,
+                                DeviceLastSeenRepository lastSeenRepo) {
         this.feedHistoryRepo = feedHistoryRepo;
         this.telemetryRepo   = telemetryRepo;
         this.scheduleRepo    = scheduleRepo;
         this.errorLogRepo    = errorLogRepo;
+        this.lastSeenRepo    = lastSeenRepo;
     }
 
     @PostConstruct
@@ -123,6 +126,12 @@ public class MqttIngestionService {
             String  ts = d.has("ts") ? d.get("ts").asText() : null;
 
             telemetryRepo.save(new DeviceTelemetry(deviceId, now, eg, ep, cp, tp, er, al, nodeBoolean(d, "am"), pf));
+
+            // Upsert last_seen — uma linha por dispositivo, sempre atualizada
+            lastSeenRepo.findById(deviceId).ifPresentOrElse(
+                ls -> { ls.setLastSeen(now); lastSeenRepo.save(ls); },
+                ()  -> lastSeenRepo.save(new com.wbm.feeder.model.DeviceLastSeen(deviceId, now))
+            );
 
             // Update cached schedule and profile
             if (pf != null) lastPf.put(deviceId, pf);

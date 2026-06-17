@@ -75,6 +75,8 @@ export const api = {
     get<ApiTelemetry | null>(`/api/devices/${deviceId}/telemetry/latest`),
   errors:        (deviceId: string, limit = 50) =>
     get<ApiErrorLog[]>(`/api/devices/${deviceId}/errors?limit=${limit}`),
+  lastSeen:      (deviceId: string) =>
+    get<{ lastSeen: string }>(`/api/devices/${deviceId}/last-seen`),
   logout:        () =>
     fetch(`${BASE}/api/auth/logout`, { method: 'POST', headers: authHeader() }),
 }
