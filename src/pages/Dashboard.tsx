@@ -32,13 +32,17 @@ function FeederLevelCard({ label, id, active, onClick }: {
     return () => clearInterval(t)
   }, [])
 
-  const data     = useDeviceStore((s) => s.deviceData[id])
-  const ep       = data?.ep ?? 0
-  const eg       = data?.eg ?? 0
-  const hasData  = !!data
-  const lastSeen = data?.lastSeen ?? 0
-  const isOffline = lastSeen > 0 && Date.now() - lastSeen > OFFLINE_THRESHOLD_MS
-  const color    = isOffline ? '#9ca3af' : ep > 50 ? '#28CC08' : ep > 20 ? '#f59e0b' : '#ef4444'
+  const data      = useDeviceStore((s) => s.deviceData[id])
+  const connected = useDeviceStore((s) => s.connected)
+  const ep        = data?.ep ?? 0
+  const eg        = data?.eg ?? 0
+  const hasData   = !!data
+  const lastSeen  = data?.lastSeen ?? 0
+  const connectedAt = getMqttConnectedAt()
+  const clearlyOffline = lastSeen > 0 && Date.now() - lastSeen > OFFLINE_THRESHOLD_MS
+  const waitingFirstMsg = connected && connectedAt > 0 && Date.now() - connectedAt < OFFLINE_THRESHOLD_MS && lastSeen < connectedAt
+  const isOffline = clearlyOffline && !waitingFirstMsg
+  const color     = isOffline ? '#9ca3af' : ep > 50 ? '#28CC08' : ep > 20 ? '#f59e0b' : '#ef4444'
 
   return (
     <button
@@ -98,10 +102,9 @@ export default function Dashboard() {
   const al       = active?.al ?? false
   const lastSeen = active?.lastSeen ?? 0
   const connectedAt = getMqttConnectedAt()
-  // Dispositivo claramente offline antes de conectar (lastSeen antigo) → mostra banner imediatamente
-  // Dispositivo estava online recentemente → aguarda próxima mensagem antes de mostrar timestamp
   const clearlyOffline = lastSeen > 0 && Date.now() - lastSeen > OFFLINE_THRESHOLD_MS
-  const waitingFirstMsg = connected && connectedAt > 0 && lastSeen < connectedAt && !clearlyOffline
+  // Após F5, aguarda até OFFLINE_THRESHOLD_MS pela 1ª mensagem antes de declarar offline
+  const waitingFirstMsg = connected && connectedAt > 0 && Date.now() - connectedAt < OFFLINE_THRESHOLD_MS && lastSeen < connectedAt
   const isOffline = clearlyOffline && !waitingFirstMsg
 
   function handleSelectDevice(id: string) {

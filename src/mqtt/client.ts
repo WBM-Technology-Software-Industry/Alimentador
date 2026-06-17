@@ -183,6 +183,7 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
         delete prevAlAll[msgDeviceId]
         delete feedStartTime[msgDeviceId]
         delete lastAlTrueAt[msgDeviceId]
+        delete feedStartEg[msgDeviceId]
         setOptimisticFeed(null, msgDeviceId)
       }
 
