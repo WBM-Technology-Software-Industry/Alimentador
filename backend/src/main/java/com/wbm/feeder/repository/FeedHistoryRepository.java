@@ -11,7 +11,7 @@ import java.util.List;
 public interface FeedHistoryRepository extends JpaRepository<FeedHistory, Long> {
     List<FeedHistory> findByDeviceIdOrderByTimestampDesc(String deviceId, Pageable pageable);
 
-    boolean existsByDeviceIdAndGramsAndTimestampAfter(String deviceId, Integer grams, java.time.Instant after);
+    boolean existsByDeviceIdAndGramsAndSourceAndTimestampAfter(String deviceId, Integer grams, String source, java.time.Instant after);
 
     boolean existsByDeviceIdAndSourceAndTimestampAfter(String deviceId, String source, java.time.Instant after);
 

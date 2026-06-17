@@ -17,7 +17,8 @@ let mqttConnectedAt = 0
 const prevAlAll:      Record<string, boolean> = {}
 const feedStartTime:  Record<string, number>  = {}
 const lastAlTrueAt:   Record<string, number>  = {}
-const lastPostedFeed: Record<string, number>  = {} // dedup local: timestamp do último postFeedEntry por dispositivo
+const lastPostedManual:    Record<string, number> = {} // dedup local por dispositivo — manual
+const lastPostedScheduled: Record<string, number> = {} // dedup local por dispositivo — automático
 
 export function getMqttClient() { return client }
 export function getMqttConnectedAt() { return mqttConnectedAt }
@@ -216,19 +217,20 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
         const isManualFeed  = lastSim > 0 && grams > 0 && lastTrue > lastSim && withinCooldown
         const manualPending = lastSim > 0 && grams > 0 && withinCooldown
 
-        const FEED_DEDUP_MS = 120_000 // 2 minutos — evita que múltiplos browsers postem o mesmo trato
-        const canPost = !lastPostedFeed[msgDeviceId] || Date.now() - lastPostedFeed[msgDeviceId] > FEED_DEDUP_MS
+        const FEED_DEDUP_MS = 120_000 // 2 minutos por fonte — evita que múltiplos browsers postem o mesmo trato
 
         if (isManualFeed) {
+          const canPost = !lastPostedManual[msgDeviceId] || Date.now() - lastPostedManual[msgDeviceId] > FEED_DEDUP_MS
           if (canPost) {
-            lastPostedFeed[msgDeviceId] = Date.now()
+            lastPostedManual[msgDeviceId] = Date.now()
             api.postFeedEntry(msgDeviceId, grams, 'manual', pending?.user ?? useAuthStore.getState().name).catch(() => {})
           }
           setPendingManual(msgDeviceId, null)
         } else if (!manualPending) {
           const schedGrams = resolveScheduledGramsFromStore(msgDeviceId, feedStartTime[msgDeviceId])
+          const canPost = !lastPostedScheduled[msgDeviceId] || Date.now() - lastPostedScheduled[msgDeviceId] > FEED_DEDUP_MS
           if (schedGrams > 0 && canPost) {
-            lastPostedFeed[msgDeviceId] = Date.now()
+            lastPostedScheduled[msgDeviceId] = Date.now()
             api.postFeedEntry(msgDeviceId, schedGrams, 'scheduled').catch(() => {})
           }
         }
