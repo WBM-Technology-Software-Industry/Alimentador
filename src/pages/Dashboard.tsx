@@ -98,9 +98,11 @@ export default function Dashboard() {
   const al       = active?.al ?? false
   const lastSeen = active?.lastSeen ?? 0
   const connectedAt = getMqttConnectedAt()
-  // Aguardando primeira mensagem desta sessão — não mostrar timestamp antigo ainda
-  const waitingFirstMsg = connected && connectedAt > 0 && lastSeen < connectedAt
-  const isOffline = !waitingFirstMsg && lastSeen > 0 && Date.now() - lastSeen > OFFLINE_THRESHOLD_MS
+  // Dispositivo claramente offline antes de conectar (lastSeen antigo) → mostra banner imediatamente
+  // Dispositivo estava online recentemente → aguarda próxima mensagem antes de mostrar timestamp
+  const clearlyOffline = lastSeen > 0 && Date.now() - lastSeen > OFFLINE_THRESHOLD_MS
+  const waitingFirstMsg = connected && connectedAt > 0 && lastSeen < connectedAt && !clearlyOffline
+  const isOffline = clearlyOffline && !waitingFirstMsg
 
   function handleSelectDevice(id: string) {
     if (id === deviceId) return
