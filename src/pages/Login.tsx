@@ -7,6 +7,7 @@ import wbmLogo from '../assets/LOGO-OFC-WBM-2.0.PNG'
 const BASE = import.meta.env.VITE_API_URL ?? ''
 
 export default function Login() {
+  const [name, setName]         = useState('')
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [error, setError]       = useState('')
@@ -30,7 +31,7 @@ export default function Login() {
         return
       }
       const data = await res.json()
-      setAuth(data.token, data.email)
+      setAuth(data.token, data.email, name.trim())
       navigate('/', { replace: true })
     } catch {
       setError('Erro ao conectar com o servidor.')
@@ -54,6 +55,18 @@ export default function Login() {
           <h1 className="text-base font-bold text-gray-800 text-center">Entrar</h1>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-gray-500">Seu nome</label>
+              <input
+                type="text"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="Ex: Hitalo"
+                required
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-400"
+              />
+            </div>
+
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-gray-500">E-mail</label>
               <input

@@ -35,7 +35,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
   const { collapsed } = useSidebar()
   const connected = useDeviceStore((s) => s.connected)
   const { dark, toggle } = useDarkMode()
-  const { email, clearAuth } = useAuthStore()
+  const { name, email, clearAuth } = useAuthStore()
   const navigate = useNavigate()
   const [confirmLogout, setConfirmLogout] = useState(false)
 
@@ -77,7 +77,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
 
           <SidebarFooter>
             <div className="flex flex-col gap-1">
-              <span className="text-xs text-gray-400 truncate group-data-[collapsed=true]:hidden">{email}</span>
+              <span className="text-xs text-gray-400 truncate group-data-[collapsed=true]:hidden">{name ?? email}</span>
               <button
                 onClick={() => setConfirmLogout(true)}
                 className="flex items-center gap-2 text-xs text-gray-400 hover:text-red-500 transition-colors"

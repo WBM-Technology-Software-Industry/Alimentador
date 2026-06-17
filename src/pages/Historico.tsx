@@ -287,7 +287,7 @@ export default function Historico() {
                         </p>
                         <p className="text-xs text-gray-400 truncate">
                           {e.source === 'manual' ? 'Manual' : 'Automático'}
-                          {e.user ? ` · ${e.user.split('@')[0]}` : ''}
+                          {e.user ? ` · ${e.user}` : ''}
                           {` · ${DEVICE_LABELS[e.deviceId] ?? e.deviceId}`}
                         </p>
                       </div>

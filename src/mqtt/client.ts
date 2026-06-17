@@ -203,7 +203,7 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
         const manualPending = lastSim > 0 && grams > 0
 
         if (isManualFeed) {
-          api.postFeedEntry(msgDeviceId, grams, 'manual', useAuthStore.getState().email).catch(() => {})
+          api.postFeedEntry(msgDeviceId, grams, 'manual', useAuthStore.getState().name).catch(() => {})
           delete lastSimCmdAt[msgDeviceId]
           delete lastSimGrams[msgDeviceId]
         } else if (!manualPending && (manualCooldownUntil[msgDeviceId] ?? 0) < Date.now()) {
