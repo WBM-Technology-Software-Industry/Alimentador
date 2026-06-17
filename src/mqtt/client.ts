@@ -188,12 +188,17 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
       if (newAl === true && !prevAlAll[msgDeviceId]) {
         feedStartTime[msgDeviceId] = Date.now()
         lastAlTrueAt[msgDeviceId]  = Date.now()
-        // Cria entrada otimista para browsers que não viram a mensagem cmd
+        // Cria entrada otimista para todos os browsers (manual ou automático)
         const { pendingManual, optimisticFeed, setOptimisticFeed } = useDeviceStore.getState()
         const pending = pendingManual[msgDeviceId]
-        if (pending && !optimisticFeed[msgDeviceId]) {
+        if (!optimisticFeed[msgDeviceId]) {
           const ts = Date.now()
-          setOptimisticFeed({ id: `opt-${ts}`, deviceId: msgDeviceId, grams: pending.grams, timestamp: ts, source: 'manual', user: pending.user ?? useAuthStore.getState().name })
+          if (pending) {
+            setOptimisticFeed({ id: `opt-${ts}`, deviceId: msgDeviceId, grams: pending.grams, timestamp: ts, source: 'manual', user: pending.user ?? useAuthStore.getState().name })
+          } else {
+            const schedGrams = resolveScheduledGramsFromStore(msgDeviceId, ts)
+            setOptimisticFeed({ id: `opt-${ts}`, deviceId: msgDeviceId, grams: schedGrams, timestamp: ts, source: 'scheduled', user: null })
+          }
         }
       }
 
