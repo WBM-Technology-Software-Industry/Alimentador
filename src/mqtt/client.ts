@@ -234,11 +234,7 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
           }
           setPendingManual(msgDeviceId, null)
         } else if (!manualPending) {
-          // Calcula gramas pela variação de estoque (eg); fallback para schedule config
-          const egBefore = feedStartEg[msgDeviceId] ?? 0
-          const egAfter  = typeof d.eg === 'number' ? d.eg : (useDeviceStore.getState().deviceData[msgDeviceId]?.eg ?? 0)
-          const dispensedFromEg = egBefore > 0 && egBefore > egAfter ? Math.round(egBefore - egAfter) : 0
-          const schedGrams = dispensedFromEg > 0 ? dispensedFromEg : resolveScheduledGramsFromStore(msgDeviceId, feedStartTime[msgDeviceId])
+          const schedGrams = resolveScheduledGramsFromStore(msgDeviceId, feedStartTime[msgDeviceId])
           const canPost = !lastPostedScheduled[msgDeviceId] || Date.now() - lastPostedScheduled[msgDeviceId] > FEED_DEDUP_MS
           if (schedGrams > 0 && canPost) {
             lastPostedScheduled[msgDeviceId] = Date.now()
