@@ -61,8 +61,9 @@ public class DeviceController {
     @PostMapping("/history")
     public ResponseEntity<FeedHistory> addHistory(@PathVariable String deviceId,
                                                   @RequestBody Map<String, Object> body) {
-        int grams  = body.containsKey("grams")  ? ((Number) body.get("grams")).intValue()  : 0;
-        String src = body.containsKey("source") ? (String) body.get("source") : "manual";
+        int grams     = body.containsKey("grams")  ? ((Number) body.get("grams")).intValue()  : 0;
+        String src    = body.containsKey("source") ? (String) body.get("source") : "manual";
+        String userEmail = body.containsKey("user") ? (String) body.get("user") : null;
         if (grams <= 0) return ResponseEntity.badRequest().build();
         // Prevent duplicate entries within 10 seconds (same device, same grams, same source)
         if (feedHistoryRepo.existsByDeviceIdAndGramsAndTimestampAfter(deviceId, grams, Instant.now().minusSeconds(10))) {
@@ -74,7 +75,7 @@ public class DeviceController {
                 deviceId, "manual", Instant.now().minusSeconds(1800))) {
             return ResponseEntity.noContent().build();
         }
-        FeedHistory entry = feedHistoryRepo.save(new FeedHistory(deviceId, Instant.now(), grams, src));
+        FeedHistory entry = feedHistoryRepo.save(new FeedHistory(deviceId, Instant.now(), grams, src, userEmail));
         return ResponseEntity.ok(entry);
     }
 

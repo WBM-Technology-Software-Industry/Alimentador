@@ -2,6 +2,7 @@ import mqtt, { type MqttClient } from 'mqtt'
 import { useDeviceStore, type DeviceSchedule, type FishSchedule } from '../store/deviceStore'
 import { notify } from '../store/notificationStore'
 import { api } from '../api/client'
+import { useAuthStore } from '../store/authStore'
 
 const DEVICE_LABELS: Record<string, string> = {
   ALIMENTADOR_1: 'Alimentador 1',
@@ -202,7 +203,7 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
         const manualPending = lastSim > 0 && grams > 0
 
         if (isManualFeed) {
-          api.postFeedEntry(msgDeviceId, grams, 'manual').catch(() => {})
+          api.postFeedEntry(msgDeviceId, grams, 'manual', useAuthStore.getState().email).catch(() => {})
           delete lastSimCmdAt[msgDeviceId]
           delete lastSimGrams[msgDeviceId]
         } else if (!manualPending && (manualCooldownUntil[msgDeviceId] ?? 0) < Date.now()) {

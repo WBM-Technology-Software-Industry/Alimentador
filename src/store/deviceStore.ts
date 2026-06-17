@@ -8,6 +8,7 @@ export type FeedEntry = {
   timestamp: number
   grams: number
   source: 'manual' | 'scheduled'
+  user?: string | null
 }
 
 export type DeviceSchedule = {
@@ -41,6 +42,7 @@ export type CachedEntry = {
   grams: number
   source: 'manual' | 'scheduled'
   deviceId: string
+  user?: string | null
 }
 
 export type PerDeviceData = {

@@ -11,6 +11,7 @@ type Entry = {
   grams: number
   source: 'manual' | 'scheduled'
   deviceId: string
+  user?: string | null
 }
 
 const DEVICE_LABELS: Record<string, string> = {
@@ -82,6 +83,7 @@ export default function Historico() {
         grams: e.grams,
         source: e.source,
         deviceId: e.deviceId,
+        user: e.userEmail ?? null,
       }))
       setDeviceData(id, { historyCache: mapped })
       return mapped
@@ -284,7 +286,9 @@ export default function Historico() {
                           {isPending ? `${e.grams}g — dispensando...` : e.grams > 0 ? `${e.grams}g dispensados` : '—'}
                         </p>
                         <p className="text-xs text-gray-400 truncate">
-                          {e.source === 'manual' ? 'Manual' : 'Automático'} · {DEVICE_LABELS[e.deviceId] ?? e.deviceId}
+                          {e.source === 'manual' ? 'Manual' : 'Automático'}
+                          {e.user ? ` · ${e.user.split('@')[0]}` : ''}
+                          {` · ${DEVICE_LABELS[e.deviceId] ?? e.deviceId}`}
                         </p>
                       </div>
                     </div>

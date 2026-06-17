@@ -37,6 +37,7 @@ export type ApiFeedEntry = {
   timestamp: string
   grams: number
   source: 'manual' | 'scheduled'
+  userEmail?: string | null
 }
 
 export type ApiTelemetry = {
@@ -64,8 +65,8 @@ export type ApiErrorLog = {
 export const api = {
   history:       (deviceId: string, limit = 100) =>
     get<ApiFeedEntry[]>(`/api/devices/${deviceId}/history?limit=${limit}`),
-  postFeedEntry: (deviceId: string, grams: number, source: 'manual' | 'scheduled') =>
-    post<ApiFeedEntry>(`/api/devices/${deviceId}/history`, { grams, source }),
+  postFeedEntry: (deviceId: string, grams: number, source: 'manual' | 'scheduled', user?: string | null) =>
+    post<ApiFeedEntry>(`/api/devices/${deviceId}/history`, { grams, source, ...(user ? { user } : {}) }),
   clearHistory:  (deviceId: string) =>
     del(`/api/devices/${deviceId}/history`),
   telemetry:     (deviceId: string, limit = 200) =>
