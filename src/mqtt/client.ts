@@ -17,6 +17,7 @@ let mqttConnectedAt = 0
 const prevAlAll:      Record<string, boolean> = {}
 const feedStartTime:  Record<string, number>  = {}
 const lastAlTrueAt:   Record<string, number>  = {}
+const feedStartEg:    Record<string, number>  = {} // eg (estoque em g) no início do trato
 const lastPostedManual:    Record<string, number> = {} // dedup local por dispositivo — manual
 const lastPostedScheduled: Record<string, number> = {} // dedup local por dispositivo — automático
 
@@ -191,6 +192,8 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
       if (newAl === true && !prevAlAll[msgDeviceId]) {
         feedStartTime[msgDeviceId] = Date.now()
         lastAlTrueAt[msgDeviceId]  = Date.now()
+        // Grava eg antes do trato para calcular gramas dispensadas pela variação de estoque
+        feedStartEg[msgDeviceId] = typeof d.eg === 'number' ? d.eg : (useDeviceStore.getState().deviceData[msgDeviceId]?.eg ?? 0)
         // Cria entrada otimista para todos os browsers (manual ou automático)
         const { pendingManual, optimisticFeed, setOptimisticFeed } = useDeviceStore.getState()
         const pending = pendingManual[msgDeviceId]
@@ -215,7 +218,10 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
 
         const withinCooldown = cooldownUntil > Date.now()
         const isManualFeed  = lastSim > 0 && grams > 0 && lastTrue > lastSim && withinCooldown
-        const manualPending = lastSim > 0 && grams > 0 && withinCooldown
+        // manualPending só bloqueia o registro automático se o motor ligou DEPOIS do comando
+        // (se ligou antes, é um trato automático coincidindo com um comando em fila)
+        const motorStartedAfterCmd = lastTrue > lastSim
+        const manualPending = lastSim > 0 && grams > 0 && withinCooldown && motorStartedAfterCmd
 
         const FEED_DEDUP_MS = 120_000 // 2 minutos por fonte — evita que múltiplos browsers postem o mesmo trato
 
@@ -227,7 +233,11 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
           }
           setPendingManual(msgDeviceId, null)
         } else if (!manualPending) {
-          const schedGrams = resolveScheduledGramsFromStore(msgDeviceId, feedStartTime[msgDeviceId])
+          // Calcula gramas pela variação de estoque (eg); fallback para schedule config
+          const egBefore = feedStartEg[msgDeviceId] ?? 0
+          const egAfter  = typeof d.eg === 'number' ? d.eg : (useDeviceStore.getState().deviceData[msgDeviceId]?.eg ?? 0)
+          const dispensedFromEg = egBefore > 0 && egBefore > egAfter ? Math.round(egBefore - egAfter) : 0
+          const schedGrams = dispensedFromEg > 0 ? dispensedFromEg : resolveScheduledGramsFromStore(msgDeviceId, feedStartTime[msgDeviceId])
           const canPost = !lastPostedScheduled[msgDeviceId] || Date.now() - lastPostedScheduled[msgDeviceId] > FEED_DEDUP_MS
           if (schedGrams > 0 && canPost) {
             lastPostedScheduled[msgDeviceId] = Date.now()
