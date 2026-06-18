@@ -55,7 +55,12 @@ public class MqttIngestionService {
     private final Map<String, JsonNode> lastCps   = new ConcurrentHashMap<>();
     private final Map<String, Integer>  lastPf    = new ConcurrentHashMap<>();
     // Device local time at feed start (al: false → true)
-    private final Map<String, String>   feedStartTs = new ConcurrentHashMap<>();
+    private final Map<String, String>   feedStartTs      = new ConcurrentHashMap<>();
+    // Epoch ms when feed started — used to compare against manual cmd timestamp
+    private final Map<String, Long>     feedStartEpochMs = new ConcurrentHashMap<>();
+    // Pending manual feed from cmd topic (sim field)
+    private final Map<String, Integer>  pendingManualGrams = new ConcurrentHashMap<>();
+    private final Map<String, Long>     pendingManualCmdAt  = new ConcurrentHashMap<>();
 
     public MqttIngestionService(FeedHistoryRepository feedHistoryRepo,
                                 DeviceTelemetryRepository telemetryRepo,
@@ -101,9 +106,16 @@ public class MqttIngestionService {
         Matcher mc = TOPIC_CMD.matcher(topic);
         if (mc.matches()) {
             try {
+                String cmdDeviceId = mc.group(1);
                 JsonNode cmd = mapper.readTree(payload);
-                // cmd topic monitoring only — manual feeds are saved by the frontend
-                log.debug("Cmd received on topic {}: {}", topic, new String(payload));
+                if (cmd.has("sim") && cmd.get("sim").isNumber()) {
+                    int simGrams = cmd.get("sim").intValue();
+                    if (simGrams > 0) {
+                        pendingManualGrams.put(cmdDeviceId, simGrams);
+                        pendingManualCmdAt.put(cmdDeviceId, System.currentTimeMillis());
+                        log.debug("Manual feed cmd: device={} grams={}", cmdDeviceId, simGrams);
+                    }
+                }
             } catch (Exception ignored) {}
             return;
         }
@@ -140,12 +152,52 @@ public class MqttIngestionService {
 
             Boolean wasFed = prevAl.get(deviceId);
 
-            // Track device local time at feed start (for schedule matching)
-            if (Boolean.TRUE.equals(al) && !Boolean.TRUE.equals(wasFed) && ts != null) {
-                feedStartTs.put(deviceId, ts);
+            // Feed started (al: false → true)
+            if (Boolean.TRUE.equals(al) && !Boolean.TRUE.equals(wasFed)) {
+                feedStartEpochMs.put(deviceId, System.currentTimeMillis());
+                if (ts != null) feedStartTs.put(deviceId, ts);
             }
 
-            // Feed history is saved entirely by the frontend to avoid race conditions
+            // Feed ended (al: true → false) — save history in the backend so it works even sem browser aberto
+            if (Boolean.FALSE.equals(al) && Boolean.TRUE.equals(wasFed)) {
+                long nowMs = System.currentTimeMillis();
+                Integer manGrams = pendingManualGrams.get(deviceId);
+                Long cmdAt       = pendingManualCmdAt.get(deviceId);
+                long motorStart  = feedStartEpochMs.getOrDefault(deviceId, 0L);
+
+                // Manual se: há um sim pendente dentro do cooldown de 30 min e o motor ligou depois do cmd
+                boolean isManual = manGrams != null && manGrams > 0
+                        && cmdAt != null && (nowMs - cmdAt) < 30 * 60_000L
+                        && motorStart > cmdAt;
+
+                int grams;
+                String source;
+                if (isManual) {
+                    grams  = manGrams;
+                    source = "manual";
+                    pendingManualGrams.remove(deviceId);
+                    pendingManualCmdAt.remove(deviceId);
+                } else {
+                    grams  = resolveScheduledGrams(deviceId);
+                    source = "scheduled";
+                }
+
+                if (grams > 0) {
+                    Instant twoMinAgo = Instant.now().minusSeconds(120);
+                    boolean alreadySaved = feedHistoryRepo
+                            .existsByDeviceIdAndGramsAndSourceAndTimestampAfter(deviceId, grams, source, twoMinAgo);
+                    if (!alreadySaved) {
+                        feedHistoryRepo.save(new FeedHistory(deviceId, Instant.now(), grams, source, null));
+                        log.info("Feed history saved by backend: device={} grams={} source={}", deviceId, grams, source);
+                    } else {
+                        log.debug("Feed history deduped (frontend already saved): device={} grams={} source={}", deviceId, grams, source);
+                    }
+                }
+
+                feedStartTs.remove(deviceId);
+                feedStartEpochMs.remove(deviceId);
+            }
+
             if (al != null) prevAl.put(deviceId, al);
 
             // Log new errors only
@@ -190,7 +242,7 @@ public class MqttIngestionService {
             } catch (Exception ignored) {}
         }
 
-        // Try c_pt with 30-minute threshold
+        // Try c_pt — slot mais próximo dentro de 5 minutos do horário do trato
         JsonNode cpt = lastCpt.get(deviceId);
         if (cpt != null && cpt.isArray()) {
             int bestQ    = 0;
