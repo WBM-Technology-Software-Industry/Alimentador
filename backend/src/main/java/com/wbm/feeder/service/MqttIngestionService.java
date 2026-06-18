@@ -39,7 +39,7 @@ public class MqttIngestionService {
     @Value("${mqtt.broker-url}")
     private String brokerUrl;
 
-    private final FeedHistoryRepository     feedHistoryRepo;
+    private final FeedHistoryService        feedHistoryService;
     private final DeviceTelemetryRepository telemetryRepo;
     private final DeviceScheduleRepository  scheduleRepo;
     private final ErrorLogRepository        errorLogRepo;
@@ -62,16 +62,16 @@ public class MqttIngestionService {
     private final Map<String, Integer>  pendingManualGrams = new ConcurrentHashMap<>();
     private final Map<String, Long>     pendingManualCmdAt  = new ConcurrentHashMap<>();
 
-    public MqttIngestionService(FeedHistoryRepository feedHistoryRepo,
+    public MqttIngestionService(FeedHistoryService feedHistoryService,
                                 DeviceTelemetryRepository telemetryRepo,
                                 DeviceScheduleRepository scheduleRepo,
                                 ErrorLogRepository errorLogRepo,
                                 DeviceLastSeenRepository lastSeenRepo) {
-        this.feedHistoryRepo = feedHistoryRepo;
-        this.telemetryRepo   = telemetryRepo;
-        this.scheduleRepo    = scheduleRepo;
-        this.errorLogRepo    = errorLogRepo;
-        this.lastSeenRepo    = lastSeenRepo;
+        this.feedHistoryService = feedHistoryService;
+        this.telemetryRepo      = telemetryRepo;
+        this.scheduleRepo       = scheduleRepo;
+        this.errorLogRepo       = errorLogRepo;
+        this.lastSeenRepo       = lastSeenRepo;
     }
 
     @PostConstruct
@@ -183,15 +183,7 @@ public class MqttIngestionService {
                 }
 
                 if (grams > 0) {
-                    Instant twoMinAgo = Instant.now().minusSeconds(120);
-                    boolean alreadySaved = feedHistoryRepo
-                            .existsByDeviceIdAndGramsAndSourceAndTimestampAfter(deviceId, grams, source, twoMinAgo);
-                    if (!alreadySaved) {
-                        feedHistoryRepo.save(new FeedHistory(deviceId, Instant.now(), grams, source, null));
-                        log.info("Feed history saved by backend: device={} grams={} source={}", deviceId, grams, source);
-                    } else {
-                        log.debug("Feed history deduped (frontend already saved): device={} grams={} source={}", deviceId, grams, source);
-                    }
+                    feedHistoryService.saveIfNew(deviceId, grams, source);
                 }
 
                 feedStartTs.remove(deviceId);
@@ -222,7 +214,7 @@ public class MqttIngestionService {
             }
 
         } catch (Exception e) {
-            log.debug("Failed to process MQTT message: {}", e.getMessage());
+            log.error("Failed to process MQTT message on topic {}: {}", topic, e.getMessage(), e);
         }
     }
 
