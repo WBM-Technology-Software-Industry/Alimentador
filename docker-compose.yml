@@ -31,6 +31,7 @@ services:
       MQTT_BROKER_URL: ${MQTT_BROKER_URL:-tcp://152.67.43.175:1883}
     networks:
       - alimentador
+      - proxy
 
   frontend:
     build: .
