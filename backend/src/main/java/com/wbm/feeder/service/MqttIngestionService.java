@@ -17,6 +17,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -47,6 +50,12 @@ public class MqttIngestionService {
     private final ObjectMapper              mapper = new ObjectMapper();
 
     private MqttClient client;
+    private final ScheduledExecutorService mqttScheduler =
+            Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r, "mqtt-connector");
+                t.setDaemon(true);
+                return t;
+            });
 
     private final Map<String, Boolean> prevAl  = new ConcurrentHashMap<>();
     private final Map<String, Integer> prevErr = new ConcurrentHashMap<>();
@@ -75,19 +84,34 @@ public class MqttIngestionService {
     }
 
     @PostConstruct
-    public void connect() {
+    public void startMqtt() {
+        mqttScheduler.execute(this::tryConnect);
+    }
+
+    @PreDestroy
+    public void stopMqtt() {
+        mqttScheduler.shutdownNow();
+        if (client != null) {
+            try { client.close(); } catch (MqttException ignored) {}
+        }
+    }
+
+    private synchronized void tryConnect() {
         try {
+            if (client != null) {
+                try { client.close(); } catch (MqttException ignored) {}
+            }
             client = new MqttClient(brokerUrl, "feeder-backend-" + System.currentTimeMillis());
             MqttConnectOptions opts = new MqttConnectOptions();
-            opts.setAutomaticReconnect(true);
             opts.setCleanSession(true);
-            opts.setConnectionTimeout(30);
+            opts.setConnectionTimeout(15);
             opts.setKeepAliveInterval(20);
-            opts.setMaxReconnectDelay(5000);
+            opts.setAutomaticReconnect(false);
 
             client.setCallback(new MqttCallback() {
                 @Override public void connectionLost(Throwable cause) {
-                    log.warn("MQTT connection lost: {} — reconnecting...", cause.getMessage());
+                    log.warn("MQTT connection lost: {} — reconnecting in 10s", cause.getMessage());
+                    mqttScheduler.schedule(() -> tryConnect(), 10, TimeUnit.SECONDS);
                 }
                 @Override public void messageArrived(String topic, MqttMessage message) {
                     handleMessage(topic, message.getPayload());
@@ -98,9 +122,10 @@ public class MqttIngestionService {
             client.connect(opts);
             client.subscribe("devices/+/status", 1);
             client.subscribe("devices/+/cmd", 1);
-            log.info("MQTT connected to {} — subscribed to devices/+/status and devices/+/cmd", brokerUrl);
+            log.info("MQTT connected to {}", brokerUrl);
         } catch (MqttException e) {
-            log.error("Failed to connect to MQTT broker: {}", e.getMessage());
+            log.warn("MQTT connection failed: {} — retrying in 15s", e.getMessage());
+            mqttScheduler.schedule(() -> tryConnect(), 15, TimeUnit.SECONDS);
         }
     }
 
