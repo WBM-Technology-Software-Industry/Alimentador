@@ -81,11 +81,13 @@ public class MqttIngestionService {
             MqttConnectOptions opts = new MqttConnectOptions();
             opts.setAutomaticReconnect(true);
             opts.setCleanSession(true);
-            opts.setConnectionTimeout(10);
+            opts.setConnectionTimeout(30);
+            opts.setKeepAliveInterval(20);
+            opts.setMaxReconnectDelay(5000);
 
             client.setCallback(new MqttCallback() {
                 @Override public void connectionLost(Throwable cause) {
-                    log.warn("MQTT connection lost: {}", cause.getMessage());
+                    log.warn("MQTT connection lost: {} — reconnecting...", cause.getMessage());
                 }
                 @Override public void messageArrived(String topic, MqttMessage message) {
                     handleMessage(topic, message.getPayload());
