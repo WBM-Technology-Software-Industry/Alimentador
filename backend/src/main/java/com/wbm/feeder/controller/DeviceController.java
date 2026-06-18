@@ -1,6 +1,9 @@
 package com.wbm.feeder.controller;
 
-import com.wbm.feeder.model.*;
+import com.wbm.feeder.dto.ErrorLogDto;
+import com.wbm.feeder.dto.FeedHistoryDto;
+import com.wbm.feeder.dto.TelemetryDto;
+import com.wbm.feeder.model.FeedHistory;
 import com.wbm.feeder.repository.*;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
@@ -46,48 +49,65 @@ public class DeviceController {
     }
 
     @GetMapping("/history")
-    public List<FeedHistory> history(@PathVariable String deviceId,
-                                     @RequestParam(defaultValue = "100") int limit) {
-        return feedHistoryRepo.findByDeviceIdOrderByTimestampDesc(deviceId, PageRequest.of(0, limit));
+    public List<FeedHistoryDto> history(@PathVariable String deviceId,
+                                        @RequestParam(defaultValue = "100") int limit) {
+        return feedHistoryRepo
+                .findByDeviceIdOrderByTimestampDesc(deviceId, PageRequest.of(0, limit))
+                .stream()
+                .map(FeedHistoryDto::from)
+                .toList();
     }
 
     @GetMapping("/telemetry")
-    public List<DeviceTelemetry> telemetry(@PathVariable String deviceId,
-                                           @RequestParam(defaultValue = "200") int limit) {
-        return telemetryRepo.findByDeviceIdOrderByTimestampDesc(deviceId, PageRequest.of(0, limit));
+    public List<TelemetryDto> telemetry(@PathVariable String deviceId,
+                                        @RequestParam(defaultValue = "200") int limit) {
+        return telemetryRepo
+                .findByDeviceIdOrderByTimestampDesc(deviceId, PageRequest.of(0, limit))
+                .stream()
+                .map(TelemetryDto::from)
+                .toList();
     }
 
     @GetMapping("/telemetry/latest")
-    public DeviceTelemetry latestTelemetry(@PathVariable String deviceId) {
-        return telemetryRepo.findTopByDeviceIdOrderByTimestampDesc(deviceId).orElse(null);
-    }
-
-    @GetMapping("/schedules")
-    public List<DeviceSchedule> schedules(@PathVariable String deviceId) {
-        return scheduleRepo.findByDeviceId(deviceId);
+    public ResponseEntity<TelemetryDto> latestTelemetry(@PathVariable String deviceId) {
+        return telemetryRepo
+                .findTopByDeviceIdOrderByTimestampDesc(deviceId)
+                .map(TelemetryDto::from)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/errors")
-    public List<ErrorLog> errors(@PathVariable String deviceId,
-                                 @RequestParam(defaultValue = "50") int limit) {
-        return errorLogRepo.findByDeviceIdOrderByTimestampDesc(deviceId, PageRequest.of(0, limit));
+    public List<ErrorLogDto> errors(@PathVariable String deviceId,
+                                    @RequestParam(defaultValue = "50") int limit) {
+        return errorLogRepo
+                .findByDeviceIdOrderByTimestampDesc(deviceId, PageRequest.of(0, limit))
+                .stream()
+                .map(ErrorLogDto::from)
+                .toList();
     }
 
     @PostMapping("/history")
-    public ResponseEntity<FeedHistory> addHistory(@PathVariable String deviceId,
-                                                  @RequestBody Map<String, Object> body) {
-        int grams     = body.containsKey("grams")  ? ((Number) body.get("grams")).intValue()  : 0;
-        String src    = body.containsKey("source") ? (String) body.get("source") : "manual";
-        String userEmail = body.containsKey("user") ? (String) body.get("user") : null;
+    public ResponseEntity<FeedHistoryDto> addHistory(@PathVariable String deviceId,
+                                                     @RequestBody Map<String, Object> body) {
+        int grams        = body.containsKey("grams")  ? ((Number) body.get("grams")).intValue() : 0;
+        String src       = body.containsKey("source") ? (String) body.get("source") : "manual";
+        String userEmail = body.containsKey("user")   ? (String) body.get("user")   : null;
+
         if (grams <= 0) return ResponseEntity.badRequest().build();
-        // Prevent duplicate entries within 2 minutes (same device, same grams, same source)
-        // Cobre o caso de múltiplos browsers detectarem o mesmo trato e enviarem simultaneamente
-        if (feedHistoryRepo.existsByDeviceIdAndGramsAndSourceAndTimestampAfter(deviceId, grams, src, Instant.now().minusSeconds(120))) {
-            return feedHistoryRepo.findByDeviceIdOrderByTimestampDesc(deviceId, org.springframework.data.domain.PageRequest.of(0, 1))
-                    .stream().findFirst().map(ResponseEntity::ok).orElse(ResponseEntity.ok().build());
+
+        if (feedHistoryRepo.existsByDeviceIdAndGramsAndSourceAndTimestampAfter(
+                deviceId, grams, src, Instant.now().minusSeconds(120))) {
+            return feedHistoryRepo
+                    .findByDeviceIdOrderByTimestampDesc(deviceId, PageRequest.of(0, 1))
+                    .stream().findFirst()
+                    .map(FeedHistoryDto::from)
+                    .map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.ok().build());
         }
+
         FeedHistory entry = feedHistoryRepo.save(new FeedHistory(deviceId, Instant.now(), grams, src, userEmail));
-        return ResponseEntity.ok(entry);
+        return ResponseEntity.ok(FeedHistoryDto.from(entry));
     }
 
     @DeleteMapping("/history/{id}")
