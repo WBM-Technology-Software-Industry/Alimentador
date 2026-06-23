@@ -35,6 +35,7 @@ function PrivateRoutes() {
 export default function App() {
   const setBrokerConfig = useDeviceStore((s) => s.setBrokerConfig)
   const setDeviceData   = useDeviceStore((s) => s.setDeviceData)
+  const setDeviceName   = useDeviceStore((s) => s.setDeviceName)
   const connected       = useDeviceStore((s) => s.connected)
   const deviceData      = useDeviceStore((s) => s.deviceData)
   const token           = useAuthStore((s) => s.token)
@@ -46,6 +47,10 @@ export default function App() {
     if (!token) return
     setBrokerConfig(BROKER_URL, DEVICE_ID)
     connectMqtt(BROKER_URL, DEVICE_ID)
+
+    api.getLabels()
+      .then((labels) => { Object.entries(labels).forEach(([id, name]) => setDeviceName(id, name)) })
+      .catch(() => {})
 
     ALL_DEVICES.forEach((id) => {
       // Semente de lastSeen a partir do banco — evita exibir timestamp desatualizado após F5
@@ -74,7 +79,7 @@ export default function App() {
 
     const timeout = setTimeout(() => setLoading(false), 2000)
     return () => clearTimeout(timeout)
-  }, [token, setBrokerConfig, setDeviceData])
+  }, [token, setBrokerConfig, setDeviceData, setDeviceName])
 
   useEffect(() => {
     if (connected) setLoading(false)

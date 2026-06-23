@@ -3,6 +3,7 @@ import { useDeviceStore, type FishSchedule, type DeviceSchedule, DEFAULT_DEVICE_
 import { publishCmd, publishCmdSequence } from '../mqtt/client'
 import { useAuthStore } from '../store/authStore'
 import { CmdStatusBadge, useLastCmd } from '../components/StatusBar'
+import { api } from '../api/client'
 
 function pad(n: number) { return String(n).padStart(2, '0') }
 
@@ -25,6 +26,7 @@ function DeviceIdConfig() {
 
   function handleSave() {
     setDeviceName(deviceId, editName)
+    api.saveLabel(deviceId, editName).catch(() => {})
     setSaved(true)
   }
 

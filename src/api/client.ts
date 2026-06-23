@@ -80,4 +80,12 @@ export const api = {
     get<{ lastSeen: string }>(`/api/devices/${deviceId}/last-seen`),
   logout:        () =>
     fetch(`${BASE}/api/auth/logout`, { method: 'POST', headers: authHeader() }),
+  getLabels: () =>
+    get<Record<string, string>>('/api/labels'),
+  saveLabel: (deviceId: string, label: string) =>
+    fetch(`${BASE}/api/labels/${deviceId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...authHeader() },
+      body: JSON.stringify({ label }),
+    }),
 }
