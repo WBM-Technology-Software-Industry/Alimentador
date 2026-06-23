@@ -16,6 +16,7 @@ docker-compose.override.yml
 docker-compose.dev.yml
 Dockerfile.dev
 feeder-api.postman_collection.json
+mqtt-bridge-dev.js
 
 # Sistema
 .DS_Store

@@ -25,10 +25,19 @@ public class AuthFilter implements Filter {
         HttpServletRequest  request  = (HttpServletRequest)  req;
         HttpServletResponse response = (HttpServletResponse) res;
 
+        response.setHeader("Access-Control-Allow-Origin",  "*");
+        response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
+
         String path = request.getRequestURI();
 
-        // Allow auth endpoints and OPTIONS (CORS preflight) through
-        if (path.startsWith("/api/auth/") || "OPTIONS".equalsIgnoreCase(request.getMethod())) {
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            response.setStatus(HttpServletResponse.SC_OK);
+            return;
+        }
+
+        // Allow auth endpoints through
+        if (path.startsWith("/api/auth/")) {
             chain.doFilter(req, res);
             return;
         }
