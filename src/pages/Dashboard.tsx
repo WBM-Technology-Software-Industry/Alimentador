@@ -1,4 +1,4 @@
-import { useDeviceStore } from '../store/deviceStore'
+import { useDeviceStore, DEFAULT_DEVICE_LABELS } from '../store/deviceStore'
 import StockGauge from '../components/StockGauge'
 import { format, formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -14,10 +14,7 @@ const ERROR_LABELS: Record<number, string> = {
   11: 'Motor ligado por tempo excessivo sem atingir o peso.',
 }
 
-const DEVICES = [
-  { label: 'Alimentador 1', id: 'ALIMENTADOR_1' },
-  { label: 'Alimentador 2', id: 'ALIMENTADOR_2' },
-]
+const DEVICE_IDS = ['ALIMENTADOR_1', 'ALIMENTADOR_2']
 
 function Skeleton({ className }: { className: string }) {
   return <div className={`animate-pulse bg-gray-200 rounded-lg ${className}`} />
@@ -34,6 +31,7 @@ function FeederLevelCard({ label, id, active, onClick }: {
 
   const data      = useDeviceStore((s) => s.deviceData[id])
   const connected = useDeviceStore((s) => s.connected)
+  const customName = useDeviceStore((s) => s.deviceNames[id])
   const ep        = data?.ep ?? 0
   const eg        = data?.eg ?? 0
   const hasData   = !!data
@@ -52,7 +50,7 @@ function FeederLevelCard({ label, id, active, onClick }: {
       }`}
     >
       <div className="flex items-center justify-between">
-        <span className={`text-xs font-semibold ${active ? 'text-brand-600' : 'text-gray-600'}`}>{label}</span>
+        <span className={`text-xs font-semibold ${active ? 'text-brand-600' : 'text-gray-600'}`}>{customName ?? label}</span>
         {!hasData
           ? <Skeleton className="w-8 h-3" />
           : isOffline
@@ -92,7 +90,7 @@ export default function Dashboard() {
     return () => clearInterval(t)
   }, [])
 
-  const { deviceId, brokerUrl, setBrokerConfig, deviceData, connected } = useDeviceStore()
+  const { deviceId, brokerUrl, setBrokerConfig, deviceData, connected, deviceNames } = useDeviceStore()
   const active = deviceData[deviceId]
   const hasData = !!active
   const eg = active?.eg ?? 0
@@ -117,13 +115,13 @@ export default function Dashboard() {
 
       {/* Feeder selector cards */}
       <div className="flex gap-3">
-        {DEVICES.map((d) => (
+        {DEVICE_IDS.map((id) => (
           <FeederLevelCard
-            key={d.id}
-            label={d.label}
-            id={d.id}
-            active={d.id === deviceId}
-            onClick={() => handleSelectDevice(d.id)}
+            key={id}
+            label={deviceNames[id] ?? DEFAULT_DEVICE_LABELS[id] ?? id}
+            id={id}
+            active={id === deviceId}
+            onClick={() => handleSelectDevice(id)}
           />
         ))}
       </div>

@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
-import { useDeviceStore } from '../store/deviceStore'
+import { useDeviceStore, DEFAULT_DEVICE_LABELS } from '../store/deviceStore'
 import { api, type ApiFeedEntry } from '../api/client'
 import { format, isToday, isYesterday, subDays, startOfDay, endOfDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -14,10 +14,6 @@ type Entry = {
   user?: string | null
 }
 
-const DEVICE_LABELS: Record<string, string> = {
-  ALIMENTADOR_1: 'Alimentador 1',
-  ALIMENTADOR_2: 'Alimentador 2',
-}
 
 type Period = 'today' | '7d' | '30d' | 'all'
 
@@ -55,7 +51,8 @@ function groupByDay(entries: Entry[]) {
 const ALL_DEVICE_IDS = ['ALIMENTADOR_1', 'ALIMENTADOR_2']
 
 export default function Historico() {
-  const { deviceData, setDeviceData, clearFeedHistory, lastFeedAt, optimisticFeed } = useDeviceStore()
+  const { deviceData, setDeviceData, clearFeedHistory, lastFeedAt, optimisticFeed, deviceNames } = useDeviceStore()
+  function deviceLabel(id: string) { return deviceNames[id] ?? DEFAULT_DEVICE_LABELS[id] ?? id }
 
   // Filtro por dispositivo — padrão: todos
   const [filterDevice, setFilterDevice] = useState<string>('all')
@@ -181,7 +178,7 @@ export default function Historico() {
 
       {/* Filtro por dispositivo */}
       <div className="flex rounded-xl overflow-hidden border border-gray-200 bg-white shadow">
-        {[{ id: 'all', label: 'Todos' }, ...ALL_DEVICE_IDS.map(id => ({ id, label: DEVICE_LABELS[id] }))].map(d => (
+        {[{ id: 'all', label: 'Todos' }, ...ALL_DEVICE_IDS.map(id => ({ id, label: deviceLabel(id) }))].map(d => (
           <button
             key={d.id}
             onClick={() => setFilterDevice(d.id)}
@@ -292,7 +289,7 @@ export default function Historico() {
                         <p className="text-xs text-gray-400 truncate">
                           {e.source === 'manual' ? 'Manual' : 'Automático'}
                           {e.user ? ` · ${e.user}` : ''}
-                          {` · ${DEVICE_LABELS[e.deviceId] ?? e.deviceId}`}
+                          {` · ${deviceLabel(e.deviceId)}`}
                         </p>
                       </div>
                     </div>

@@ -1,6 +1,11 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+export const DEFAULT_DEVICE_LABELS: Record<string, string> = {
+  ALIMENTADOR_1: 'Alimentador 1',
+  ALIMENTADOR_2: 'Alimentador 2',
+}
+
 export type DeviceType = 'cao' | 'peixe'
 
 export type FeedEntry = {
@@ -107,6 +112,9 @@ type DeviceState = {
   // Comando manual pendente por dispositivo (persistido — sobrevive a refresh/reconexão)
   pendingManual: Record<string, PendingManual>
 
+  // Nomes personalizados por dispositivo
+  deviceNames: Record<string, string>
+
   // Actions
   setDeviceType: (t: DeviceType) => void
   setBrokerConfig: (url: string, id: string) => void
@@ -123,6 +131,7 @@ type DeviceState = {
   timeoutCmd: (id: string) => void
   clearCmdLog: () => void
   setPendingManual: (deviceId: string, v: PendingManual | null) => void
+  setDeviceName: (deviceId: string, name: string) => void
 }
 
 export const useDeviceStore = create<DeviceState>()(
@@ -152,6 +161,7 @@ export const useDeviceStore = create<DeviceState>()(
       manualGrams: 100,
       cmdLog: [],
       pendingManual: {},
+      deviceNames: {},
 
       setDeviceType: (deviceType) => set({ deviceType }),
       setBrokerConfig: (brokerUrl, deviceId) => set({ brokerUrl, deviceId }),
@@ -220,6 +230,15 @@ export const useDeviceStore = create<DeviceState>()(
           return { pendingManual: next }
         }
         return { pendingManual: { ...s.pendingManual, [deviceId]: v } }
+      }),
+      setDeviceName: (deviceId, name) => set((s) => {
+        const trimmed = name.trim()
+        if (!trimmed) {
+          const next = { ...s.deviceNames }
+          delete next[deviceId]
+          return { deviceNames: next }
+        }
+        return { deviceNames: { ...s.deviceNames, [deviceId]: trimmed } }
       }),
     }),
     {

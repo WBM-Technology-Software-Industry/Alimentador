@@ -1,18 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
-import { useDeviceStore, type FishSchedule, type DeviceSchedule } from '../store/deviceStore'
+import { useDeviceStore, type FishSchedule, type DeviceSchedule, DEFAULT_DEVICE_LABELS } from '../store/deviceStore'
 import { publishCmd, publishCmdSequence } from '../mqtt/client'
 import { useAuthStore } from '../store/authStore'
 import { CmdStatusBadge, useLastCmd } from '../components/StatusBar'
 
 function pad(n: number) { return String(n).padStart(2, '0') }
 
-const DEVICES = [
-  { label: 'Alimentador 1', id: 'ALIMENTADOR_1' },
-  { label: 'Alimentador 2', id: 'ALIMENTADOR_2' },
-]
+const DEVICE_IDS = ['ALIMENTADOR_1', 'ALIMENTADOR_2']
 
 function DeviceIdConfig() {
-  const { deviceId, brokerUrl, setBrokerConfig, setDeviceType, deviceData } = useDeviceStore()
+  const { deviceId, brokerUrl, setBrokerConfig, setDeviceType, deviceData, deviceNames, setDeviceName } = useDeviceStore()
+  const [editName, setEditName] = useState('')
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    setEditName(deviceNames[deviceId] ?? '')
+    setSaved(false)
+  }, [deviceId, deviceNames])
 
   function handleSelect(id: string) {
     if (id === deviceId) return
@@ -21,23 +25,52 @@ function DeviceIdConfig() {
     setDeviceType(pf === 0 ? 'peixe' : 'cao')
   }
 
+  function handleSave() {
+    setDeviceName(deviceId, editName)
+    setSaved(true)
+  }
+
   return (
     <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-3">
       <h2 className="text-gray-500 text-sm font-medium">Alimentador</h2>
       <div className="flex rounded-xl overflow-hidden border border-gray-200">
-        {DEVICES.map((d) => (
+        {DEVICE_IDS.map((id) => (
           <button
-            key={d.id}
-            onClick={() => handleSelect(d.id)}
+            key={id}
+            onClick={() => handleSelect(id)}
             className={`flex-1 py-3 text-sm font-semibold transition-all ${
-              deviceId === d.id
+              deviceId === id
                 ? 'bg-brand-600 text-[#1A1A1A]'
                 : 'bg-white text-gray-500 hover:bg-gray-50'
             }`}
           >
-            {d.label}
+            {deviceNames[id] ?? DEFAULT_DEVICE_LABELS[id] ?? id}
           </button>
         ))}
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <label className="text-xs text-gray-500">Nome personalizado</label>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={editName}
+            onChange={(e) => { setEditName(e.target.value); setSaved(false) }}
+            onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+            placeholder={DEFAULT_DEVICE_LABELS[deviceId] ?? deviceId}
+            maxLength={40}
+            className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500"
+          />
+          <button
+            onClick={handleSave}
+            className="px-4 py-2 rounded-xl bg-brand-600 text-[#1A1A1A] text-sm font-semibold"
+          >
+            Salvar
+          </button>
+        </div>
+        {saved && (
+          <p className="text-xs text-green-600">Nome salvo!</p>
+        )}
       </div>
     </div>
   )
