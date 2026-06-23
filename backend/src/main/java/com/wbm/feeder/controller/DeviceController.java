@@ -7,6 +7,7 @@ import com.wbm.feeder.model.FeedHistory;
 import com.wbm.feeder.repository.*;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
@@ -24,17 +25,20 @@ public class DeviceController {
     private final DeviceScheduleRepository  scheduleRepo;
     private final ErrorLogRepository        errorLogRepo;
     private final DeviceLastSeenRepository  lastSeenRepo;
+    private final JdbcTemplate              jdbc;
 
     public DeviceController(FeedHistoryRepository feedHistoryRepo,
                             DeviceTelemetryRepository telemetryRepo,
                             DeviceScheduleRepository scheduleRepo,
                             ErrorLogRepository errorLogRepo,
-                            DeviceLastSeenRepository lastSeenRepo) {
+                            DeviceLastSeenRepository lastSeenRepo,
+                            JdbcTemplate jdbc) {
         this.feedHistoryRepo = feedHistoryRepo;
         this.telemetryRepo   = telemetryRepo;
         this.scheduleRepo    = scheduleRepo;
         this.errorLogRepo    = errorLogRepo;
         this.lastSeenRepo    = lastSeenRepo;
+        this.jdbc            = jdbc;
     }
 
     @GetMapping("/last-seen")
@@ -88,13 +92,31 @@ public class DeviceController {
     }
 
     @PostMapping("/history")
-    public ResponseEntity<FeedHistoryDto> addHistory(@PathVariable String deviceId,
-                                                     @RequestBody Map<String, Object> body) {
-        int grams        = body.containsKey("grams")  ? ((Number) body.get("grams")).intValue() : 0;
-        String src       = body.containsKey("source") ? (String) body.get("source") : "manual";
-        String userEmail = body.containsKey("user")   ? (String) body.get("user")   : null;
+    public ResponseEntity<FeedHistoryDto> addHistory(
+            @PathVariable String deviceId,
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestBody Map<String, Object> body) {
+
+        int    grams = body.containsKey("grams")  ? ((Number) body.get("grams")).intValue() : 0;
+        String src   = body.containsKey("source") ? (String) body.get("source") : "manual";
 
         if (grams <= 0) return ResponseEntity.badRequest().build();
+
+        String userName  = null;
+        String userEmail = null;
+
+        if ("scheduled".equals(src)) {
+            userName = "Sistema";
+        } else if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            var rows = jdbc.queryForList(
+                "SELECT u.name, u.email FROM auth_token t JOIN app_user u ON u.id = t.user_id WHERE t.token = ?",
+                token);
+            if (!rows.isEmpty()) {
+                userName  = (String) rows.get(0).get("name");
+                userEmail = (String) rows.get(0).get("email");
+            }
+        }
 
         if (feedHistoryRepo.existsByDeviceIdAndGramsAndSourceAndTimestampAfter(
                 deviceId, grams, src, Instant.now().minusSeconds(120))) {
@@ -106,7 +128,8 @@ public class DeviceController {
                     .orElse(ResponseEntity.ok().build());
         }
 
-        FeedHistory entry = feedHistoryRepo.save(new FeedHistory(deviceId, Instant.now(), grams, src, userEmail));
+        FeedHistory entry = feedHistoryRepo.save(
+            new FeedHistory(deviceId, Instant.now(), grams, src, userEmail, userName));
         return ResponseEntity.ok(FeedHistoryDto.from(entry));
     }
 

@@ -11,7 +11,8 @@ type Entry = {
   grams: number
   source: 'manual' | 'scheduled'
   deviceId: string
-  user?: string | null
+  userName?: string | null
+  userEmail?: string | null
 }
 
 
@@ -80,7 +81,8 @@ export default function Historico() {
         grams: e.grams,
         source: e.source,
         deviceId: e.deviceId,
-        user: e.userEmail ?? null,
+        userName:  e.userName  ?? null,
+        userEmail: e.userEmail ?? null,
       }))
       setDeviceData(id, { historyCache: mapped })
       return mapped
@@ -287,8 +289,8 @@ export default function Historico() {
                             : e.grams > 0 ? `${e.grams}g dispensados` : '—'}
                         </p>
                         <p className="text-xs text-gray-400 truncate">
-                          {e.source === 'manual' ? 'Manual' : 'Automático'}
-                          {e.user ? ` · ${e.user}` : ''}
+                          {e.source === 'manual' ? 'Manual' : 'Agendamento automático'}
+                          {e.userName ? ` · ${e.userName}` : e.source === 'scheduled' ? ' · Sistema' : ''}
                           {` · ${deviceLabel(e.deviceId)}`}
                         </p>
                       </div>

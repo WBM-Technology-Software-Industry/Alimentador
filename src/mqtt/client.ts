@@ -230,7 +230,7 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
           const canPost = !lastPostedManual[msgDeviceId] || Date.now() - lastPostedManual[msgDeviceId] > FEED_DEDUP_MS
           if (canPost) {
             lastPostedManual[msgDeviceId] = Date.now()
-            api.postFeedEntry(msgDeviceId, grams, 'manual', pending?.user ?? useAuthStore.getState().name).catch(() => {})
+            api.postFeedEntry(msgDeviceId, grams, 'manual').catch(() => {})
           }
           setPendingManual(msgDeviceId, null)
         } else if (!manualPending) {

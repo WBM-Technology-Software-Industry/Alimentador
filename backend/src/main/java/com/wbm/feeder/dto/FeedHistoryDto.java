@@ -8,7 +8,8 @@ public record FeedHistoryDto(
         String timestamp,
         int    grams,
         String source,
-        String userEmail
+        String userEmail,
+        String userName
 ) {
     public static FeedHistoryDto from(FeedHistory e) {
         return new FeedHistoryDto(
@@ -17,7 +18,8 @@ public record FeedHistoryDto(
                 e.getTimestamp().toString(),
                 e.getGrams() != null ? e.getGrams() : 0,
                 e.getSource(),
-                e.getUserEmail()
+                e.getUserEmail(),
+                e.getUserName()
         );
     }
 }

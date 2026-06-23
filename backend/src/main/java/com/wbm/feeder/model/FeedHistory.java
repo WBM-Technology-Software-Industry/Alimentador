@@ -24,14 +24,18 @@ public class FeedHistory {
     @Column(name = "user_email")
     private String userEmail;
 
+    @Column(name = "user_name")
+    private String userName;
+
     public FeedHistory() {}
 
-    public FeedHistory(String deviceId, Instant timestamp, Integer grams, String source, String userEmail) {
+    public FeedHistory(String deviceId, Instant timestamp, Integer grams, String source, String userEmail, String userName) {
         this.deviceId  = deviceId;
         this.timestamp = timestamp;
         this.grams     = grams;
         this.source    = source;
         this.userEmail = userEmail;
+        this.userName  = userName;
     }
 
     public Long    getId()        { return id; }
@@ -40,4 +44,5 @@ public class FeedHistory {
     public Integer getGrams()     { return grams; }
     public String  getSource()    { return source; }
     public String  getUserEmail() { return userEmail; }
+    public String  getUserName()  { return userName; }
 }

@@ -24,7 +24,7 @@ public class FeedHistoryService {
     public void saveIfNew(String deviceId, int grams, String source) {
         Instant twoMinAgo = Instant.now().minusSeconds(120);
         if (!feedHistoryRepo.existsByDeviceIdAndGramsAndSourceAndTimestampAfter(deviceId, grams, source, twoMinAgo)) {
-            feedHistoryRepo.save(new FeedHistory(deviceId, Instant.now(), grams, source, null));
+            feedHistoryRepo.save(new FeedHistory(deviceId, Instant.now(), grams, source, null, "Sistema"));
             log.info("Feed history saved: device={} grams={} source={}", deviceId, grams, source);
         } else {
             log.debug("Feed history deduped: device={} grams={} source={}", deviceId, grams, source);
