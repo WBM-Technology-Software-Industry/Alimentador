@@ -9,8 +9,16 @@ backend/.env
 
 # Docker / secrets
 .env
+.env.local
+docker-compose.override.yml
+
+# Ambiente de desenvolvimento local
+docker-compose.dev.yml
+Dockerfile.dev
+feeder-api.postman_collection.json
 
 # Sistema
 .DS_Store
 *.log
 *.Zone.Identifier
+node_modules
