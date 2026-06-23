@@ -46,15 +46,17 @@ export type PendingManual = {
   grams: number
   cooldownUntil: number
   user?: string | null
+  cancelled?: boolean
 }
 
 export type CachedEntry = {
   id: string | number
   timestamp: number
   grams: number
-  source: 'manual' | 'scheduled'
+  source: 'manual' | 'scheduled' | 'cancelled'
   deviceId: string
-  user?: string | null
+  userName?: string | null
+  userEmail?: string | null
 }
 
 export type PerDeviceData = {

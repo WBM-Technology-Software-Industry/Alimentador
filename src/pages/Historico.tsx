@@ -3,13 +3,13 @@ import { useDeviceStore, DEFAULT_DEVICE_LABELS } from '../store/deviceStore'
 import { api, type ApiFeedEntry } from '../api/client'
 import { format, isToday, isYesterday, subDays, startOfDay, endOfDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { CalendarClock, Hand, Trash2, Calendar, RefreshCw } from 'lucide-react'
+import { CalendarClock, Hand, Trash2, Calendar, RefreshCw, XCircle } from 'lucide-react'
 
 type Entry = {
   id: string | number
   timestamp: number
   grams: number
-  source: 'manual' | 'scheduled'
+  source: 'manual' | 'scheduled' | 'cancelled'
   deviceId: string
   userName?: string | null
   userEmail?: string | null
@@ -269,27 +269,38 @@ export default function Historico() {
                   const isPending = typeof e.id === 'string'
                   return (
                   <div key={e.id} className={`rounded-xl shadow px-4 py-3 flex items-center justify-between gap-3 ${
-                    isPending ? 'bg-blue-50 border border-blue-200' : 'bg-white'
+                    isPending       ? 'bg-blue-50 border border-blue-200'
+                    : e.source === 'cancelled' ? 'bg-red-50 border border-red-100'
+                    : 'bg-white'
                   }`}>
                     <div className="flex items-center gap-3 min-w-0">
                       <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
-                        isPending ? 'bg-blue-100' : e.source === 'manual' ? 'bg-brand-100' : 'bg-blue-50'}`}>
+                        isPending          ? 'bg-blue-100'
+                        : e.source === 'cancelled' ? 'bg-red-100'
+                        : e.source === 'manual'    ? 'bg-brand-100'
+                        : 'bg-blue-50'}`}>
                         {isPending
-                          ? e.source === 'manual'
-                            ? <Hand size={15} className="text-blue-500 animate-pulse" />
-                            : <CalendarClock size={15} className="text-blue-500 animate-pulse" />
-                          : e.source === 'manual'
-                            ? <Hand size={15} className="text-brand-700" />
-                            : <CalendarClock size={15} className="text-blue-500" />}
+                          ? <Hand size={15} className="text-blue-500 animate-pulse" />
+                          : e.source === 'cancelled'
+                            ? <XCircle size={15} className="text-red-500" />
+                            : e.source === 'manual'
+                              ? <Hand size={15} className="text-brand-700" />
+                              : <CalendarClock size={15} className="text-blue-500" />}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-gray-800">
+                        <p className={`text-sm font-semibold ${e.source === 'cancelled' ? 'text-red-600' : 'text-gray-800'}`}>
                           {isPending
                             ? e.grams > 0 ? `${e.grams}g — dispensando...` : 'Dispensando...'
-                            : e.grams > 0 ? `${e.grams}g dispensados` : '—'}
+                            : e.source === 'cancelled'
+                              ? `${e.grams}g — cancelado`
+                              : e.grams > 0 ? `${e.grams}g dispensados` : '—'}
                         </p>
                         <p className="text-xs text-gray-400 truncate">
-                          {e.source === 'manual' ? 'Manual' : 'Agendamento automático'}
+                          {e.source === 'cancelled'
+                            ? 'Cancelado pelo usuário'
+                            : e.source === 'manual'
+                              ? 'Manual'
+                              : 'Agendamento automático'}
                           {e.userName ? ` · ${e.userName}` : e.source === 'scheduled' ? ' · Sistema' : ''}
                           {` · ${deviceLabel(e.deviceId)}`}
                         </p>

@@ -230,7 +230,8 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
           const canPost = !lastPostedManual[msgDeviceId] || Date.now() - lastPostedManual[msgDeviceId] > FEED_DEDUP_MS
           if (canPost) {
             lastPostedManual[msgDeviceId] = Date.now()
-            api.postFeedEntry(msgDeviceId, grams, 'manual').catch(() => {})
+            const source = pending?.cancelled ? 'cancelled' : 'manual'
+            api.postFeedEntry(msgDeviceId, grams, source).catch(() => {})
           }
           setPendingManual(msgDeviceId, null)
         } else if (!manualPending) {
@@ -327,6 +328,13 @@ export function publishCmd(deviceId: string, payload: object) {
         cmdAt: now, grams: g, cooldownUntil: now + 30 * 60 * 1000,
         user: useAuthStore.getState().name,
       })
+    }
+  }
+  if ('st' in p) {
+    const { pendingManual, setPendingManual } = useDeviceStore.getState()
+    const pending = pendingManual[deviceId]
+    if (pending && !pending.cancelled) {
+      setPendingManual(deviceId, { ...pending, cancelled: true })
     }
   }
   client.publish(`devices/${deviceId}/cmd`, JSON.stringify(payload), { qos: 1 })
