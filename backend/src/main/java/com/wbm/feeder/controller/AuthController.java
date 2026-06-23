@@ -39,9 +39,11 @@ public class AuthController {
         jdbc.update("INSERT INTO auth_token (token, user_id) VALUES (?, ?)",
                 token, userOpt.get().getId());
 
+        AppUser user = userOpt.get();
         return ResponseEntity.ok(Map.of(
             "token", token,
-            "email", userOpt.get().getEmail()
+            "email", user.getEmail(),
+            "name",  user.getName() != null ? user.getName() : ""
         ));
     }
 

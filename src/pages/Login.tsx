@@ -30,7 +30,7 @@ export default function Login() {
         return
       }
       const data = await res.json()
-      setAuth(data.token, data.email, data.email)
+      setAuth(data.token, data.email, data.name ?? data.email)
       navigate('/', { replace: true })
     } catch {
       setError('Erro ao conectar com o servidor.')

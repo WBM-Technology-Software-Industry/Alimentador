@@ -19,7 +19,11 @@ public class AppUser {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
 
+    @Column(name = "name")
+    private String name;
+
     public Long getId()                  { return id; }
     public String getEmail()             { return email; }
     public String getPasswordHash()      { return passwordHash; }
+    public String getName()              { return name; }
 }
