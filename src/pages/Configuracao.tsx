@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useDeviceStore, type DeviceSchedule, DEFAULT_DEVICE_LABELS } from '../store/deviceStore'
+import { useDeviceStore, type FishSchedule, type DeviceSchedule, DEFAULT_DEVICE_LABELS } from '../store/deviceStore'
 import { publishCmd, publishCmdSequence } from '../mqtt/client'
 import { useAuthStore } from '../store/authStore'
 import { CmdStatusBadge, useLastCmd } from '../components/StatusBar'
@@ -193,6 +193,109 @@ function ModoOperacao() {
   )
 }
 
+
+// ─── Modo Peixe (reservado para uso futuro) ──────────────────────────────────
+
+export function FishWindowConfig({ fs }: { fs: FishSchedule }) {
+  const { connected, deviceId, deviceData } = useDeviceStore()
+  const [hl,  setHl]  = useState(fs.hl)
+  const [hd,  setHd]  = useState(fs.hd)
+  const [tc,  setTc]  = useState(fs.tc)
+  const [qpc, setQpc] = useState(fs.qpc)
+  const [sentAt,  setSentAt]  = useState<number | null>(null)
+  const [offline, setOffline] = useState(false)
+  const lastCmd = useLastCmd('config', sentAt)
+
+  const live = deviceData[deviceId]?.fishSchedule
+  const isSynced = live !== null && live !== undefined
+    && live.qpc === qpc && live.tc === tc && live.hl === hl && live.hd === hd
+  const confirmedText = live
+    ? `Dispositivo: ${live.qpc}g a cada ${live.tc}min — das ${pad(live.hl)}h às ${pad(live.hd)}h`
+    : 'Confirmado pelo dispositivo!'
+
+  function handleSave() {
+    const updated: FishSchedule = { qpc, tc, hl, hd }
+    const ok = publishCmd(deviceId, { c_ps: updated })
+    setOffline(!ok)
+    if (ok) setSentAt(Date.now())
+  }
+
+  return (
+    <>
+      <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-gray-500 text-sm font-medium">Valor atual no dispositivo</h2>
+          {live && (isSynced
+            ? <span className="text-xs font-semibold text-green-600">✓ Sincronizado</span>
+            : <span className="text-xs font-semibold text-amber-500">⚠ Com alterações</span>
+          )}
+        </div>
+        {live ? (
+          <>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-500">Janela de Atividade</span>
+              <span className="text-sm font-semibold text-gray-800">Das {pad(live.hl)}h às {pad(live.hd)}h</span>
+            </div>
+            <hr className="border-gray-100" />
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-500">Frequência de Tratos</span>
+              <span className="text-sm font-semibold text-gray-800">A cada {live.tc} minutos</span>
+            </div>
+            <hr className="border-gray-100" />
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-500">Quantidade por trato</span>
+              <span className="text-sm font-semibold text-gray-800">{live.qpc}g</span>
+            </div>
+          </>
+        ) : (
+          <p className="text-xs text-gray-400 italic">Aguardando dados do dispositivo...</p>
+        )}
+      </div>
+      <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-4">
+        <h2 className="text-gray-500 text-sm font-medium">Configurar</h2>
+        <CmdStatusBadge cmd={lastCmd} offline={offline} confirmedText={confirmedText} />
+        <div className="flex gap-3">
+          <div className="flex flex-col gap-1 flex-1 min-w-0">
+            <label className="text-xs text-gray-500">Início (hora)</label>
+            <input type="number" min={0} max={23} value={hl || ''}
+              onFocus={(e) => e.target.select()}
+              onChange={(e) => setHl(parseInt(e.target.value) || 0)}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500" />
+          </div>
+          <div className="flex flex-col gap-1 flex-1 min-w-0">
+            <label className="text-xs text-gray-500">Fim (hora)</label>
+            <input type="number" min={0} max={23} value={hd || ''}
+              onFocus={(e) => e.target.select()}
+              onChange={(e) => setHd(parseInt(e.target.value) || 0)}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500" />
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <div className="flex flex-col gap-1 flex-1 min-w-0">
+            <label className="text-xs text-gray-500">Intervalo (min)</label>
+            <input type="number" min={1} value={tc || ''}
+              onFocus={(e) => e.target.select()}
+              onChange={(e) => setTc(parseInt(e.target.value) || 0)}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500" />
+          </div>
+          <div className="flex flex-col gap-1 flex-1 min-w-0">
+            <label className="text-xs text-gray-500">Quantidade (g)</label>
+            <input type="number" min={1} value={qpc || ''}
+              onFocus={(e) => e.target.select()}
+              onChange={(e) => setQpc(parseInt(e.target.value) || 0)}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500" />
+          </div>
+        </div>
+        <button onClick={handleSave} disabled={!connected}
+          className="w-full py-3 rounded-2xl bg-brand-600 disabled:bg-gray-300 text-[#1A1A1A] font-bold text-sm">
+          Salvar configuração
+        </button>
+      </div>
+    </>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 type Slot = { time: string; grams: number }
 
