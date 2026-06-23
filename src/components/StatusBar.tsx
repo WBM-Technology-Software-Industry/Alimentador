@@ -64,12 +64,10 @@ const STATUS_TEXT = {
 
 export default function StatusBar() {
   const deviceId   = useDeviceStore((s) => s.deviceId)
-  const deviceType = useDeviceStore((s) => s.deviceType)
   const deviceData = useDeviceStore((s) => s.deviceData)
   const cmdLog     = useDeviceStore((s) => s.cmdLog)
 
   const deviceLabel = DEVICE_LABELS[deviceId] ?? (deviceId || '—')
-  const profile     = deviceType === 'peixe' ? '🐟 Peixe' : '🐾 Cão'
 
   // Todos os dispositivos que estão alimentando agora (só se recebeu status nos últimos 90s)
   const feedingDevices = Object.entries(deviceData)
@@ -81,8 +79,6 @@ export default function StatusBar() {
   return (
     <div className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 px-4 py-1.5 flex items-center gap-2.5 overflow-x-auto no-scrollbar text-xs shrink-0">
       <span className="font-semibold text-gray-700 dark:text-gray-200 shrink-0">{deviceLabel}</span>
-      <span className="text-gray-300 dark:text-gray-600">·</span>
-      <span className="text-gray-500 dark:text-gray-400 shrink-0">{profile}</span>
       <span className="text-gray-300 dark:text-gray-600">·</span>
 
       {feedingDevices.length > 0 ? (

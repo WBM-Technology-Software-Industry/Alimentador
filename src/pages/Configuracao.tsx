@@ -413,24 +413,13 @@ function PetScheduleSection() {
   )
 }
 
-const DEVICE_TYPES = [
-  { value: 'cao'   as const, icon: '🐾', label: 'Cão'   },
-  { value: 'peixe' as const, icon: '🐟', label: 'Peixe' },
-]
-
 export default function Configuracao() {
-  const { deviceType, setDeviceType, setDeviceData, deviceData, deviceId, connected } = useDeviceStore()
-  const fishSchedule    = deviceData[deviceId]?.fishSchedule
-  const devicePf        = deviceData[deviceId]?.pf   // pf real do dispositivo (null = não recebido ainda)
-  const deviceProfile   = devicePf === null || devicePf === undefined ? null : devicePf === 1 ? 'cao' : 'peixe'
-  const profileMismatch = deviceProfile !== null && deviceProfile !== deviceType
-
-  function handleSetProfile(value: 'cao' | 'peixe') {
-    const pfNum = value === 'cao' ? 1 : 0
-    setDeviceType(value)
-    setDeviceData(deviceId, { pf: pfNum })
-    publishCmd(deviceId, { pf: pfNum })
-  }
+  const { deviceType, deviceData, deviceId } = useDeviceStore()
+  const fishSchedule = deviceData[deviceId]?.fishSchedule
+  const devicePf     = deviceData[deviceId]?.pf
+  const deviceProfile = devicePf === null || devicePf === undefined
+    ? null
+    : devicePf === 1 ? 'cao' : 'peixe'
 
   return (
     <div className="p-4 lg:p-6 lg:max-w-5xl lg:mx-auto flex flex-col gap-4">
@@ -438,39 +427,17 @@ export default function Configuracao() {
       <DeviceIdConfig />
 
       <div className="flex flex-col lg:grid lg:grid-cols-2 gap-4">
-        {/* Coluna esquerda: perfil + modo */}
+        {/* Coluna esquerda: perfil (leitura) + modo */}
         <div className="flex flex-col gap-4">
-          {/* Perfil do dispositivo */}
+          {/* Perfil do dispositivo — somente leitura */}
           <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-3">
             <h2 className="text-gray-500 text-sm font-medium">Perfil do dispositivo</h2>
-            <div className="flex rounded-xl overflow-hidden border border-gray-200">
-              {DEVICE_TYPES.map((t) => (
-                <button
-                  key={t.value}
-                  disabled={!connected}
-                  onClick={() => handleSetProfile(t.value)}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-all ${
-                    deviceType === t.value
-                      ? 'bg-brand-600 text-[#1A1A1A]'
-                      : 'bg-white text-gray-500 hover:bg-gray-50'
-                  }`}
-                >
-                  <span>{t.icon}</span>{t.label}
-                </button>
-              ))}
-            </div>
-            {/* Indicador do perfil real do dispositivo */}
             {deviceProfile === null ? (
               <p className="text-xs text-gray-400 italic">Aguardando dado do dispositivo...</p>
-            ) : profileMismatch ? (
-              <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-amber-700 text-xs font-medium">
-                <span>⚠</span>
-                Dispositivo está em modo <strong>{deviceProfile === 'cao' ? '🐾 Cão' : '🐟 Peixe'}</strong> — diferente do selecionado aqui.
-              </div>
             ) : (
               <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-3 py-2 text-green-700 text-xs font-medium">
                 <span>✓</span>
-                Dispositivo confirmado em modo <strong>{deviceType === 'cao' ? '🐾 Cão' : '🐟 Peixe'}</strong>.
+                Modo <strong>{deviceProfile === 'cao' ? '🐾 Cão' : '🐟 Peixe'}</strong> — configurado pelo dispositivo.
               </div>
             )}
           </div>
