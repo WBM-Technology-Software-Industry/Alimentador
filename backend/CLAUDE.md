@@ -69,6 +69,12 @@ Access-Control-Allow-Headers: Authorization, Content-Type
 ```
 OPTIONS retorna 200 imediatamente.
 
+## Rodar testes localmente
+
+```bash
+JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 mvn test
+```
+
 ## Deduplicação de histórico
 
 `FeedHistoryService.saveIfNew()` verifica se já existe registro com mesmo `deviceId + grams + source` nos últimos 2 minutos — evita múltiplos browsers postando o mesmo trato.
