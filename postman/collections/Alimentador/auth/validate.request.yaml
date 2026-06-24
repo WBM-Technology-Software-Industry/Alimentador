@@ -1,7 +1,0 @@
-$kind: http-request
-name: Validate Token
-method: GET
-url: "{{base_url}}/api/auth/validate"
-headers:
-  - key: Authorization
-    value: "Bearer {{token}}"

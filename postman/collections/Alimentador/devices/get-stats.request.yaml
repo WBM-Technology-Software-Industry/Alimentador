@@ -1,7 +1,0 @@
-$kind: http-request
-name: GET Stats
-method: GET
-url: "{{base_url}}/api/devices/{{device_id}}/stats"
-headers:
-  - key: Authorization
-    value: "Bearer {{token}}"

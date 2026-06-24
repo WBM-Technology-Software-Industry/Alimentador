@@ -1,7 +1,0 @@
-$kind: http-request
-name: GET Errors
-method: GET
-url: "{{base_url}}/api/devices/{{device_id}}/errors?limit=50"
-headers:
-  - key: Authorization
-    value: "Bearer {{token}}"

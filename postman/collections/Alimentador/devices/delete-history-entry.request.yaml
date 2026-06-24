@@ -1,7 +1,0 @@
-$kind: http-request
-name: DELETE History Entry
-method: DELETE
-url: "{{base_url}}/api/devices/{{device_id}}/history/{{entry_id}}"
-headers:
-  - key: Authorization
-    value: "Bearer {{token}}"

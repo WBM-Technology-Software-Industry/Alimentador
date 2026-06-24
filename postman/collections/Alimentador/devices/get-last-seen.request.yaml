@@ -1,7 +1,0 @@
-$kind: http-request
-name: GET Last Seen
-method: GET
-url: "{{base_url}}/api/devices/{{device_id}}/last-seen"
-headers:
-  - key: Authorization
-    value: "Bearer {{token}}"
