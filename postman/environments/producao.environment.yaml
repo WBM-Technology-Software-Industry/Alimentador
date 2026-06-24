@@ -1,0 +1,17 @@
+name: Produção
+values:
+  - key: base_url
+    value: https://feeder.wbmtechnologylin.com.br
+    enabled: true
+  - key: token
+    value: ""
+    enabled: true
+  - key: device_id
+    value: ALIMENTADOR_1
+    enabled: true
+  - key: entry_id
+    value: "1"
+    enabled: true
+  - key: password
+    value: ""
+    enabled: true

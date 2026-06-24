@@ -1,0 +1,12 @@
+$kind: mqtt-request
+name: server
+url: mqtt://152.67.43.175:1883
+version: 5
+topics:
+  - name: device/ALIMENTADOR_1/status
+    qos: 0
+    subscribe: false
+lastWill:
+  payload: ""
+  topic: ""
+order: 2831804963773455

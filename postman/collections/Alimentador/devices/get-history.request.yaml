@@ -1,0 +1,7 @@
+$kind: http-request
+name: GET History
+method: GET
+url: "{{base_url}}/api/devices/{{device_id}}/history?limit=50"
+headers:
+  - key: Authorization
+    value: "Bearer {{token}}"
