@@ -5,6 +5,8 @@ import com.wbm.feeder.dto.FeedHistoryDto;
 import com.wbm.feeder.dto.TelemetryDto;
 import com.wbm.feeder.model.FeedHistory;
 import com.wbm.feeder.repository.*;
+import com.wbm.feeder.dto.DeviceStatsDto;
+import com.wbm.feeder.service.DeviceStatsService;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -26,19 +28,22 @@ public class DeviceController {
     private final ErrorLogRepository        errorLogRepo;
     private final DeviceLastSeenRepository  lastSeenRepo;
     private final JdbcTemplate              jdbc;
+    private final DeviceStatsService        statsService;
 
     public DeviceController(FeedHistoryRepository feedHistoryRepo,
                             DeviceTelemetryRepository telemetryRepo,
                             DeviceScheduleRepository scheduleRepo,
                             ErrorLogRepository errorLogRepo,
                             DeviceLastSeenRepository lastSeenRepo,
-                            JdbcTemplate jdbc) {
+                            JdbcTemplate jdbc,
+                            DeviceStatsService statsService) {
         this.feedHistoryRepo = feedHistoryRepo;
         this.telemetryRepo   = telemetryRepo;
         this.scheduleRepo    = scheduleRepo;
         this.errorLogRepo    = errorLogRepo;
         this.lastSeenRepo    = lastSeenRepo;
         this.jdbc            = jdbc;
+        this.statsService    = statsService;
     }
 
     @GetMapping("/last-seen")
@@ -146,4 +151,10 @@ public class DeviceController {
         feedHistoryRepo.deleteByDeviceId(deviceId);
         return ResponseEntity.noContent().build();
     }
-}
+    @GetMapping("/stats")
+    public ResponseEntity<DeviceStatsDto> getStats(@PathVariable String deviceId) {
+        return ResponseEntity.ok(statsService.getStats(deviceId));
+    }
+
+
+}// fim
