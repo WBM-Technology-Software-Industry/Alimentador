@@ -1,8 +1,15 @@
 {
   "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "name": "Alimentador",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "variable": [
+    { "key": "base_url", "value": "https://feeder.wbmtechnologylin.com.br", "type": "string" },
+    { "key": "token",     "value": "", "type": "string" },
+    { "key": "device_id", "value": "ALIMENTADOR_1", "type": "string" },
+    { "key": "entry_id",  "value": "1", "type": "string" }
+  ],
   "item": [
     {
       "name": "Auth",
@@ -11,8 +18,14 @@
           "name": "Login",
           "request": {
             "method": "POST",
-            "url": "{{base_url}}/api/auth/login",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"usuario@wbm.com\",\n  \"password\": \"\"\n}",
@@ -24,16 +37,28 @@
           "name": "Logout",
           "request": {
             "method": "POST",
-            "url": "{{base_url}}/api/auth/logout",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "logout"]
+            }
           }
         },
         {
           "name": "Validate Token",
           "request": {
             "method": "GET",
-            "url": "{{base_url}}/api/auth/validate",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/validate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "validate"]
+            }
           }
         }
       ]
@@ -45,22 +70,30 @@
           "name": "GET History",
           "request": {
             "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
             "url": {
               "raw": "{{base_url}}/api/devices/{{device_id}}/history?limit=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "devices", "{{device_id}}", "history"],
               "query": [{ "key": "limit", "value": "50" }]
-            },
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+            }
           }
         },
         {
           "name": "POST History (Manual)",
           "request": {
             "method": "POST",
-            "url": "{{base_url}}/api/devices/{{device_id}}/history",
             "header": [
               { "key": "Authorization", "value": "Bearer {{token}}" },
               { "key": "Content-Type", "value": "application/json" }
             ],
+            "url": {
+              "raw": "{{base_url}}/api/devices/{{device_id}}/history",
+              "host": ["{{base_url}}"],
+              "path": ["api", "devices", "{{device_id}}", "history"]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"grams\": 120,\n  \"source\": \"manual\"\n}",
@@ -72,54 +105,86 @@
           "name": "DELETE History Entry",
           "request": {
             "method": "DELETE",
-            "url": "{{base_url}}/api/devices/{{device_id}}/history/{{entry_id}}",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/devices/{{device_id}}/history/{{entry_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "devices", "{{device_id}}", "history", "{{entry_id}}"]
+            }
           }
         },
         {
           "name": "GET Stats",
           "request": {
             "method": "GET",
-            "url": "{{base_url}}/api/devices/{{device_id}}/stats",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/devices/{{device_id}}/stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "devices", "{{device_id}}", "stats"]
+            }
           }
         },
         {
           "name": "GET Last Seen",
           "request": {
             "method": "GET",
-            "url": "{{base_url}}/api/devices/{{device_id}}/last-seen",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/devices/{{device_id}}/last-seen",
+              "host": ["{{base_url}}"],
+              "path": ["api", "devices", "{{device_id}}", "last-seen"]
+            }
           }
         },
         {
           "name": "GET Errors",
           "request": {
             "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
             "url": {
               "raw": "{{base_url}}/api/devices/{{device_id}}/errors?limit=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "devices", "{{device_id}}", "errors"],
               "query": [{ "key": "limit", "value": "50" }]
-            },
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+            }
           }
         },
         {
           "name": "GET Labels",
           "request": {
             "method": "GET",
-            "url": "{{base_url}}/api/labels",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/labels",
+              "host": ["{{base_url}}"],
+              "path": ["api", "labels"]
+            }
           }
         },
         {
           "name": "PUT Label",
           "request": {
             "method": "PUT",
-            "url": "{{base_url}}/api/labels/{{device_id}}",
             "header": [
               { "key": "Authorization", "value": "Bearer {{token}}" },
               { "key": "Content-Type", "value": "application/json" }
             ],
+            "url": {
+              "raw": "{{base_url}}/api/labels/{{device_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "labels", "{{device_id}}"]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"label\": \"Meu Alimentador\"\n}",
@@ -129,11 +194,5 @@
         }
       ]
     }
-  ],
-  "variable": [
-    { "key": "base_url", "value": "https://feeder.wbmtechnologylin.com.br" },
-    { "key": "token",     "value": "" },
-    { "key": "device_id", "value": "ALIMENTADOR_1" },
-    { "key": "entry_id",  "value": "1" }
   ]
 }
