@@ -15,7 +15,6 @@ import { api } from './api/client'
 const BROKER_URL = import.meta.env.VITE_MQTT_BROKER_URL ||
   `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}`
 const DEVICE_ID  = import.meta.env.VITE_DEVICE_ID as string
-const ALL_DEVICES = ['ALIMENTADOR_1', 'ALIMENTADOR_2']
 
 function PrivateRoutes() {
   const token = useAuthStore((s) => s.token)
@@ -39,6 +38,7 @@ export default function App() {
   const connected       = useDeviceStore((s) => s.connected)
   const deviceData      = useDeviceStore((s) => s.deviceData)
   const token           = useAuthStore((s) => s.token)
+  const devices         = useAuthStore((s) => s.devices)
 
   const hasCachedData   = Object.keys(deviceData).length > 0
   const [loading, setLoading] = useState(!hasCachedData && !!token)
@@ -52,7 +52,7 @@ export default function App() {
       .then((labels) => { Object.entries(labels).forEach(([id, name]) => setDeviceName(id, name)) })
       .catch(() => {})
 
-    ALL_DEVICES.forEach((id) => {
+    devices.forEach((id) => {
       // Semente de lastSeen a partir do banco — evita exibir timestamp desatualizado após F5
       api.lastSeen(id)
         .then((r) => setDeviceData(id, { lastSeen: new Date(r.lastSeen).getTime() }))

@@ -11,7 +11,7 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [error, setError]       = useState('')
   const [loading, setLoading]   = useState(false)
-  const { setAuth }             = useAuthStore()
+  const { setAuth, setDevices } = useAuthStore()
   const navigate                = useNavigate()
 
   async function handleSubmit(e: React.FormEvent) {
@@ -31,6 +31,15 @@ export default function Login() {
       }
       const data = await res.json()
       setAuth(data.token, data.email, data.name ?? data.email)
+      try {
+        const r = await fetch(`${BASE}/api/me/devices`, {
+          headers: { 'Authorization': `Bearer ${data.token}` },
+        })
+        if (r.ok) {
+          const d = await r.json()
+          setDevices(d.devices ?? [], d.profiles ?? [])
+        }
+      } catch { /* usa devices vazios */ }
       navigate('/', { replace: true })
     } catch {
       setError('Erro ao conectar com o servidor.')

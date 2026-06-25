@@ -2,15 +2,15 @@ import { useEffect, useRef, useState } from 'react'
 import { useDeviceStore, type FishSchedule, type DeviceSchedule, DEFAULT_DEVICE_LABELS } from '../store/deviceStore'
 import { publishCmd, publishCmdSequence } from '../mqtt/client'
 import { useAuthStore } from '../store/authStore'
+
 import { CmdStatusBadge, useLastCmd } from '../components/StatusBar'
 import { api } from '../api/client'
 
 function pad(n: number) { return String(n).padStart(2, '0') }
 
-const DEVICE_IDS = ['ALIMENTADOR_1', 'ALIMENTADOR_2']
-
 function DeviceIdConfig() {
   const { deviceId, brokerUrl, setBrokerConfig, deviceNames, setDeviceName } = useDeviceStore()
+  const devices = useAuthStore((s) => s.devices)
   const [editName, setEditName] = useState('')
   const [saved, setSaved] = useState(false)
 
@@ -34,7 +34,7 @@ function DeviceIdConfig() {
     <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-3">
       <h2 className="text-gray-500 text-sm font-medium">Alimentador</h2>
       <div className="flex rounded-xl overflow-hidden border border-gray-200">
-        {DEVICE_IDS.map((id) => (
+        {devices.map((id) => (
           <button
             key={id}
             onClick={() => handleSelect(id)}
