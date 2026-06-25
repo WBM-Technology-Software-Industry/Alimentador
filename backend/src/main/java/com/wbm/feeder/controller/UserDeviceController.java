@@ -1,6 +1,5 @@
 package com.wbm.feeder.controller;
 
-import com.wbm.feeder.model.UserDevice;
 import com.wbm.feeder.repository.UserDeviceRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -23,7 +22,7 @@ public class UserDeviceController {
     }
 
     @GetMapping("/devices")
-    public ResponseEntity<List<Map<String, String>>> myDevices(
+    public ResponseEntity<Map<String, List<String>>> myDevices(
             @RequestHeader("Authorization") String authHeader) {
 
         String token = authHeader.substring(7);
@@ -35,14 +34,17 @@ public class UserDeviceController {
 
         Long userId = ((Number) rows.get(0).get("id")).longValue();
 
-        List<Map<String, String>> result = userDeviceRepo.findByIdUserId(userId)
+        List<String> devices = userDeviceRepo.findByIdUserId(userId)
                 .stream()
-                .map(ud -> Map.of(
-                        "deviceId", ud.getDeviceId(),
-                        "profile",  ud.getProfile()
-                ))
+                .map(ud -> ud.getDeviceId())
                 .toList();
 
-        return ResponseEntity.ok(result);
+        List<String> profiles = jdbc.queryForList(
+                "SELECT profile FROM user_profile WHERE user_id = ?", String.class, userId);
+
+        return ResponseEntity.ok(Map.of(
+                "devices",  devices,
+                "profiles", profiles
+        ));
     }
 }
