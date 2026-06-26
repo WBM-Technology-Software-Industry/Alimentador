@@ -411,16 +411,45 @@ function PetScheduleSection() {
 }
 
 export default function Configuracao() {
-  const { deviceId } = useDeviceStore()
+  const { deviceId, deviceData } = useDeviceStore()
+  const profiles = useAuthStore((s) => s.profiles)
+  const [activeProfile, setActiveProfile] = useState<string>(() => profiles[0] ?? 'pet')
+
+  const fishSchedule = deviceData[deviceId]?.fishSchedule
+  const defaultFs = fishSchedule ?? { qpc: 5, tc: 30, hl: 8, hd: 20 }
 
   return (
     <div className="p-4 lg:p-6 lg:max-w-5xl lg:mx-auto flex flex-col gap-4">
 
       <DeviceIdConfig />
 
+      {profiles.length > 1 && (
+        <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-3">
+          <h2 className="text-gray-500 text-sm font-medium">Perfil</h2>
+          <div className="flex rounded-xl overflow-hidden border border-gray-200">
+            {profiles.map((p) => (
+              <button
+                key={p}
+                onClick={() => setActiveProfile(p)}
+                className={`flex-1 py-3 text-sm font-semibold capitalize transition-all ${
+                  activeProfile === p
+                    ? 'bg-brand-600 text-[#1A1A1A]'
+                    : 'bg-white text-gray-500 hover:bg-gray-50'
+                }`}
+              >
+                {p === 'pet' ? 'Pet' : 'Peixe'}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col lg:grid lg:grid-cols-2 gap-4">
         <ModoOperacao />
-        <PetScheduleSection key={deviceId} />
+        {activeProfile === 'fish'
+          ? <FishWindowConfig key={deviceId} fs={defaultFs} />
+          : <PetScheduleSection key={deviceId} />
+        }
       </div>
 
     </div>
