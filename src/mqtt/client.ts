@@ -7,6 +7,7 @@ import { useAuthStore } from '../store/authStore'
 const DEVICE_LABELS: Record<string, string> = {
   ALIMENTADOR_1: 'Alimentador 1',
   ALIMENTADOR_2: 'Alimentador 2',
+  ALIMENTADOR_3: 'Alimentador 3',
 }
 
 const OFFLINE_THRESHOLD_MS = 90_000
@@ -24,7 +25,7 @@ const lastPostedScheduled: Record<string, number> = {} // dedup local por dispos
 export function getMqttClient() { return client }
 export function getMqttConnectedAt() { return mqttConnectedAt }
 
-export function connectMqtt(brokerUrl: string, _deviceId?: string) {
+export function connectMqtt(brokerUrl: string, credentials?: { username?: string; password?: string }) {
   if (client) {
     client.end(true)
     client = null
@@ -35,6 +36,8 @@ export function connectMqtt(brokerUrl: string, _deviceId?: string) {
   client = mqtt.connect(brokerUrl, {
     reconnectPeriod: 3000,
     connectTimeout: 10000,
+    username: credentials?.username,
+    password: credentials?.password,
   })
 
   client.on('connect', () => {

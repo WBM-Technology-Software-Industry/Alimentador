@@ -12,8 +12,10 @@ spring:
     enabled: true
 
 mqtt:
-  broker-url: ${MQTT_BROKER_URL:tcp://152.67.43.175:1883}
-  devices: ${MQTT_DEVICES:ALIMENTADOR_1,ALIMENTADOR_2}
+  broker-url: ${MQTT_BROKER_URL:ws://52.67.133.240:9001}
+  username:   ${MQTT_USERNAME:}
+  password:   ${MQTT_PASSWORD:}
+  devices: ${MQTT_DEVICES:ALIMENTADOR_1,ALIMENTADOR_2,ALIMENTADOR_3}
 
 server:
   port: ${PORT:8080}

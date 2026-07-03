@@ -4,6 +4,7 @@ import { persist } from 'zustand/middleware'
 export const DEFAULT_DEVICE_LABELS: Record<string, string> = {
   ALIMENTADOR_1: 'Alimentador 1',
   ALIMENTADOR_2: 'Alimentador 2',
+  ALIMENTADOR_3: 'Alimentador 3',
 }
 
 export type DeviceType = 'cao' | 'peixe'

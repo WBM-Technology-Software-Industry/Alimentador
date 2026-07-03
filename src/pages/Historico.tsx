@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useDeviceStore, DEFAULT_DEVICE_LABELS } from '../store/deviceStore'
+import { useAuthStore } from '../store/authStore'
 import { api, type ApiFeedEntry } from '../api/client'
 import { format, isToday, isYesterday, subDays, startOfDay, endOfDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -49,15 +50,14 @@ function groupByDay(entries: Entry[]) {
   return map
 }
 
-const ALL_DEVICE_IDS = ['ALIMENTADOR_1', 'ALIMENTADOR_2']
-
 export default function Historico() {
   const { deviceData, setDeviceData, clearFeedHistory, lastFeedAt, optimisticFeed, deviceNames } = useDeviceStore()
+  const allDeviceIds = useAuthStore((s) => s.devices)
   function deviceLabel(id: string) { return deviceNames[id] ?? DEFAULT_DEVICE_LABELS[id] ?? id }
 
   // Filtro por dispositivo — padrão: todos
   const [filterDevice, setFilterDevice] = useState<string>('all')
-  const activeDeviceIds = filterDevice === 'all' ? ALL_DEVICE_IDS : [filterDevice]
+  const activeDeviceIds = filterDevice === 'all' ? allDeviceIds : [filterDevice]
 
   // Combina cache de todos os dispositivos selecionados
   const cachedEntries = useMemo(() => {
@@ -178,20 +178,22 @@ export default function Historico() {
         </button>
       </div>
 
-      {/* Filtro por dispositivo */}
-      <div className="flex rounded-xl overflow-hidden border border-gray-200 bg-white shadow">
-        {[{ id: 'all', label: 'Todos' }, ...ALL_DEVICE_IDS.map(id => ({ id, label: deviceLabel(id) }))].map(d => (
-          <button
-            key={d.id}
-            onClick={() => setFilterDevice(d.id)}
-            className={`flex-1 py-2 text-xs font-semibold transition-all ${
-              filterDevice === d.id ? 'bg-brand-600 text-[#1A1A1A]' : 'text-gray-500 hover:bg-gray-50'
-            }`}
-          >
-            {d.label}
-          </button>
-        ))}
-      </div>
+      {/* Filtro por dispositivo — só exibido quando a conta tem mais de um device */}
+      {allDeviceIds.length > 1 && (
+        <div className="flex rounded-xl overflow-hidden border border-gray-200 bg-white shadow">
+          {[{ id: 'all', label: 'Todos' }, ...allDeviceIds.map(id => ({ id, label: deviceLabel(id) }))].map(d => (
+            <button
+              key={d.id}
+              onClick={() => setFilterDevice(d.id)}
+              className={`flex-1 py-2 text-xs font-semibold transition-all ${
+                filterDevice === d.id ? 'bg-brand-600 text-[#1A1A1A]' : 'text-gray-500 hover:bg-gray-50'
+              }`}
+            >
+              {d.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Filtros */}
       <div className="flex flex-col gap-2">

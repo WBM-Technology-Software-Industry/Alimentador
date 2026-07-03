@@ -12,9 +12,10 @@ import { useAuthStore } from './store/authStore'
 import { connectMqtt } from './mqtt/client'
 import { api } from './api/client'
 
-const BROKER_URL = import.meta.env.VITE_MQTT_BROKER_URL ||
+const BROKER_URL      = import.meta.env.VITE_MQTT_BROKER_URL ||
   `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}`
-const DEVICE_ID  = import.meta.env.VITE_DEVICE_ID as string
+const MQTT_USERNAME   = import.meta.env.VITE_MQTT_USERNAME as string | undefined
+const MQTT_PASSWORD   = import.meta.env.VITE_MQTT_PASSWORD as string | undefined
 
 function PrivateRoutes() {
   const token = useAuthStore((s) => s.token)
@@ -37,6 +38,7 @@ export default function App() {
   const setDeviceName   = useDeviceStore((s) => s.setDeviceName)
   const connected       = useDeviceStore((s) => s.connected)
   const deviceData      = useDeviceStore((s) => s.deviceData)
+  const deviceId        = useDeviceStore((s) => s.deviceId)
   const token           = useAuthStore((s) => s.token)
   const devices         = useAuthStore((s) => s.devices)
 
@@ -45,8 +47,12 @@ export default function App() {
 
   useEffect(() => {
     if (!token) return
-    setBrokerConfig(BROKER_URL, DEVICE_ID)
-    connectMqtt(BROKER_URL, DEVICE_ID)
+    connectMqtt(BROKER_URL, { username: MQTT_USERNAME, password: MQTT_PASSWORD })
+
+    // Garante que o device ativo pertença à conta logada — corrige deviceId
+    // desatualizado (conta anterior) e define o primeiro device como padrão.
+    const activeDeviceId = devices.includes(deviceId) ? deviceId : (devices[0] ?? deviceId)
+    setBrokerConfig(BROKER_URL, activeDeviceId)
 
     api.getLabels()
       .then((labels) => { Object.entries(labels).forEach(([id, name]) => setDeviceName(id, name)) })
@@ -79,7 +85,7 @@ export default function App() {
 
     const timeout = setTimeout(() => setLoading(false), 2000)
     return () => clearTimeout(timeout)
-  }, [token, setBrokerConfig, setDeviceData, setDeviceName])
+  }, [token, devices, setBrokerConfig, setDeviceData, setDeviceName])
 
   useEffect(() => {
     if (connected) setLoading(false)

@@ -42,6 +42,12 @@ public class MqttIngestionService {
     @Value("${mqtt.broker-url}")
     private String brokerUrl;
 
+    @Value("${mqtt.username:}")
+    private String mqttUsername;
+
+    @Value("${mqtt.password:}")
+    private String mqttPassword;
+
     private final FeedHistoryService        feedHistoryService;
     private final DeviceTelemetryRepository telemetryRepo;
     private final DeviceScheduleRepository  scheduleRepo;
@@ -107,6 +113,10 @@ public class MqttIngestionService {
             opts.setConnectionTimeout(15);
             opts.setKeepAliveInterval(20);
             opts.setAutomaticReconnect(false);
+            if (mqttUsername != null && !mqttUsername.isBlank()) {
+                opts.setUserName(mqttUsername);
+                opts.setPassword(mqttPassword.toCharArray());
+            }
 
             client.setCallback(new MqttCallback() {
                 @Override public void connectionLost(Throwable cause) {

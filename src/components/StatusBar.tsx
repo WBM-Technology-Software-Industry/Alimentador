@@ -48,6 +48,7 @@ export function CmdStatusBadge({
 const DEVICE_LABELS: Record<string, string> = {
   ALIMENTADOR_1: 'Alimentador 1',
   ALIMENTADOR_2: 'Alimentador 2',
+  ALIMENTADOR_3: 'Alimentador 3',
 }
 
 const STATUS_ICON = {

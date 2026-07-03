@@ -1,4 +1,5 @@
 import { useDeviceStore, DEFAULT_DEVICE_LABELS } from '../store/deviceStore'
+import { useAuthStore } from '../store/authStore'
 import StockGauge from '../components/StockGauge'
 import { format, formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -13,8 +14,6 @@ const ERROR_LABELS: Record<number, string> = {
   6:  'Alerta de nível baixo.',
   11: 'Motor ligado por tempo excessivo sem atingir o peso.',
 }
-
-const DEVICE_IDS = ['ALIMENTADOR_1', 'ALIMENTADOR_2']
 
 function Skeleton({ className }: { className: string }) {
   return <div className={`animate-pulse bg-gray-200 rounded-lg ${className}`} />
@@ -91,6 +90,7 @@ export default function Dashboard() {
   }, [])
 
   const { deviceId, brokerUrl, setBrokerConfig, deviceData, connected, deviceNames } = useDeviceStore()
+  const devices = useAuthStore((s) => s.devices)
   const active = deviceData[deviceId]
   const hasData = !!active
   const eg = active?.eg ?? 0
@@ -113,18 +113,20 @@ export default function Dashboard() {
   return (
     <div className="p-4 lg:p-6 flex flex-col gap-4 lg:max-w-5xl lg:mx-auto">
 
-      {/* Feeder selector cards */}
-      <div className="flex gap-3">
-        {DEVICE_IDS.map((id) => (
-          <FeederLevelCard
-            key={id}
-            label={deviceNames[id] ?? DEFAULT_DEVICE_LABELS[id] ?? id}
-            id={id}
-            active={id === deviceId}
-            onClick={() => handleSelectDevice(id)}
-          />
-        ))}
-      </div>
+      {/* Feeder selector cards — só exibido quando a conta tem mais de um device */}
+      {devices.length > 1 && (
+        <div className="flex gap-3">
+          {devices.map((id) => (
+            <FeederLevelCard
+              key={id}
+              label={deviceNames[id] ?? DEFAULT_DEVICE_LABELS[id] ?? id}
+              id={id}
+              active={id === deviceId}
+              onClick={() => handleSelectDevice(id)}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Main panel — single col mobile, two col desktop */}
       <div className="flex flex-col lg:grid lg:grid-cols-2 gap-4">
