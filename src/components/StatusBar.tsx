@@ -23,7 +23,7 @@ export function CmdStatusBadge({
 }) {
   if (offline) {
     return (
-      <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-red-700 text-sm">
+      <div className="flex items-center gap-2 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-xl px-3 py-2 text-red-700 dark:text-red-400 text-sm">
         <XCircle size={14} />
         Dispositivo offline — verifique a conexão.
       </div>
@@ -32,9 +32,9 @@ export function CmdStatusBadge({
   if (!cmd) return null
 
   const cfg = {
-    sent:      { cls: 'bg-amber-50 border-amber-200 text-amber-700', Icon: Clock,        spin: true,  text: 'Enviado — aguardando confirmação do dispositivo...' },
-    confirmed: { cls: 'bg-green-50 border-green-200 text-green-700', Icon: CheckCircle2, spin: false, text: confirmedText ?? 'Confirmado pelo dispositivo!' },
-    timeout:   { cls: 'bg-red-50 border-red-200 text-red-700',       Icon: XCircle,      spin: false, text: 'Dispositivo não respondeu. Verifique a conexão.' },
+    sent:      { cls: 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900 text-amber-700 dark:text-amber-400', Icon: Clock,        spin: true,  text: 'Enviado — aguardando confirmação do dispositivo...' },
+    confirmed: { cls: 'bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-900 text-green-700 dark:text-green-400', Icon: CheckCircle2, spin: false, text: confirmedText ?? 'Confirmado pelo dispositivo!' },
+    timeout:   { cls: 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-900 text-red-700 dark:text-red-400',             Icon: XCircle,      spin: false, text: 'Dispositivo não respondeu. Verifique a conexão.' },
   }[cmd.status]
 
   return (

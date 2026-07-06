@@ -41,7 +41,7 @@ export const Sidebar = React.forwardRef<
       ref={ref}
       data-collapsed={collapsed}
       className={cn(
-        'group flex flex-col h-full bg-gray-200 dark:bg-gray-800 border-r border-gray-300 dark:border-gray-700 transition-all duration-300',
+        'group flex flex-col h-full bg-white dark:bg-gray-800 border-r border-gray-100 dark:border-gray-700 transition-all duration-300',
         collapsed ? 'w-16' : 'w-56',
         className,
       )}
@@ -61,7 +61,7 @@ export const SidebarHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn('flex flex-col gap-2 px-4 py-4 border-b border-gray-300 dark:border-gray-700', className)}
+    className={cn('flex flex-col gap-2 px-4 py-4 border-b border-gray-100 dark:border-gray-700', className)}
     {...props}
   />
 ))
@@ -89,7 +89,7 @@ export const SidebarFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn('px-4 py-4 border-t border-gray-300 dark:border-gray-700', className)}
+    className={cn('px-4 py-4 border-t border-gray-100 dark:border-gray-700', className)}
     {...props}
   />
 ))
@@ -153,9 +153,14 @@ export const SidebarMenuButton = React.forwardRef<HTMLButtonElement, SidebarMenu
       <Comp
         ref={ref as React.Ref<HTMLButtonElement>}
         className={cn(
-          'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all',
-          'text-gray-600 hover:text-gray-900 hover:bg-gray-300 dark:text-gray-400 dark:hover:text-gray-100 dark:hover:bg-gray-700',
-          isActive && 'bg-brand-600 text-[#1A1A1A] hover:bg-brand-600 hover:text-[#1A1A1A]',
+          'relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all',
+          'text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-100 dark:hover:bg-gray-700/60',
+          isActive && [
+            'bg-brand-50 text-brand-700 hover:bg-brand-50 hover:text-brand-700',
+            'dark:bg-brand-900/20 dark:text-brand-300 dark:hover:text-brand-300',
+            'before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-5 before:w-1 before:rounded-r-full before:bg-brand-500',
+            'group-data-[collapsed=true]:before:hidden',
+          ],
           'group-data-[collapsed=true]:justify-center group-data-[collapsed=true]:px-2',
           className,
         )}

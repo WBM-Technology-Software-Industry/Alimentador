@@ -31,9 +31,9 @@ function DeviceIdConfig() {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-3">
-      <h2 className="text-gray-500 text-sm font-medium">Alimentador</h2>
-      <div className="flex rounded-xl overflow-hidden border border-gray-200">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 flex flex-col gap-3">
+      <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Alimentador</h2>
+      <div className="flex rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
         {devices.map((id) => (
           <button
             key={id}
@@ -41,7 +41,7 @@ function DeviceIdConfig() {
             className={`flex-1 py-3 text-sm font-semibold transition-all ${
               deviceId === id
                 ? 'bg-brand-600 text-[#1A1A1A]'
-                : 'bg-white text-gray-500 hover:bg-gray-50'
+                : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/60'
             }`}
           >
             {deviceNames[id] ?? DEFAULT_DEVICE_LABELS[id] ?? id}
@@ -50,7 +50,7 @@ function DeviceIdConfig() {
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className="text-xs text-gray-500">Nome personalizado</label>
+        <label className="text-xs text-gray-500 dark:text-gray-400">Nome personalizado</label>
         <div className="flex gap-2">
           <input
             type="text"
@@ -59,7 +59,7 @@ function DeviceIdConfig() {
             onKeyDown={(e) => e.key === 'Enter' && handleSave()}
             placeholder={DEFAULT_DEVICE_LABELS[deviceId] ?? deviceId}
             maxLength={40}
-            className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500"
+            className="flex-1 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30"
           />
           <button
             onClick={handleSave}
@@ -104,15 +104,15 @@ function ModoOperacao() {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-3">
-      <h2 className="text-gray-500 text-sm font-medium">Modo de operação</h2>
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 flex flex-col gap-3">
+      <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Modo de operação</h2>
 
-      <div className="flex rounded-xl overflow-hidden border border-gray-200">
+      <div className="flex rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
         <button
           onClick={() => toggleMode(false)}
           disabled={!connected}
           className={`flex-1 py-3 text-sm font-semibold transition-all disabled:opacity-40 ${
-            deviceAm !== true ? 'bg-brand-600 text-[#1A1A1A]' : 'bg-white text-gray-500 hover:bg-gray-50'
+            deviceAm !== true ? 'bg-brand-600 text-[#1A1A1A]' : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/60'
           }`}
         >
           Manual
@@ -121,7 +121,7 @@ function ModoOperacao() {
           onClick={() => toggleMode(true)}
           disabled={!connected}
           className={`flex-1 py-3 text-sm font-semibold transition-all disabled:opacity-40 ${
-            deviceAm === true ? 'bg-brand-600 text-[#1A1A1A]' : 'bg-white text-gray-500 hover:bg-gray-50'
+            deviceAm === true ? 'bg-brand-600 text-[#1A1A1A]' : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/60'
           }`}
         >
           Automático
@@ -130,32 +130,32 @@ function ModoOperacao() {
 
       {/* Indicador unificado */}
       {offline ? (
-        <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-red-700 text-xs font-medium">
+        <div className="flex items-center gap-2 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-xl px-3 py-2 text-red-700 dark:text-red-400 text-xs font-medium">
           <span>✗</span> Dispositivo offline — verifique a conexão.
         </div>
       ) : isSending ? (
-        <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-amber-700 text-xs font-medium">
+        <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded-xl px-3 py-2 text-amber-700 dark:text-amber-400 text-xs font-medium">
           <span className="animate-pulse">⏳</span> Enviado — aguardando confirmação do dispositivo...
         </div>
       ) : isTimeout ? (
-        <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-red-700 text-xs font-medium">
+        <div className="flex items-center gap-2 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-xl px-3 py-2 text-red-700 dark:text-red-400 text-xs font-medium">
           <span>✗</span> Dispositivo não respondeu. Verifique a conexão.
         </div>
       ) : deviceAl ? (
-        <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2 text-blue-700 text-xs font-medium">
+        <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 rounded-xl px-3 py-2 text-blue-700 dark:text-blue-400 text-xs font-medium">
           <span className="animate-pulse">●</span> Alimentando...
         </div>
       ) : deviceAm === null ? (
         <p className="text-xs text-gray-400 italic">Aguardando dado do dispositivo...</p>
       ) : (
-        <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-3 py-2 text-green-700 text-xs font-medium">
+        <div className="flex items-center gap-2 bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-900 rounded-xl px-3 py-2 text-green-700 dark:text-green-400 text-xs font-medium">
           <span>✓</span>
           Dispositivo em modo <strong>{deviceAm ? 'Automático' : 'Manual'}</strong>.
         </div>
       )}
 
       {deviceAm === true && isEmpty && (
-        <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-red-600 text-xs font-medium">
+        <div className="flex items-center gap-2 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-xl px-3 py-2 text-red-600 dark:text-red-400 text-xs font-medium">
           <span>⚠</span> Estoque vazio — abasteça antes que o disparo automático ocorra.
         </div>
       )}
@@ -163,11 +163,11 @@ function ModoOperacao() {
       {deviceAm !== true && (
         <>
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-gray-500">Quantidade por trato manual (g)</label>
+            <label className="text-xs text-gray-500 dark:text-gray-400">Quantidade por trato manual (g)</label>
             <input
               type="number" min={1} value={manualGrams || ''}
               onChange={(e) => setManualGrams(parseInt(e.target.value) || 0)}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500"
+              className="w-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30"
             />
           </div>
           {deviceAl && (
@@ -179,7 +179,7 @@ function ModoOperacao() {
             </button>
           )}
           {isEmpty && (
-            <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-red-600 text-xs font-medium">
+            <div className="flex items-center gap-2 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-xl px-3 py-2 text-red-600 dark:text-red-400 text-xs font-medium">
               <span>⚠</span> Estoque vazio — abasteça antes de disparar.
             </div>
           )}
@@ -225,9 +225,9 @@ export function FishWindowConfig({ fs }: { fs: FishSchedule }) {
 
   return (
     <>
-      <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-3">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-gray-500 text-sm font-medium">Valor atual no dispositivo</h2>
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Valor atual no dispositivo</h2>
           {live && (isSynced
             ? <span className="text-xs font-semibold text-green-600">✓ Sincronizado</span>
             : <span className="text-xs font-semibold text-amber-500">⚠ Com alterações</span>
@@ -236,57 +236,57 @@ export function FishWindowConfig({ fs }: { fs: FishSchedule }) {
         {live ? (
           <>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-500">Janela de Atividade</span>
-              <span className="text-sm font-semibold text-gray-800">Das {pad(live.hl)}h às {pad(live.hd)}h</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">Janela de Atividade</span>
+              <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">Das {pad(live.hl)}h às {pad(live.hd)}h</span>
             </div>
-            <hr className="border-gray-100" />
+            <hr className="border-gray-100 dark:border-gray-700" />
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-500">Frequência de Tratos</span>
-              <span className="text-sm font-semibold text-gray-800">A cada {live.tc} minutos</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">Frequência de Tratos</span>
+              <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">A cada {live.tc} minutos</span>
             </div>
-            <hr className="border-gray-100" />
+            <hr className="border-gray-100 dark:border-gray-700" />
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-500">Quantidade por trato</span>
-              <span className="text-sm font-semibold text-gray-800">{live.qpc}g</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">Quantidade por trato</span>
+              <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">{live.qpc}g</span>
             </div>
           </>
         ) : (
           <p className="text-xs text-gray-400 italic">Aguardando dados do dispositivo...</p>
         )}
       </div>
-      <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-4">
-        <h2 className="text-gray-500 text-sm font-medium">Configurar</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 flex flex-col gap-4">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Configurar</h2>
         <CmdStatusBadge cmd={lastCmd} offline={offline} confirmedText={confirmedText} />
         <div className="flex gap-3">
           <div className="flex flex-col gap-1 flex-1 min-w-0">
-            <label className="text-xs text-gray-500">Início (hora)</label>
+            <label className="text-xs text-gray-500 dark:text-gray-400">Início (hora)</label>
             <input type="number" min={0} max={23} value={hl || ''}
               onFocus={(e) => e.target.select()}
               onChange={(e) => setHl(parseInt(e.target.value) || 0)}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500" />
+              className="w-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30" />
           </div>
           <div className="flex flex-col gap-1 flex-1 min-w-0">
-            <label className="text-xs text-gray-500">Fim (hora)</label>
+            <label className="text-xs text-gray-500 dark:text-gray-400">Fim (hora)</label>
             <input type="number" min={0} max={23} value={hd || ''}
               onFocus={(e) => e.target.select()}
               onChange={(e) => setHd(parseInt(e.target.value) || 0)}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500" />
+              className="w-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30" />
           </div>
         </div>
         <div className="flex gap-3">
           <div className="flex flex-col gap-1 flex-1 min-w-0">
-            <label className="text-xs text-gray-500">Intervalo (min)</label>
+            <label className="text-xs text-gray-500 dark:text-gray-400">Intervalo (min)</label>
             <input type="number" min={1} value={tc || ''}
               onFocus={(e) => e.target.select()}
               onChange={(e) => setTc(parseInt(e.target.value) || 0)}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500" />
+              className="w-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30" />
           </div>
           <div className="flex flex-col gap-1 flex-1 min-w-0">
-            <label className="text-xs text-gray-500">Quantidade (g)</label>
+            <label className="text-xs text-gray-500 dark:text-gray-400">Quantidade (g)</label>
             <input type="number" min={1} value={qpc || ''}
               onFocus={(e) => e.target.select()}
               onChange={(e) => setQpc(parseInt(e.target.value) || 0)}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500" />
+              className="w-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30" />
           </div>
         </div>
         <button onClick={handleSave} disabled={!connected}
@@ -355,12 +355,12 @@ function PetScheduleSection() {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-4">
-      <h2 className="text-gray-500 text-sm font-medium">Horários de Refeição</h2>
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 flex flex-col gap-4">
+      <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Horários de Refeição</h2>
 
       {/* Dado atual do dispositivo */}
       {deviceSchedules.length > 0 ? (
-        <div className="bg-gray-50 rounded-xl p-3 flex flex-col gap-1.5">
+        <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700 rounded-xl p-3 flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Valor atual no dispositivo</span>
             {isSynced
@@ -370,8 +370,8 @@ function PetScheduleSection() {
           </div>
           {deviceSchedules.map((s, i) => (
             <div key={i} className="flex justify-between text-sm">
-              <span className="text-gray-500">Refeição {i + 1}</span>
-              <span className="font-semibold text-gray-700">{pad(s.h)}:{pad(s.m)} — {s.q}g</span>
+              <span className="text-gray-500 dark:text-gray-400">Refeição {i + 1}</span>
+              <span className="font-semibold text-gray-700 dark:text-gray-200">{pad(s.h)}:{pad(s.m)} — {s.q}g</span>
             </div>
           ))}
         </div>
@@ -383,20 +383,20 @@ function PetScheduleSection() {
 
       <div className="flex flex-col gap-3">
         {slots.map((slot, i) => (
-          <div key={i} className="flex flex-col gap-2 border border-gray-100 rounded-xl p-3">
-            <span className="text-sm font-semibold text-gray-700">Refeição {i + 1}</span>
+          <div key={i} className="flex flex-col gap-2 border border-gray-100 dark:border-gray-700 rounded-xl p-3">
+            <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Refeição {i + 1}</span>
             <div className="flex gap-2 min-w-0">
               <div className="flex flex-col gap-1 flex-1 min-w-0">
-                <label className="text-xs text-gray-500">Horário</label>
+                <label className="text-xs text-gray-500 dark:text-gray-400">Horário</label>
                 <input type="time" value={slot.time}
                   onChange={(e) => updateSlot(i, { time: e.target.value })}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500" />
+                  className="w-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30" />
               </div>
               <div className="flex flex-col gap-1 flex-1 min-w-0">
-                <label className="text-xs text-gray-500">Gramas</label>
+                <label className="text-xs text-gray-500 dark:text-gray-400">Gramas</label>
                 <input type="number" min={0} value={slot.grams || ''}
                   onChange={(e) => updateSlot(i, { grams: parseInt(e.target.value) || 0 })}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500" />
+                  className="w-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30" />
               </div>
             </div>
           </div>
@@ -440,9 +440,9 @@ export default function Configuracao() {
       <DeviceIdConfig />
 
       {visibleProfiles.length > 1 && (
-        <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-3">
-          <h2 className="text-gray-500 text-sm font-medium">Perfil</h2>
-          <div className="flex rounded-xl overflow-hidden border border-gray-200">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 flex flex-col gap-3">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Perfil</h2>
+          <div className="flex rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
             {visibleProfiles.map((p) => (
               <button
                 key={p}
@@ -450,7 +450,7 @@ export default function Configuracao() {
                 className={`flex-1 py-3 text-sm font-semibold capitalize transition-all ${
                   activeProfile === p
                     ? 'bg-brand-600 text-[#1A1A1A]'
-                    : 'bg-white text-gray-500 hover:bg-gray-50'
+                    : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/60'
                 }`}
               >
                 {p === 'pet' ? 'Pet' : 'Peixe'}

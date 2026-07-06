@@ -16,10 +16,10 @@ import wbmLogo from '../assets/LOGO-OFC-WBM-2.0.PNG'
 import controlFeedLogo from '../assets/Logo ControlFeed.png'
 
 const nav = [
-  { to: '/',             icon: LayoutDashboard, label: 'Início'    },
-  { to: '/estoque',      icon: Package,         label: 'Estoque'   },
-  { to: '/configuracao', icon: Settings,        label: 'Config'    },
-  { to: '/historico',    icon: History,         label: 'Histórico' },
+  { to: '/',             icon: LayoutDashboard, label: 'Início',        short: 'Início'    },
+  { to: '/estoque',      icon: Package,         label: 'Estoque',       short: 'Estoque'   },
+  { to: '/historico',    icon: History,         label: 'Histórico',     short: 'Histórico' },
+  { to: '/configuracao', icon: Settings,        label: 'Configurações', short: 'Config'    },
 ]
 
 const OFFLINE_THRESHOLD_MS = 90_000
@@ -79,7 +79,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
 
       {/* ── Sidebar (desktop) ──────────────────────── */}
-      <div className="hidden lg:flex fixed top-0 left-0 h-full z-40 bg-gray-200 dark:bg-gray-800">
+      <div className="hidden lg:flex fixed top-0 left-0 h-full z-40 bg-white dark:bg-gray-800">
         <Sidebar>
           <SidebarHeader>
             <div className="flex items-center justify-between min-w-0">
@@ -106,14 +106,20 @@ function AppShell({ children }: { children: React.ReactNode }) {
           </SidebarContent>
 
           <SidebarFooter>
-            <div className="flex flex-col gap-1">
-              <span className="text-xs text-gray-400 truncate group-data-[collapsed=true]:hidden">{name ?? email}</span>
+            <div className="flex items-center gap-2.5 group-data-[collapsed=true]:justify-center">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300 text-sm font-bold uppercase">
+                {(name ?? email ?? '?').charAt(0)}
+              </div>
+              <div className="flex flex-col min-w-0 group-data-[collapsed=true]:hidden">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate leading-tight">{name ?? '—'}</span>
+                <span className="text-xs text-gray-400 truncate leading-tight">{email}</span>
+              </div>
               <button
                 onClick={() => setConfirmLogout(true)}
-                className="flex items-center gap-2 text-xs text-gray-400 hover:text-red-500 transition-colors"
+                aria-label="Sair da conta"
+                className="ml-auto shrink-0 flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors group-data-[collapsed=true]:hidden"
               >
-                <LogOut size={13} />
-                <span className="group-data-[collapsed=true]:hidden">Sair</span>
+                <LogOut size={15} />
               </button>
             </div>
           </SidebarFooter>
@@ -140,10 +146,8 @@ function AppShell({ children }: { children: React.ReactNode }) {
         {/* Header desktop */}
         <header className="hidden lg:flex items-center justify-between px-6 py-3 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
           <img src={wbmLogo} alt="WBM Technology" className="h-8 w-auto" />
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <ConnectionPill />
-            <div className="h-5 w-px bg-gray-200 dark:bg-gray-700" />
-            <span className="text-sm text-gray-500 dark:text-gray-400 max-w-[14rem] truncate">{name ?? email}</span>
             <button
               onClick={toggle}
               aria-label={dark ? 'Ativar tema claro' : 'Ativar tema escuro'}
@@ -170,7 +174,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* ── Bottom nav (mobile) ────────────────────── */}
       <nav className="lg:hidden fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-gray-200 dark:bg-gray-800 border-t border-gray-300 dark:border-gray-700 flex z-50 rounded-t-3xl">
-        {nav.map(({ to, icon: Icon, label }) => (
+        {nav.map(({ to, icon: Icon, short }) => (
           <NavLink
             key={to}
             to={to}
@@ -182,7 +186,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
             }
           >
             <Icon size={20} />
-            <span>{label}</span>
+            <span>{short}</span>
           </NavLink>
         ))}
         <button
