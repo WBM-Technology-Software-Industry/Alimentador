@@ -43,7 +43,7 @@ public class DeviceEventPublisher {
     public void publishEvent(String event, Object payload) {
         for (SseEmitter emitter : emitters) {
             try {
-                emitter.send(SseEmitter.event().name(event).data(payload, String.class));
+                emitter.send(SseEmitter.event().name(event).data(payload));
             } catch (Exception e) {
                 emitters.remove(emitter);
             }

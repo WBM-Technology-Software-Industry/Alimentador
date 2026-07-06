@@ -241,19 +241,19 @@ public class MqttIngestionService {
 
             // Publish live status to frontend via SSE
             try {
-                var payload = new java.util.HashMap<String, Object>();
-                payload.put("deviceId", deviceId);
-                payload.put("timestamp", now.toString());
-                payload.put("eg", eg);
-                payload.put("ep", ep);
-                payload.put("cp", cp);
-                payload.put("tp", tp);
-                payload.put("er", er);
-                payload.put("al", al);
-                payload.put("am", nodeBoolean(d, "am"));
-                payload.put("pf", pf);
-                payload.put("ts", ts);
-                eventPublisher.publishStatus(mapper.writeValueAsString(payload));
+                var statusPayload = new java.util.HashMap<String, Object>();
+                statusPayload.put("deviceId", deviceId);
+                statusPayload.put("timestamp", now.toString());
+                statusPayload.put("eg", eg);
+                statusPayload.put("ep", ep);
+                statusPayload.put("cp", cp);
+                statusPayload.put("tp", tp);
+                statusPayload.put("er", er);
+                statusPayload.put("al", al);
+                statusPayload.put("am", nodeBoolean(d, "am"));
+                statusPayload.put("pf", pf);
+                statusPayload.put("ts", ts);
+                eventPublisher.publishStatus(mapper.writeValueAsString(statusPayload));
             } catch (Exception e) {
                 log.warn("Failed to serialize status event for {}: {}", deviceId, e.getMessage());
             }
