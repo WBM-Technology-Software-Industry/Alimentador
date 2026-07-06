@@ -13,7 +13,7 @@ import { connectMqtt } from './mqtt/client'
 import { api } from './api/client'
 
 const BROKER_URL      = import.meta.env.VITE_MQTT_BROKER_URL ||
-  `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}`
+  `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/mqtt`
 const MQTT_USERNAME   = import.meta.env.VITE_MQTT_USERNAME as string | undefined
 const MQTT_PASSWORD   = import.meta.env.VITE_MQTT_PASSWORD as string | undefined
 

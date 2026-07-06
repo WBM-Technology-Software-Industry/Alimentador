@@ -4,10 +4,15 @@ import https from 'https'
 import { readFileSync, existsSync } from 'fs'
 import { join, extname } from 'path'
 import { fileURLToPath } from 'url'
+import net from 'net'
+import { WebSocketServer } from 'ws'
 
 const __dirname   = fileURLToPath(new URL('.', import.meta.url))
-const PORT        = process.env.PORT        || 3000
+const PORT        = Number(process.env.PORT || 3000)
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8080'
+const MQTT_BROKER_HOST = process.env.MQTT_BROKER_HOST || '152.67.43.175'
+const MQTT_BROKER_PORT = Number(process.env.MQTT_BROKER_PORT || 1883)
+const MQTT_WS_PATH = process.env.MQTT_WS_PATH || '/mqtt'
 
 const MIME = {
   '.html': 'text/html',
@@ -74,7 +79,42 @@ const server = createServer((req, res) => {
   }
 })
 
+const wss = new WebSocketServer({ noServer: true })
+
+server.on('upgrade', (req, socket, head) => {
+  const targetUrl = new URL(req.url ?? '/', `http://${req.headers.host}`)
+  if (targetUrl.pathname !== MQTT_WS_PATH) {
+    socket.destroy()
+    return
+  }
+
+  wss.handleUpgrade(req, socket, head, (ws) => {
+    const tcp = net.connect(MQTT_BROKER_PORT, MQTT_BROKER_HOST)
+
+    const closeBoth = () => {
+      try { tcp.destroy() } catch {}
+      try { ws.close() } catch {}
+    }
+
+    ws.on('message', (data) => {
+      if (tcp.writable) tcp.write(data)
+    })
+
+    tcp.on('data', (data) => {
+      if (ws.readyState === ws.OPEN) ws.send(data)
+    })
+
+    ws.on('close', closeBoth)
+    ws.on('error', closeBoth)
+    tcp.on('close', () => {
+      try { ws.close() } catch {}
+    })
+    tcp.on('error', closeBoth)
+  })
+})
+
 server.listen(PORT, () => {
   console.log(`Servidor na porta ${PORT}`)
   console.log(`Proxy API → ${BACKEND_URL}`)
+  console.log(`Bridge MQTT WS → TCP em ws://0.0.0.0:${PORT}${MQTT_WS_PATH}`)
 })
