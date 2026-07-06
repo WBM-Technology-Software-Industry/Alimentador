@@ -11,6 +11,7 @@ export default function StockGauge({ ep, eg }: Props) {
   const sweep = 270
   const dashArray = (circumference * sweep) / 360
   const dashOffset = dashArray - (dashArray * Math.min(ep, 100)) / 100
+  const size = radius * 2 + stroke
 
   // WBM green → amber → red conforme nível
   const color =
@@ -21,21 +22,21 @@ export default function StockGauge({ ep, eg }: Props) {
   const kgCurrent = (eg / 1000).toFixed(3)
 
   return (
-    <div className="flex flex-col items-center">
-      <svg width={radius * 2 + stroke} height={radius * 2 + stroke} className="-rotate-[135deg]">
+    <div className="relative w-44 h-44 sm:w-52 sm:h-52 mx-auto">
+      <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-full -rotate-[135deg]">
         <circle
-          cx={radius + stroke / 2}
-          cy={radius + stroke / 2}
+          cx={size / 2}
+          cy={size / 2}
           r={normalizedR}
           fill="none"
-          stroke="#e5e7eb"
+          className="stroke-gray-200 dark:stroke-gray-700"
           strokeWidth={stroke}
           strokeDasharray={`${dashArray} ${circumference}`}
           strokeLinecap="round"
         />
         <circle
-          cx={radius + stroke / 2}
-          cy={radius + stroke / 2}
+          cx={size / 2}
+          cy={size / 2}
           r={normalizedR}
           fill="none"
           stroke={color}
@@ -47,9 +48,9 @@ export default function StockGauge({ ep, eg }: Props) {
         />
       </svg>
 
-      <div className="absolute flex flex-col items-center justify-center" style={{ marginTop: radius - 16 }}>
-        <span className="text-4xl font-bold text-gray-800">{Math.round(ep)}%</span>
-        <span className="text-sm text-gray-500">{kgCurrent} kg</span>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-3xl sm:text-4xl font-bold text-gray-800 dark:text-gray-100 tabular-nums">{Math.round(ep)}%</span>
+        <span className="text-sm text-gray-500 dark:text-gray-400 tabular-nums">{kgCurrent} kg</span>
       </div>
     </div>
   )

@@ -16,7 +16,7 @@ const ERROR_LABELS: Record<number, string> = {
 }
 
 function Skeleton({ className }: { className: string }) {
-  return <div className={`animate-pulse bg-gray-200 rounded-lg ${className}`} />
+  return <div className={`animate-pulse bg-gray-200 dark:bg-gray-700 rounded-lg ${className}`} />
 }
 
 function FeederLevelCard({ label, id, active, onClick }: {
@@ -44,27 +44,29 @@ function FeederLevelCard({ label, id, active, onClick }: {
   return (
     <button
       onClick={onClick}
-      className={`flex-1 bg-white rounded-2xl shadow p-4 flex flex-col gap-3 text-left transition-all ${
-        active ? 'ring-2 ring-brand-500' : 'opacity-70'
+      className={`flex-1 min-w-[9rem] bg-white dark:bg-gray-800 rounded-2xl shadow-sm border p-4 flex flex-col gap-3 text-left transition-all ${
+        active
+          ? 'ring-2 ring-brand-500 border-transparent'
+          : 'border-gray-100 dark:border-gray-700 opacity-70 hover:opacity-100'
       }`}
     >
       <div className="flex items-center justify-between">
-        <span className={`text-xs font-semibold ${active ? 'text-brand-600' : 'text-gray-600'}`}>{customName ?? label}</span>
+        <span className={`text-xs font-semibold ${active ? 'text-brand-600' : 'text-gray-600 dark:text-gray-300'}`}>{customName ?? label}</span>
         {!hasData
           ? <Skeleton className="w-8 h-3" />
           : isOffline
             ? <span className="text-xs font-bold text-gray-400">Offline</span>
-            : <span className="text-xs font-bold" style={{ color }}>{Math.round(ep)}%</span>
+            : <span className="text-xs font-bold tabular-nums" style={{ color }}>{Math.round(ep)}%</span>
         }
       </div>
-      <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+      <div className="h-2.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
         {hasData
           ? <div className="h-full rounded-full transition-all duration-500" style={{ width: isOffline ? '100%' : `${ep}%`, backgroundColor: color }} />
-          : <div className="h-full w-full animate-pulse bg-gray-200 rounded-full" />
+          : <div className="h-full w-full animate-pulse bg-gray-200 dark:bg-gray-600 rounded-full" />
         }
       </div>
       {hasData ? (
-        <div className="flex justify-between text-xs text-gray-400">
+        <div className="flex justify-between text-xs text-gray-400 tabular-nums">
           {isOffline
             ? <span className="text-gray-400">Sem comunicação</span>
             : <><span>{(eg / 1000).toFixed(3)} kg</span><span>{Math.round(ep)}%</span></>
@@ -77,6 +79,15 @@ function FeederLevelCard({ label, id, active, onClick }: {
         </div>
       )}
     </button>
+  )
+}
+
+function TelemetryRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex justify-between items-center gap-4 py-3 first:pt-0 last:pb-0">
+      <span className="text-sm text-gray-500 dark:text-gray-400 shrink-0">{label}</span>
+      {children}
+    </div>
   )
 }
 
@@ -105,17 +116,25 @@ export default function Dashboard() {
   const waitingFirstMsg = connected && connectedAt > 0 && Date.now() - connectedAt < OFFLINE_THRESHOLD_MS && lastSeen < connectedAt
   const isOffline = clearlyOffline && !waitingFirstMsg
 
+  const activeLabel = deviceNames[deviceId] ?? DEFAULT_DEVICE_LABELS[deviceId] ?? deviceId
+
   function handleSelectDevice(id: string) {
     if (id === deviceId) return
     setBrokerConfig(brokerUrl, id)
   }
 
   return (
-    <div className="p-4 lg:p-6 flex flex-col gap-4 lg:max-w-5xl lg:mx-auto">
+    <div className="p-4 lg:p-6 flex flex-col gap-4 lg:max-w-5xl lg:mx-auto w-full">
+
+      {/* Título da página */}
+      <div className="flex items-baseline justify-between gap-3">
+        <h1 className="text-lg font-bold text-gray-800 dark:text-gray-100">Visão geral</h1>
+        <span className="text-xs text-gray-400 truncate">{activeLabel}</span>
+      </div>
 
       {/* Feeder selector cards — só exibido quando a conta tem mais de um device */}
       {devices.length > 1 && (
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           {devices.map((id) => (
             <FeederLevelCard
               key={id}
@@ -132,7 +151,8 @@ export default function Dashboard() {
       <div className="flex flex-col lg:grid lg:grid-cols-2 gap-4">
 
         {/* Gauge card */}
-        <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-4">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 flex flex-col gap-4">
+          <span className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Nível do estoque</span>
           {hasData ? (
             <StockGauge ep={ep} eg={eg} />
           ) : (
@@ -141,75 +161,75 @@ export default function Dashboard() {
               <Skeleton className="w-24 h-4" />
             </div>
           )}
-          <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+          <div className="h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
             {hasData
               ? <div className="h-full rounded-full transition-all duration-500"
                   style={{ width: `${ep}%`, backgroundColor: ep > 50 ? '#28CC08' : ep > 20 ? '#f59e0b' : '#ef4444' }} />
-              : <div className="h-full w-full animate-pulse bg-gray-200 rounded-full" />
+              : <div className="h-full w-full animate-pulse bg-gray-200 dark:bg-gray-600 rounded-full" />
             }
           </div>
         </div>
 
         {/* Telemetry card */}
-        <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-4 justify-center">
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-500">Status</span>
-            {hasData ? (
-              <span className={`flex items-center gap-1.5 text-sm font-semibold ${al ? 'text-brand-600' : 'text-gray-400'}`}>
-                <span className={`w-2 h-2 rounded-full ${al ? 'bg-brand-500 animate-pulse' : 'bg-gray-300'}`} />
-                {al ? 'Alimentando' : 'Parado'}
-              </span>
-            ) : <Skeleton className="w-20 h-4" />}
-          </div>
-          <hr className="border-gray-100" />
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-500">Temperatura</span>
-            {hasData
-              ? <span className="text-sm font-semibold text-gray-800">{tp}°C</span>
-              : <Skeleton className="w-12 h-4" />
-            }
-          </div>
-          <hr className="border-gray-100" />
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-500">Estoque atual</span>
-            {hasData
-              ? <span className="text-sm font-semibold text-gray-800">{(eg / 1000).toFixed(3)} kg</span>
-              : <Skeleton className="w-16 h-4" />
-            }
-          </div>
-          <hr className="border-gray-100" />
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-500">Erro</span>
-            {!hasData
-              ? <Skeleton className="w-20 h-4" />
-              : er > 0
-                ? <span className="text-sm font-semibold text-red-600">{ERROR_LABELS[er] ?? `Código ${er}`}</span>
-                : <span className="text-sm font-semibold text-gray-400">Nenhum</span>
-            }
-          </div>
-          <hr className="border-gray-100" />
-          {isOffline ? (
-            <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
-              <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
-              <div className="flex flex-col">
-                <span className="text-xs font-semibold text-red-600">Sem comunicação</span>
-                <span className="text-xs text-red-400">
-                  Último contato: {format(new Date(lastSeen), "dd/MM HH:mm:ss", { locale: ptBR })}
-                  {' '}({formatDistanceToNow(new Date(lastSeen), { locale: ptBR, addSuffix: true })})
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 flex flex-col justify-center">
+          <span className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 pb-3">Telemetria</span>
+          <div className="divide-y divide-gray-100 dark:divide-gray-700">
+            <TelemetryRow label="Status">
+              {hasData ? (
+                <span className={`flex items-center gap-1.5 text-sm font-semibold ${al ? 'text-brand-600' : 'text-gray-400'}`}>
+                  <span className={`w-2 h-2 rounded-full ${al ? 'bg-brand-500 animate-pulse' : 'bg-gray-300 dark:bg-gray-600'}`} />
+                  {al ? 'Alimentando' : 'Parado'}
                 </span>
-              </div>
-            </div>
-          ) : (
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-500">Última atualização</span>
-              {waitingFirstMsg || !hasData || lastSeen === 0
-                ? <Skeleton className="w-24 h-4" />
-                : <span className="text-sm font-semibold text-gray-600">
-                    {format(new Date(lastSeen), "dd/MM HH:mm:ss", { locale: ptBR })}
-                  </span>
+              ) : <Skeleton className="w-20 h-4" />}
+            </TelemetryRow>
+
+            <TelemetryRow label="Temperatura">
+              {hasData
+                ? <span className="text-sm font-semibold text-gray-800 dark:text-gray-100 tabular-nums">{tp}°C</span>
+                : <Skeleton className="w-12 h-4" />
               }
-            </div>
-          )}
+            </TelemetryRow>
+
+            <TelemetryRow label="Estoque atual">
+              {hasData
+                ? <span className="text-sm font-semibold text-gray-800 dark:text-gray-100 tabular-nums">{(eg / 1000).toFixed(3)} kg</span>
+                : <Skeleton className="w-16 h-4" />
+              }
+            </TelemetryRow>
+
+            <TelemetryRow label="Erro">
+              {!hasData
+                ? <Skeleton className="w-20 h-4" />
+                : er > 0
+                  ? <span className="text-sm font-semibold text-red-600 dark:text-red-400 text-right">{ERROR_LABELS[er] ?? `Código ${er}`}</span>
+                  : <span className="text-sm font-semibold text-gray-400">Nenhum</span>
+              }
+            </TelemetryRow>
+
+            {isOffline ? (
+              <div className="pt-3">
+                <div className="flex items-center gap-2 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-xl px-3 py-2">
+                  <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-xs font-semibold text-red-600 dark:text-red-400">Sem comunicação</span>
+                    <span className="text-xs text-red-400 dark:text-red-500">
+                      Último contato: {format(new Date(lastSeen), "dd/MM HH:mm:ss", { locale: ptBR })}
+                      {' '}({formatDistanceToNow(new Date(lastSeen), { locale: ptBR, addSuffix: true })})
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <TelemetryRow label="Última atualização">
+                {waitingFirstMsg || !hasData || lastSeen === 0
+                  ? <Skeleton className="w-24 h-4" />
+                  : <span className="text-sm font-semibold text-gray-600 dark:text-gray-300 tabular-nums">
+                      {format(new Date(lastSeen), "dd/MM HH:mm:ss", { locale: ptBR })}
+                    </span>
+                }
+              </TelemetryRow>
+            )}
+          </div>
         </div>
 
       </div>

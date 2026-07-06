@@ -28,7 +28,9 @@ async function post<T>(path: string, body: object): Promise<T> {
   })
   if (res.status === 401) { useAuthStore.getState().clearAuth(); throw new Error('401') }
   if (!res.ok) throw new Error(`API ${res.status}`)
-  return res.json()
+  // Endpoints como POST /cmd respondem 200 sem corpo — res.json() lançaria erro
+  const text = await res.text()
+  return (text ? JSON.parse(text) : undefined) as T
 }
 
 export type ApiFeedEntry = {
