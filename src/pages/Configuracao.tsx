@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useDeviceStore, type FishSchedule, type DeviceSchedule, DEFAULT_DEVICE_LABELS } from '../store/deviceStore'
 import { publishCmd, publishCmdSequence } from '../mqtt/client'
 import { getScopedAccountAccess, useAuthStore } from '../store/authStore'
@@ -415,7 +415,14 @@ export default function Configuracao() {
   const { deviceId, deviceData } = useDeviceStore()
   const email = useAuthStore((s) => s.email)
   const profiles = useAuthStore((s) => s.profiles)
-  const visibleProfiles = getScopedAccountAccess(email, [], profiles).profiles
+  const profilesKey = profiles.join(',')
+  // Memoizado por conteúdo — getScopedAccountAccess cria um array novo a cada
+  // chamada para contas restritas, o que quebraria o useEffect abaixo.
+  const visibleProfiles = useMemo(
+    () => getScopedAccountAccess(email, [], profiles).profiles,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [email, profilesKey]
+  )
   const [activeProfile, setActiveProfile] = useState<string>(() => visibleProfiles[0] ?? 'pet')
 
   useEffect(() => {

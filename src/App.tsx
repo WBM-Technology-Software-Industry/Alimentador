@@ -1,5 +1,5 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Layout from './components/Layout'
 import LoadingScreen from './components/LoadingScreen'
 import Dashboard from './pages/Dashboard'
@@ -47,8 +47,17 @@ export default function App() {
 
   const hasCachedData   = Object.keys(deviceData).length > 0
   const [loading, setLoading] = useState(!hasCachedData && !!token)
-  const scopedAccess    = getScopedAccountAccess(email, devices, profiles)
-  const visibleDevices  = scopedAccess.devices
+  const devicesKey      = devices.join(',')
+  const profilesKey     = profiles.join(',')
+  // Memoizado por conteúdo (não por referência) — getScopedAccountAccess cria um
+  // array novo a cada chamada para contas restritas, o que quebrava o useEffect
+  // abaixo (visibleDevices mudava de referência a cada render, reconectando o SSE
+  // em loop infinito).
+  const visibleDevices  = useMemo(
+    () => getScopedAccountAccess(email, devices, profiles).devices,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [email, devicesKey, profilesKey]
+  )
 
   useEffect(() => {
     if (!token) return
