@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useDeviceStore, type FishSchedule, type DeviceSchedule, DEFAULT_DEVICE_LABELS } from '../store/deviceStore'
 import { publishCmd, publishCmdSequence } from '../mqtt/client'
-import { useAuthStore } from '../store/authStore'
+import { getScopedAccountAccess, useAuthStore } from '../store/authStore'
 
 import { CmdStatusBadge, useLastCmd } from '../components/StatusBar'
 import { api } from '../api/client'
@@ -412,8 +412,16 @@ function PetScheduleSection() {
 
 export default function Configuracao() {
   const { deviceId, deviceData } = useDeviceStore()
+  const email = useAuthStore((s) => s.email)
   const profiles = useAuthStore((s) => s.profiles)
-  const [activeProfile, setActiveProfile] = useState<string>(() => profiles[0] ?? 'pet')
+  const visibleProfiles = getScopedAccountAccess(email, [], profiles).profiles
+  const [activeProfile, setActiveProfile] = useState<string>(() => visibleProfiles[0] ?? 'pet')
+
+  useEffect(() => {
+    if (!visibleProfiles.includes(activeProfile)) {
+      setActiveProfile(visibleProfiles[0] ?? 'pet')
+    }
+  }, [activeProfile, visibleProfiles])
 
   const fishSchedule = deviceData[deviceId]?.fishSchedule
   const defaultFs = fishSchedule ?? { qpc: 5, tc: 30, hl: 8, hd: 20 }
@@ -423,11 +431,11 @@ export default function Configuracao() {
 
       <DeviceIdConfig />
 
-      {profiles.length > 1 && (
+      {visibleProfiles.length > 1 && (
         <div className="bg-white rounded-2xl shadow p-5 flex flex-col gap-3">
           <h2 className="text-gray-500 text-sm font-medium">Perfil</h2>
           <div className="flex rounded-xl overflow-hidden border border-gray-200">
-            {profiles.map((p) => (
+            {visibleProfiles.map((p) => (
               <button
                 key={p}
                 onClick={() => setActiveProfile(p)}

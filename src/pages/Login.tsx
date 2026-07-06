@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '../store/authStore'
+import { getScopedAccountAccess, useAuthStore } from '../store/authStore'
 import controlFeedLogo from '../assets/Logo ControlFeed.png'
 import wbmLogo from '../assets/LOGO-OFC-WBM-2.0.PNG'
 
@@ -37,7 +37,8 @@ export default function Login() {
         })
         if (r.ok) {
           const d = await r.json()
-          setDevices(d.devices ?? [], d.profiles ?? [])
+          const scoped = getScopedAccountAccess(data.email ?? email, d.devices ?? [], d.profiles ?? [])
+          setDevices(scoped.devices, scoped.profiles)
         }
       } catch { /* usa devices vazios */ }
       navigate('/', { replace: true })

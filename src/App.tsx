@@ -8,7 +8,7 @@ import Historico from './pages/Historico'
 import Configuracao from './pages/Configuracao'
 import Login from './pages/Login'
 import { useDeviceStore } from './store/deviceStore'
-import { useAuthStore } from './store/authStore'
+import { getScopedAccountAccess, useAuthStore } from './store/authStore'
 import { connectMqtt } from './mqtt/client'
 import { api } from './api/client'
 
@@ -40,10 +40,15 @@ export default function App() {
   const deviceData      = useDeviceStore((s) => s.deviceData)
   const deviceId        = useDeviceStore((s) => s.deviceId)
   const token           = useAuthStore((s) => s.token)
+  const email           = useAuthStore((s) => s.email)
   const devices         = useAuthStore((s) => s.devices)
+  const profiles        = useAuthStore((s) => s.profiles)
+  const setDevices      = useAuthStore((s) => s.setDevices)
 
   const hasCachedData   = Object.keys(deviceData).length > 0
   const [loading, setLoading] = useState(!hasCachedData && !!token)
+  const scopedAccess    = getScopedAccountAccess(email, devices, profiles)
+  const visibleDevices  = scopedAccess.devices
 
   useEffect(() => {
     if (!token) return
@@ -51,14 +56,14 @@ export default function App() {
 
     // Garante que o device ativo pertença à conta logada — corrige deviceId
     // desatualizado (conta anterior) e define o primeiro device como padrão.
-    const activeDeviceId = devices.includes(deviceId) ? deviceId : (devices[0] ?? deviceId)
+    const activeDeviceId = visibleDevices.includes(deviceId) ? deviceId : (visibleDevices[0] ?? deviceId)
     setBrokerConfig(BROKER_URL, activeDeviceId)
 
     api.getLabels()
       .then((labels) => { Object.entries(labels).forEach(([id, name]) => setDeviceName(id, name)) })
       .catch(() => {})
 
-    devices.forEach((id) => {
+    visibleDevices.forEach((id) => {
       // Semente de lastSeen a partir do banco — evita exibir timestamp desatualizado após F5
       api.lastSeen(id)
         .then((r) => setDeviceData(id, { lastSeen: new Date(r.lastSeen).getTime() }))
@@ -85,7 +90,14 @@ export default function App() {
 
     const timeout = setTimeout(() => setLoading(false), 2000)
     return () => clearTimeout(timeout)
-  }, [token, devices, setBrokerConfig, setDeviceData, setDeviceName])
+  }, [token, email, visibleDevices, setBrokerConfig, setDeviceData, setDeviceName])
+
+  useEffect(() => {
+    const scoped = getScopedAccountAccess(email, devices, profiles)
+    if (scoped.devices.join(',') !== devices.join(',') || scoped.profiles.join(',') !== profiles.join(',')) {
+      setDevices(scoped.devices, scoped.profiles)
+    }
+  }, [email, devices, profiles, setDevices])
 
   useEffect(() => {
     if (connected) setLoading(false)
