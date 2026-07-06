@@ -61,7 +61,7 @@ function DeviceIdConfig() {
             onKeyDown={(e) => e.key === 'Enter' && handleSave()}
             placeholder={DEFAULT_DEVICE_LABELS[deviceId] ?? deviceId}
             maxLength={40}
-            className="flex-1 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30"
+            className="min-w-0 flex-1 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30"
           />
           <button
             onClick={handleSave}
@@ -439,7 +439,7 @@ export default function Configuracao() {
   return (
     <div className="p-4 lg:p-6 lg:max-w-5xl lg:mx-auto flex flex-col gap-4">
 
-      <div className="flex flex-col lg:grid lg:grid-cols-2 gap-4 items-start">
+      <div className="flex flex-col lg:grid lg:grid-cols-2 gap-4 lg:items-start">
         <DeviceIdConfig />
 
         {visibleProfiles.length > 1 && (
@@ -464,7 +464,7 @@ export default function Configuracao() {
         )}
       </div>
 
-      <div className="flex flex-col lg:grid lg:grid-cols-2 gap-4 items-start">
+      <div className="flex flex-col lg:grid lg:grid-cols-2 gap-4 lg:items-start">
         <ModoOperacao />
         {activeProfile === 'fish'
           ? <FishWindowConfig key={deviceId} fs={defaultFs} />

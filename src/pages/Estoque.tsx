@@ -10,12 +10,12 @@ function ActionCard({ icon: Icon, title, description, children }: {
   icon: React.ElementType; title: string; description: string; children: React.ReactNode
 }) {
   return (
-    <div className="bg-white rounded-2xl shadow p-4 flex flex-col gap-3">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 flex flex-col gap-3">
       <div className="flex items-center gap-2">
-        <Icon size={18} className="text-brand-600" />
-        <div>
-          <p className="font-semibold text-gray-800 text-sm">{title}</p>
-          <p className="text-xs text-gray-400">{description}</p>
+        <Icon size={18} className="text-brand-600 shrink-0" />
+        <div className="min-w-0">
+          <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm">{title}</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500">{description}</p>
         </div>
       </div>
       {children}
@@ -32,7 +32,7 @@ function GramsInput({ placeholder, onConfirm, confirmLabel = 'Confirmar' }: {
       <input
         type="number" min={1} placeholder={placeholder} value={val}
         onChange={(e) => setVal(e.target.value)}
-        className="min-w-0 flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500"
+        className="min-w-0 flex-1 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30"
       />
       <button
         onClick={() => { const n = parseInt(val); if (!isNaN(n) && n > 0) { onConfirm(n); setVal('') } }}
@@ -67,7 +67,7 @@ export default function Estoque() {
         </div>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2">
         <ActionCard icon={RotateCcw} title="Enchi o reservatório" description={`Define ${ctx.foodLabel} como 100% cheio`}>
           <button
             onClick={() => send({ rs: 1 }, 'Reservatório marcado como cheio!')}
