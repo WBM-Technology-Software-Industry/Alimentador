@@ -91,14 +91,15 @@ function ModoOperacao() {
   const isSending = lastCmd?.status === 'sent'
   const isTimeout = lastCmd?.status === 'timeout'
 
-  function toggleMode(automatic: boolean) {
-    const ok = publishCmd(deviceId, { am: automatic })
+  async function toggleMode(automatic: boolean) {
+    const ok = await publishCmd(deviceId, { am: automatic })
     setOffline(!ok)
     if (ok) { setDeviceData(deviceId, { am: automatic }); setSentAt(Date.now()) }
   }
 
-  function handleSendQuantity() {
-    publishCmd(deviceId, { sim: manualGrams })
+  async function handleSendQuantity() {
+    const ok = await publishCmd(deviceId, { sim: manualGrams })
+    if (!ok) return
     setOptimisticFeed({ id: `opt-${Date.now()}`, deviceId, grams: manualGrams, timestamp: Date.now(), source: 'manual', user: useAuthStore.getState().name })
   }
 
@@ -215,9 +216,9 @@ export function FishWindowConfig({ fs }: { fs: FishSchedule }) {
     ? `Dispositivo: ${live.qpc}g a cada ${live.tc}min — das ${pad(live.hl)}h às ${pad(live.hd)}h`
     : 'Confirmado pelo dispositivo!'
 
-  function handleSave() {
+  async function handleSave() {
     const updated: FishSchedule = { qpc, tc, hl, hd }
-    const ok = publishCmd(deviceId, { c_ps: updated })
+    const ok = await publishCmd(deviceId, { c_ps: updated })
     setOffline(!ok)
     if (ok) setSentAt(Date.now())
   }
@@ -343,12 +344,12 @@ function PetScheduleSection() {
     setSlots(prev => prev.map((s, idx) => idx === i ? { ...s, ...partial } : s))
   }
 
-  function handleSave() {
+  async function handleSave() {
     const updated: DeviceSchedule[] = slots
       .filter(s => s.grams > 0)
       .map(s => { const [h, m] = s.time.split(':').map(Number); return { h, m, q: s.grams } })
       .sort((a, b) => a.h * 60 + a.m - (b.h * 60 + b.m))
-    const ok = publishCmdSequence(deviceId, [{ pf: 1 }, { am: true }, { c_pt: updated }])
+    const ok = await publishCmdSequence(deviceId, [{ pf: 1 }, { am: true }, { c_pt: updated }])
     setOffline(!ok)
     if (ok) setSentAt(Date.now())
   }

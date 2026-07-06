@@ -50,6 +50,13 @@ public class AuthFilter implements Filter {
 
         String auth = request.getHeader("Authorization");
         if (auth == null || !auth.startsWith("Bearer ")) {
+            String tokenParam = request.getParameter("token");
+            if (tokenParam != null && !tokenParam.isBlank()) {
+                auth = "Bearer " + tokenParam;
+            }
+        }
+
+        if (auth == null || !auth.startsWith("Bearer ")) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json");
             response.getWriter().write("{\"error\":\"Não autenticado.\"}");

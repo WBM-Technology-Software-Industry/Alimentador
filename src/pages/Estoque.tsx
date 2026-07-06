@@ -49,9 +49,9 @@ export default function Estoque() {
   const ctx = useDeviceContext()
   const [feedback, setFeedback] = useState<Feedback>(null)
 
-  function send(payload: object, msg: string) {
+  async function send(payload: object, msg: string) {
     if (!connected) { setFeedback({ ok: false, msg: 'Dispositivo offline.' }); return }
-    const ok = publishCmd(deviceId, payload)
+    const ok = await publishCmd(deviceId, payload)
     setFeedback({ ok, msg: ok ? msg : 'Falha ao enviar.' })
     setTimeout(() => setFeedback(null), 3000)
   }

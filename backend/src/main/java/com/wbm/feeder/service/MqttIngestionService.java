@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wbm.feeder.model.*;
 import com.wbm.feeder.repository.*;
+import com.wbm.feeder.service.DeviceEventPublisher;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.eclipse.paho.client.mqttv3.*;
@@ -12,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -53,6 +55,7 @@ public class MqttIngestionService {
     private final DeviceScheduleRepository  scheduleRepo;
     private final ErrorLogRepository        errorLogRepo;
     private final DeviceLastSeenRepository  lastSeenRepo;
+    private final DeviceEventPublisher      eventPublisher;
     private final ObjectMapper              mapper = new ObjectMapper();
 
     private MqttClient client;
@@ -81,12 +84,14 @@ public class MqttIngestionService {
                                 DeviceTelemetryRepository telemetryRepo,
                                 DeviceScheduleRepository scheduleRepo,
                                 ErrorLogRepository errorLogRepo,
-                                DeviceLastSeenRepository lastSeenRepo) {
+                                DeviceLastSeenRepository lastSeenRepo,
+                                DeviceEventPublisher eventPublisher) {
         this.feedHistoryService = feedHistoryService;
         this.telemetryRepo      = telemetryRepo;
         this.scheduleRepo       = scheduleRepo;
         this.errorLogRepo       = errorLogRepo;
         this.lastSeenRepo       = lastSeenRepo;
+        this.eventPublisher     = eventPublisher;
     }
 
     @PostConstruct
@@ -145,6 +150,11 @@ public class MqttIngestionService {
             try {
                 String cmdDeviceId = mc.group(1);
                 JsonNode cmd = mapper.readTree(payload);
+                eventPublisher.publishEvent("cmd", mapper.writeValueAsString(Map.of(
+                        "deviceId", cmdDeviceId,
+                        "timestamp", Instant.now().toString(),
+                        "payload", mapper.convertValue(cmd, Map.class)
+                )));
                 if (cmd.has("sim") && cmd.get("sim").isNumber()) {
                     int simGrams = cmd.get("sim").intValue();
                     if (simGrams > 0) {
@@ -229,6 +239,25 @@ public class MqttIngestionService {
 
             if (al != null) prevAl.put(deviceId, al);
 
+            // Publish live status to frontend via SSE
+            try {
+                var payload = new java.util.HashMap<String, Object>();
+                payload.put("deviceId", deviceId);
+                payload.put("timestamp", now.toString());
+                payload.put("eg", eg);
+                payload.put("ep", ep);
+                payload.put("cp", cp);
+                payload.put("tp", tp);
+                payload.put("er", er);
+                payload.put("al", al);
+                payload.put("am", nodeBoolean(d, "am"));
+                payload.put("pf", pf);
+                payload.put("ts", ts);
+                eventPublisher.publishStatus(mapper.writeValueAsString(payload));
+            } catch (Exception e) {
+                log.warn("Failed to serialize status event for {}: {}", deviceId, e.getMessage());
+            }
+
             // Log new errors only
             if (er != null && er > 0) {
                 Integer last = prevErr.get(deviceId);
@@ -302,6 +331,21 @@ public class MqttIngestionService {
             s -> { s.setScheduleData(data); s.setUpdatedAt(now); scheduleRepo.save(s); },
             () -> scheduleRepo.save(new DeviceSchedule(deviceId, type, data, now))
         );
+    }
+
+    public boolean publishCommand(String deviceId, Map<String, Object> payload) {
+        if (client == null || !client.isConnected()) {
+            log.warn("Cannot publish MQTT command: client not connected");
+            return false;
+        }
+        try {
+            String json = mapper.writeValueAsString(payload);
+            client.publish("devices/" + deviceId + "/cmd", json.getBytes(StandardCharsets.UTF_8), 1, false);
+            return true;
+        } catch (Exception e) {
+            log.warn("Failed to publish MQTT command to {}: {}", deviceId, e.getMessage());
+            return false;
+        }
     }
 
     private Double  nodeDouble(JsonNode n, String k)  { return n.has(k) && n.get(k).isNumber()  ? n.get(k).doubleValue()  : null; }

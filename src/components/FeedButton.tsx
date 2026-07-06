@@ -28,17 +28,18 @@ export default function FeedButton() {
     prevAlRef.current = al
   }, [al])
 
-  function triggerFeed() {
+  async function triggerFeed() {
     if (!connected) return
 
-    publishCmd(deviceId, { sim: manualGrams })
+    const ok = await publishCmd(deviceId, { sim: manualGrams })
+    if (!ok) return
     addFeedEntry({ id: String(Date.now()), timestamp: Date.now(), grams: manualGrams, source: 'manual' })
     notify.info('Alimentando...')
   }
 
-  function handleStop() {
+  async function handleStop() {
     setContinuous(false)
-    publishCmd(deviceId, { st: 0 })
+    await publishCmd(deviceId, { st: 0 })
   }
 
   if (al) {

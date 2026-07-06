@@ -54,7 +54,11 @@ public class DeviceController {
                 body.put("lastSeen", ls.getLastSeen().toString());
                 return ResponseEntity.ok(body);
             })
-            .orElse(ResponseEntity.notFound().build());
+            .orElseGet(() -> {
+                Map<String, String> body = new HashMap<>();
+                body.put("lastSeen", null);
+                return ResponseEntity.ok(body);
+            });
     }
 
     @GetMapping("/history")
@@ -83,7 +87,7 @@ public class DeviceController {
                 .findTopByDeviceIdOrderByTimestampDesc(deviceId)
                 .map(TelemetryDto::from)
                 .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .orElse(ResponseEntity.ok().body(null));
     }
 
     @GetMapping("/errors")

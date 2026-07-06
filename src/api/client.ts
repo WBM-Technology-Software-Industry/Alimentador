@@ -78,6 +78,8 @@ export const api = {
     get<ApiErrorLog[]>(`/api/devices/${deviceId}/errors?limit=${limit}`),
   lastSeen:      (deviceId: string) =>
     get<{ lastSeen: string }>(`/api/devices/${deviceId}/last-seen`),
+  sendCommand:   (deviceId: string, payload: object) =>
+    post<void>(`/api/devices/${deviceId}/cmd`, payload),
   logout:        () =>
     fetch(`${BASE}/api/auth/logout`, { method: 'POST', headers: authHeader() }),
   getLabels: () =>

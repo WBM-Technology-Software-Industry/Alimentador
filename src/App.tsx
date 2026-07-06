@@ -12,10 +12,10 @@ import { getScopedAccountAccess, useAuthStore } from './store/authStore'
 import { connectMqtt } from './mqtt/client'
 import { api } from './api/client'
 
-const BROKER_URL      = import.meta.env.VITE_MQTT_BROKER_URL ||
-  `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/mqtt`
-const MQTT_USERNAME   = import.meta.env.VITE_MQTT_USERNAME as string | undefined
-const MQTT_PASSWORD   = import.meta.env.VITE_MQTT_PASSWORD as string | undefined
+const API_BASE = import.meta.env.VITE_API_URL as string | undefined ?? ''
+const EVENTS_URL = API_BASE
+  ? API_BASE.replace(/\/+$/, '') + '/events'
+  : '/api/events'
 
 function PrivateRoutes() {
   const token = useAuthStore((s) => s.token)
@@ -52,12 +52,12 @@ export default function App() {
 
   useEffect(() => {
     if (!token) return
-    connectMqtt(BROKER_URL, { username: MQTT_USERNAME, password: MQTT_PASSWORD })
+    connectMqtt(EVENTS_URL, token)
 
     // Garante que o device ativo pertença à conta logada — corrige deviceId
     // desatualizado (conta anterior) e define o primeiro device como padrão.
     const activeDeviceId = visibleDevices.includes(deviceId) ? deviceId : (visibleDevices[0] ?? deviceId)
-    setBrokerConfig(BROKER_URL, activeDeviceId)
+    setBrokerConfig(EVENTS_URL, activeDeviceId)
 
     api.getLabels()
       .then((labels) => { Object.entries(labels).forEach(([id, name]) => setDeviceName(id, name)) })
@@ -66,8 +66,12 @@ export default function App() {
     visibleDevices.forEach((id) => {
       // Semente de lastSeen a partir do banco — evita exibir timestamp desatualizado após F5
       api.lastSeen(id)
-        .then((r) => setDeviceData(id, { lastSeen: new Date(r.lastSeen).getTime() }))
-        .catch(() => {})
+        .then((r) => {
+          if (r?.lastSeen) {
+            setDeviceData(id, { lastSeen: new Date(r.lastSeen).getTime() })
+          }
+        })
+        .catch((err) => { console.warn('[API] lastSeen failed for', id, err) })
 
       api.latestTelemetry(id)
         .then((t) => {

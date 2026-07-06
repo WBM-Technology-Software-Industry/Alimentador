@@ -30,9 +30,9 @@ function FishConfigCard({ deviceId, label }: { deviceId: string; label: string }
     ? `Dispositivo: ${live.qpc}g a cada ${live.tc}min — das ${pad(live.hl)}h às ${pad(live.hd)}h`
     : 'Confirmado!'
 
-  function handleSave() {
+  async function handleSave() {
     const updated: FishSchedule = { qpc, tc, hl, hd }
-    const ok = publishCmd(deviceId, { c_ps: updated })
+    const ok = await publishCmd(deviceId, { c_ps: updated })
     setOffline(!ok)
     if (ok) setSentAt(Date.now())
   }
