@@ -33,21 +33,23 @@ function DeviceIdConfig() {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 flex flex-col gap-3">
       <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Alimentador</h2>
-      <div className="flex rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
-        {devices.map((id) => (
-          <button
-            key={id}
-            onClick={() => handleSelect(id)}
-            className={`flex-1 py-3 text-sm font-semibold transition-all ${
-              deviceId === id
-                ? 'bg-brand-600 text-[#1A1A1A]'
-                : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/60'
-            }`}
-          >
-            {deviceNames[id] ?? DEFAULT_DEVICE_LABELS[id] ?? id}
-          </button>
-        ))}
-      </div>
+      {devices.length > 1 && (
+        <div className="flex rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+          {devices.map((id) => (
+            <button
+              key={id}
+              onClick={() => handleSelect(id)}
+              className={`flex-1 py-3 text-sm font-semibold transition-all ${
+                deviceId === id
+                  ? 'bg-brand-600 text-[#1A1A1A]'
+                  : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/60'
+              }`}
+            >
+              {deviceNames[id] ?? DEFAULT_DEVICE_LABELS[id] ?? id}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="flex flex-col gap-1">
         <label className="text-xs text-gray-500 dark:text-gray-400">Nome personalizado</label>
@@ -437,30 +439,32 @@ export default function Configuracao() {
   return (
     <div className="p-4 lg:p-6 lg:max-w-5xl lg:mx-auto flex flex-col gap-4">
 
-      <DeviceIdConfig />
+      <div className="flex flex-col lg:grid lg:grid-cols-2 gap-4 items-start">
+        <DeviceIdConfig />
 
-      {visibleProfiles.length > 1 && (
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 flex flex-col gap-3">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Perfil</h2>
-          <div className="flex rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
-            {visibleProfiles.map((p) => (
-              <button
-                key={p}
-                onClick={() => setActiveProfile(p)}
-                className={`flex-1 py-3 text-sm font-semibold capitalize transition-all ${
-                  activeProfile === p
-                    ? 'bg-brand-600 text-[#1A1A1A]'
-                    : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/60'
-                }`}
-              >
-                {p === 'pet' ? 'Pet' : 'Peixe'}
-              </button>
-            ))}
+        {visibleProfiles.length > 1 && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 flex flex-col gap-3">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Perfil</h2>
+            <div className="flex rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+              {visibleProfiles.map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setActiveProfile(p)}
+                  className={`flex-1 py-3 text-sm font-semibold capitalize transition-all ${
+                    activeProfile === p
+                      ? 'bg-brand-600 text-[#1A1A1A]'
+                      : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/60'
+                  }`}
+                >
+                  {p === 'pet' ? 'Pet' : 'Peixe'}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      <div className="flex flex-col lg:grid lg:grid-cols-2 gap-4">
+      <div className="flex flex-col lg:grid lg:grid-cols-2 gap-4 items-start">
         <ModoOperacao />
         {activeProfile === 'fish'
           ? <FishWindowConfig key={deviceId} fs={defaultFs} />
