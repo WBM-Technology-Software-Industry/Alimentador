@@ -28,7 +28,9 @@ services:
       DATABASE_URL: jdbc:postgresql://postgres:5432/feeder
       DATABASE_USER: feeder
       DATABASE_PASSWORD: ${DB_PASSWORD:-feeder123}
-      MQTT_BROKER_URL: ${MQTT_BROKER_URL:-tcp://152.67.43.175:1883}
+      MQTT_BROKER_URL: ${MQTT_BROKER_URL:-ws://52.67.133.240:9001}
+      MQTT_USERNAME: ${MQTT_USERNAME}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
     networks:
       - alimentador
       - proxy
