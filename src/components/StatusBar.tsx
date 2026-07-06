@@ -78,7 +78,7 @@ export default function StatusBar() {
   const recent = cmdLog.slice(0, 3)
 
   return (
-    <div className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 px-4 py-1.5 flex items-center gap-2.5 overflow-x-auto no-scrollbar text-xs shrink-0">
+    <div className="bg-gray-50 dark:bg-gray-800/60 border-b border-gray-100 dark:border-gray-700 px-4 lg:px-6 py-2 flex items-center gap-2.5 overflow-x-auto no-scrollbar text-xs shrink-0">
       <span className="font-semibold text-gray-700 dark:text-gray-200 shrink-0">{deviceLabel}</span>
       <span className="text-gray-300 dark:text-gray-600">·</span>
 

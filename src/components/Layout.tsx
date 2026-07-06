@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { LayoutDashboard, Package, History, Settings, Sun, Moon, LogOut } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
+import { useDeviceStore } from '../store/deviceStore'
 import { api } from '../api/client'
 import NotificationToast from './NotificationToast'
 import StatusBar from './StatusBar'
@@ -20,6 +21,37 @@ const nav = [
   { to: '/configuracao', icon: Settings,        label: 'Config'    },
   { to: '/historico',    icon: History,         label: 'Histórico' },
 ]
+
+const OFFLINE_THRESHOLD_MS = 90_000
+
+// Pílula de conexão ao vivo para o cabeçalho desktop — reflete o estado real
+// do stream (SSE) e do último contato do device ativo.
+function ConnectionPill() {
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => setTick(n => n + 1), 10_000)
+    return () => clearInterval(t)
+  }, [])
+
+  const connected  = useDeviceStore((s) => s.connected)
+  const deviceId   = useDeviceStore((s) => s.deviceId)
+  const lastSeen   = useDeviceStore((s) => s.deviceData[deviceId]?.lastSeen ?? 0)
+  const deviceStale = lastSeen > 0 && Date.now() - lastSeen > OFFLINE_THRESHOLD_MS
+
+  const state = !connected ? 'off' : deviceStale ? 'stale' : 'live'
+  const cfg = {
+    live:  { dot: 'bg-brand-500', pulse: true,  text: 'Ao vivo',        cls: 'text-brand-700 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/20 border-brand-200 dark:border-brand-900/40' },
+    stale: { dot: 'bg-amber-500', pulse: false, text: 'Sem sinal',      cls: 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-900/40' },
+    off:   { dot: 'bg-gray-400',  pulse: false, text: 'Desconectado',   cls: 'text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700/40 border-gray-200 dark:border-gray-600' },
+  }[state]
+
+  return (
+    <span className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${cfg.cls}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot} ${cfg.pulse ? 'animate-pulse' : ''}`} />
+      {cfg.text}
+    </span>
+  )
+}
 
 function useDarkMode() {
   const [dark, setDark] = useState(() => localStorage.getItem('theme') === 'dark')
@@ -106,15 +138,18 @@ function AppShell({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Header desktop */}
-        <header className="hidden lg:flex items-center justify-between px-6 py-3 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 shadow-sm">
+        <header className="hidden lg:flex items-center justify-between px-6 py-3 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
           <img src={wbmLogo} alt="WBM Technology" className="h-8 w-auto" />
           <div className="flex items-center gap-4">
+            <ConnectionPill />
+            <div className="h-5 w-px bg-gray-200 dark:bg-gray-700" />
+            <span className="text-sm text-gray-500 dark:text-gray-400 max-w-[14rem] truncate">{name ?? email}</span>
             <button
               onClick={toggle}
-              className="flex items-center gap-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+              aria-label={dark ? 'Ativar tema claro' : 'Ativar tema escuro'}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:text-gray-100 dark:hover:bg-gray-700 transition-colors"
             >
               {dark ? <Sun size={16} /> : <Moon size={16} />}
-              <span className="text-xs">{dark ? 'Claro' : 'Escuro'}</span>
             </button>
           </div>
         </header>
@@ -129,6 +164,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
         {/* Footer desktop */}
         <footer className="hidden lg:flex items-center justify-between px-6 py-3 bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700">
           <span className="text-xs text-gray-400">ControlFeed — Sistema de Alimentação Automática</span>
+          <span className="text-xs text-gray-300 dark:text-gray-600">WBM Technology · {new Date().getFullYear()}</span>
         </footer>
       </div>
 
