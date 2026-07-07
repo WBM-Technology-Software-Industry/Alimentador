@@ -23,3 +23,8 @@ mqtt-bridge-dev.js
 *.log
 *.Zone.Identifier
 node_modules
+
+# Ferramentas / editor (local)
+.claude/
+.postman/
+.vscode/
