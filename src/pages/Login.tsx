@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Eye, EyeOff } from 'lucide-react'
 import { getScopedAccountAccess, useAuthStore } from '../store/authStore'
 import controlFeedLogo from '../assets/Logo ControlFeed.png'
 import wbmLogo from '../assets/LOGO-OFC-WBM-2.0.PNG'
@@ -9,6 +10,7 @@ const BASE = import.meta.env.VITE_API_URL ?? ''
 export default function Login() {
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError]       = useState('')
   const [loading, setLoading]   = useState(false)
   const { setAuth, setDevices } = useAuthStore()
@@ -78,14 +80,24 @@ export default function Login() {
 
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-gray-500">Senha</label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-400"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  className="w-full border border-gray-200 rounded-xl pl-3 pr-10 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-400"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(v => !v)}
+                  aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
 
             {error && (
