@@ -6,6 +6,7 @@ frontend/.env.local
 # Backend
 backend/target/
 backend/.env
+backend/CLAUDE.md
 
 # Docker / secrets
 .env
